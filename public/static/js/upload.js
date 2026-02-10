@@ -155,50 +155,65 @@ async function startProcessing() {
   document.getElementById('upload-results').classList.add('hidden');
 
   processingResults = { success: 0, errors: 0, skipped: 0, details: [] };
-  const total = fileQueue.length;
+  
+  // Salva copie locali per evitare problemi di garbage collection
+  const filesToProcess = [...fileQueue];
+  const total = filesToProcess.length;
 
   for (let i = 0; i < total; i++) {
-    const file = fileQueue[i];
-    updateProgress(i, total, `Analisi: ${file.name}`);
+    const file = filesToProcess[i];
+    const fileName = file ? file.name : `file_${i + 1}.pdf`;
+    
+    updateProgress(i, total, `Analisi: ${fileName}`);
 
     try {
+      if (!file) {
+        throw new Error('File non accessibile');
+      }
+
       // 1. Estrai testo
       const text = await extractTextFromPDF(file);
       
       if (!text || text.length < 50) {
         processingResults.skipped++;
-        processingResults.details.push({ name: file.name, status: 'skipped', message: 'Testo insufficiente (PDF scansione?)' });
+        processingResults.details.push({ name: fileName, status: 'skipped', message: 'Testo insufficiente (PDF scansione?)' });
         continue;
       }
 
       // 2. Pre-classificazione LLM
       const classification = await preClassifyProgram(text);
 
-      // 3. Salva su Supabase
+      // 3. Valida risposta LLM
+      if (!classification || typeof classification !== 'object') {
+        throw new Error('Risposta LLM non valida');
+      }
+
+      // 4. Salva su Supabase
       const record = {
         user_id: session.user.id,
-        docente_nome: classification.docente_nome,
-        docente_email: classification.docente_email,
-        ateneo: classification.ateneo,
-        corso_laurea: classification.corso_laurea,
-        classe_laurea: classification.classe_laurea,
-        materia_inferita: classification.materia_inferita,
+        docente_nome: classification.docente_nome || null,
+        docente_email: classification.docente_email || null,
+        ateneo: classification.ateneo || null,
+        corso_laurea: classification.corso_laurea || null,
+        classe_laurea: classification.classe_laurea || null,
+        materia_inferita: classification.materia_inferita || null,
         manuali_citati: classification.manuali_citati || [],
         temi_principali: classification.temi_principali || [],
-        scenario_zanichelli: classification.scenario_zanichelli,
+        scenario_zanichelli: classification.scenario_zanichelli || 'zanichelli_assente',
         testo_programma: text,
-        pdf_storage_path: file.name
+        pdf_storage_path: fileName
       };
 
       const { error } = await supabaseClient.from('programmi').insert(record);
       if (error) throw new Error(error.message);
 
       processingResults.success++;
-      processingResults.details.push({ name: file.name, status: 'success', message: `${classification.docente_nome || 'Docente'} — ${classification.materia_inferita || 'Materia'}` });
+      processingResults.details.push({ name: fileName, status: 'success', message: `${classification.docente_nome || 'Docente'} — ${classification.materia_inferita || 'Materia'}` });
 
     } catch (error) {
+      console.error(`Errore processing ${fileName}:`, error);
       processingResults.errors++;
-      processingResults.details.push({ name: file.name, status: 'error', message: error.message });
+      processingResults.details.push({ name: fileName, status: 'error', message: error.message });
     }
 
     // Pausa tra le chiamate (rate limiting)
