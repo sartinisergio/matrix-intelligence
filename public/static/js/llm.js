@@ -102,24 +102,39 @@ Se un campo non è determinabile, usa null (per stringhe) o [] (per array).`;
 
 // --- Prompt Motivazione Target ---
 function getTargetMotivationPrompt(bookData, targetData) {
-  return `Sei un consulente commerciale per la casa editrice Zanichelli.
-Devi spiegare in 2-3 frasi perché un docente universitario potrebbe essere interessato a un nuovo libro.
-Sii concreto e specifico — menziona temi, lacune, e vantaggi reali.
+  let frameworkContext = '';
+  if (targetData.profilo_classe) {
+    frameworkContext = `\nPROFILO CLASSE DI LAUREA (dal framework disciplinare MATRIX):\n${targetData.profilo_classe}\n`;
+  }
+  if (targetData.framework_score !== undefined) {
+    frameworkContext += `\nALLINEAMENTO FRAMEWORK: ${targetData.framework_score}% dei moduli disciplinari coperti dal programma del docente.\n`;
+  }
+
+  return `Sei un consulente commerciale esperto per la casa editrice Zanichelli.
+Devi spiegare in 2-3 frasi CONCRETE perché un docente universitario dovrebbe considerare il nuovo libro proposto.
+
+REGOLE:
+- Sii specifico: menziona il manuale attuale del docente, le lacune che il nuovo libro colma, i punti di forza
+- Se il docente NON usa Zanichelli (scenario "assente"), sottolinea i vantaggi rispetto al concorrente attuale
+- Se il docente USA GIA' Zanichelli (scenario "principale" o "alternativo"), suggerisci aggiornamento/complemento
+- Se c'e un profilo classe di laurea, menziona l'aderenza ai requisiti del corso di studi
+- Nessun titolo, nessuna formattazione, solo 2-3 frasi dirette
 
 NUOVO LIBRO:
 - Titolo: ${bookData.titolo}
 - Autore: ${bookData.autore || 'N/D'}
 - Materia: ${bookData.materia}
-- Temi: ${(bookData.temi || []).join(', ')}
+- Temi chiave: ${(bookData.temi || []).join(', ')}
 
 DOCENTE TARGET:
 - Nome: ${targetData.docente_nome || 'N/D'}
 - Ateneo: ${targetData.ateneo || 'N/D'}
 - Materia insegnata: ${targetData.materia_inferita || 'N/D'}
+- Classe di laurea: ${targetData.classe_laurea || 'N/D'}
 - Temi del corso: ${(targetData.temi_principali || []).join(', ')}
 - Manuale attuale: ${targetData.manuale_attuale || 'N/D'}
-- Scenario: ${targetData.scenario_zanichelli || 'N/D'}
-
+- Scenario Zanichelli: ${targetData.scenario_zanichelli || 'N/D'}
+${frameworkContext}
 Rispondi con esattamente 2-3 frasi. Nessun titolo, nessuna formattazione.`;
 }
 

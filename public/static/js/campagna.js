@@ -10,6 +10,45 @@ let currentCampaignId = null;
 let catalogData = null;
 let catalogManuals = [];
 
+// --- Framework di valutazione ---
+let frameworkData = null;
+let allFrameworks = [];
+
+async function loadFrameworks() {
+  if (frameworkData) return;
+  try {
+    const response = await fetch('/static/data/catalogo_framework.json');
+    if (!response.ok) throw new Error('Framework non trovati');
+    frameworkData = await response.json();
+    allFrameworks = frameworkData.frameworks || [];
+    console.log(`Framework caricati: ${allFrameworks.length}`);
+  } catch (e) {
+    console.error('Errore caricamento framework:', e);
+  }
+}
+
+function findFrameworkForSubject(materia) {
+  if (!allFrameworks.length || !materia) return null;
+  const materiaLower = materia.toLowerCase();
+  
+  // Match esatto o parziale
+  let best = null;
+  for (const fw of allFrameworks) {
+    const fwSubject = fw.subject.toLowerCase();
+    const fwName = fw.name.toLowerCase();
+    
+    if (fwSubject === materiaLower || fwName === materiaLower) {
+      // Preferisci il framework più completo (più moduli)
+      if (!best || fw.syllabus_modules.length > best.syllabus_modules.length) {
+        best = fw;
+      }
+    } else if (fwSubject.includes(materiaLower) || materiaLower.includes(fwSubject)) {
+      if (!best) best = fw;
+    }
+  }
+  return best;
+}
+
 async function loadCatalog() {
   if (catalogData) return; // Già caricato
   
@@ -338,12 +377,19 @@ async function generateTargets(campaignId) {
     return;
   }
 
-  // Step 2: Matching
+  // Step 2: Carica framework disciplinare (se disponibile)
+  await loadFrameworks();
+  const framework = findFrameworkForSubject(campaign.libro_materia);
+  if (framework) {
+    showToast(`Framework "${framework.name}" trovato (${framework.syllabus_modules.length} moduli)`, 'info');
+  }
+
+  // Step 3: Matching con nuovo algoritmo
   showToast('Calcolo rilevanza in corso...', 'info');
   const targets = [];
 
   for (const prog of programs) {
-    const result = calculateRelevance(campaign, prog, bookThemes);
+    const result = calculateRelevance(campaign, prog, bookThemes, framework);
     if (result) {
       targets.push(result);
     }
@@ -394,8 +440,11 @@ async function generateTargets(campaignId) {
           ateneo: t.programData.ateneo,
           materia_inferita: t.programData.materia_inferita,
           temi_principali: t.programData.temi_principali,
-          manuale_attuale: mainManual ? `${mainManual.titolo} (${mainManual.autore})` : 'Nessuno citato',
-          scenario_zanichelli: t.programData.scenario_zanichelli
+          manuale_attuale: t.manualePrincipale || 'Nessuno citato',
+          scenario_zanichelli: t.programData.scenario_zanichelli,
+          classe_laurea: t.programData.classe_laurea,
+          profilo_classe: t.profiloClasse,
+          framework_score: t.frameworkScore
         };
 
         t.motivazione = await generateMotivation(bookData, targetData);
@@ -411,10 +460,10 @@ async function generateTargets(campaignId) {
     targetProgress.classList.add('hidden');
   }
 
-  // Motivazione generica per bassa rilevanza
+  // Motivazione generica per bassa rilevanza (consolidamento Zanichelli)
   targets.filter(t => t.rilevanza === 'bassa').forEach(t => {
-    const commonThemes = t.temiComuni.slice(0, 3).join(', ');
-    t.motivazione = `Il corso tratta temi affini (${commonThemes}) che potrebbero beneficiare del nuovo testo come risorsa complementare.`;
+    const manuale = t.manualePrincipale || 'un testo Zanichelli';
+    t.motivazione = `Il docente utilizza già ${manuale} come testo principale. Opportunità di consolidamento e aggiornamento con la nuova edizione o proposta complementare.`;
   });
 
   // Salva target nella campagna
@@ -424,9 +473,12 @@ async function generateTargets(campaignId) {
     docente_email: t.programData.docente_email,
     ateneo: t.programData.ateneo,
     materia: t.programData.materia_inferita,
+    classe_laurea: t.programData.classe_laurea,
     scenario: t.programData.scenario_zanichelli,
     rilevanza: t.rilevanza,
     overlap_pct: t.overlapPct,
+    framework_score: t.frameworkScore,
+    manuale_principale: t.manualePrincipale,
     motivazione: t.motivazione,
     temi_comuni: t.temiComuni
   }));
@@ -448,21 +500,79 @@ async function generateTargets(campaignId) {
   loadCampaigns(); // Aggiorna lista campagne
 }
 
-// --- Algoritmo di Matching ---
-function calculateRelevance(campaign, program, bookThemes) {
+// ===================================================
+// NUOVO ALGORITMO DI MATCHING — Logica Commerciale
+// ===================================================
+//
+// PRINCIPIO: Una campagna è per un libro specifico di una materia specifica.
+// La domanda non è "quanti temi in comune?" ma:
+//   1. Il docente insegna la materia giusta?
+//   2. Quanto è "conquistabile" (scenario Zanichelli)?
+//   3. Quali manuali usa attualmente? (concorrente diretto?)
+//   4. Il framework disciplinare conferma l'affinità?
+//
+// CLASSIFICAZIONE:
+//   ALTA   = materia OK + zanichelli_assente (oppure materia OK + concorrente diretto)
+//   MEDIA  = materia OK + zanichelli_alternativo (oppure materia OK + zanichelli_assente con basso overlap)
+//   BASSA  = materia OK + zanichelli_principale (consolidamento)
+//   ESCLUSO = materia non coincidente
+
+function calculateRelevance(campaign, program, bookThemes, framework) {
+  // ====== STEP 1: Filtro Materia ======
+  const subjectMatch = checkSubjectMatch(
+    campaign.libro_materia, 
+    program.materia_inferita
+  );
+  
+  if (!subjectMatch) return null; // ESCLUSO — materia diversa
+  
+  // ====== STEP 2: Analisi Scenario Zanichelli ======
+  const scenario = program.scenario_zanichelli || 'zanichelli_assente';
+  
+  // Priorità base dallo scenario
+  let basePriority;
+  switch (scenario) {
+    case 'zanichelli_assente':
+      basePriority = 'alta';   // Opportunità massima
+      break;
+    case 'zanichelli_alternativo':
+      basePriority = 'media';  // Conosce già Zanichelli, non come principale
+      break;
+    case 'zanichelli_principale':
+      basePriority = 'bassa';  // Già cliente — consolidamento
+      break;
+    default:
+      basePriority = 'media';
+  }
+  
+  // ====== STEP 3: Analisi Manuali Citati ======
+  const manuali = program.manuali_citati || [];
+  const manualePrincipale = manuali.find(m => m.ruolo === 'principale');
+  const manualiAlternativi = manuali.filter(m => m.ruolo === 'alternativo');
+  
+  // Verifica se il docente usa un concorrente diretto del nostro libro
+  const usaConcorrenteDiretto = manualePrincipale && 
+    !isZanichelliAuthor(manualePrincipale.autore) &&
+    checkSubjectMatch(campaign.libro_materia, program.materia_inferita);
+  
+  // Se usa un concorrente diretto E Zanichelli è assente → massima opportunità
+  if (usaConcorrenteDiretto && scenario === 'zanichelli_assente') {
+    basePriority = 'alta';
+  }
+  
+  // ====== STEP 4: Overlap Tematico (affinamento) ======
   const progThemes = (program.temi_principali || []).map(t => t.toLowerCase());
   const bkThemes = bookThemes.map(t => t.toLowerCase());
-
-  // Calcola overlap tematico (con partial matching)
+  
   let matchCount = 0;
   const temiComuni = [];
-
+  
   for (const bt of bkThemes) {
     for (const pt of progThemes) {
       if (
         bt === pt ||
         bt.includes(pt) || pt.includes(bt) ||
-        levenshteinSimilarity(bt, pt) > 0.7
+        levenshteinSimilarity(bt, pt) > 0.65
       ) {
         matchCount++;
         temiComuni.push(pt);
@@ -470,35 +580,114 @@ function calculateRelevance(campaign, program, bookThemes) {
       }
     }
   }
-
+  
   const overlapPct = bkThemes.length > 0 ? matchCount / bkThemes.length : 0;
-
-  // Materia match
-  const subjectMatch = campaign.libro_materia && program.materia_inferita &&
-    (campaign.libro_materia.toLowerCase().includes(program.materia_inferita.toLowerCase()) ||
-     program.materia_inferita.toLowerCase().includes(campaign.libro_materia.toLowerCase()));
-
-  // Classificazione rilevanza
-  let rilevanza = null;
-
-  if (subjectMatch && overlapPct >= 0.5) {
-    rilevanza = 'alta';
-  } else if ((subjectMatch && overlapPct >= 0.25) || (!subjectMatch && overlapPct >= 0.5)) {
-    rilevanza = 'media';
-  } else if (overlapPct >= 0.15) {
-    rilevanza = 'bassa';
+  
+  // ====== STEP 5: Framework Matching (se disponibile) ======
+  let frameworkScore = 0;
+  let frameworkModuliCoperti = [];
+  
+  if (framework && framework.syllabus_modules) {
+    const fwConcepts = [];
+    for (const mod of framework.syllabus_modules) {
+      for (const kc of (mod.key_concepts || [])) {
+        fwConcepts.push({ concept: kc.toLowerCase(), module: mod.name });
+      }
+    }
+    
+    // Confronta temi del programma con concetti del framework
+    const moduliSet = new Set();
+    for (const pt of progThemes) {
+      for (const fc of fwConcepts) {
+        if (
+          pt.includes(fc.concept) || fc.concept.includes(pt) ||
+          levenshteinSimilarity(pt, fc.concept) > 0.65
+        ) {
+          moduliSet.add(fc.module);
+        }
+      }
+    }
+    
+    frameworkModuliCoperti = [...moduliSet];
+    frameworkScore = framework.syllabus_modules.length > 0 
+      ? moduliSet.size / framework.syllabus_modules.length 
+      : 0;
   }
-
-  if (!rilevanza) return null; // Escluso
-
+  
+  // ====== STEP 6: Aggiustamento Finale ======
+  let rilevanza = basePriority;
+  
+  // Alza di un livello se overlap alto O framework score alto
+  if (overlapPct >= 0.4 || frameworkScore >= 0.3) {
+    if (rilevanza === 'bassa') rilevanza = 'media';
+    else if (rilevanza === 'media') rilevanza = 'alta';
+  }
+  
+  // ====== STEP 7: Profilo Classe di Laurea (se disponibile) ======
+  let profiloClasse = null;
+  if (framework && framework.program_profiles && program.classe_laurea) {
+    const classeLaurea = program.classe_laurea.toUpperCase();
+    profiloClasse = framework.program_profiles.find(p => 
+      p.name.toUpperCase().includes(classeLaurea)
+    );
+  }
+  
   return {
     programData: program,
     rilevanza,
     overlapPct: Math.round(overlapPct * 100),
+    frameworkScore: Math.round(frameworkScore * 100),
+    frameworkModuliCoperti,
     temiComuni: [...new Set(temiComuni)],
-    scenario: program.scenario_zanichelli,
+    scenario,
+    manualePrincipale: manualePrincipale 
+      ? `${manualePrincipale.titolo || ''} (${manualePrincipale.autore || ''})` 
+      : null,
+    profiloClasse: profiloClasse?.priority_modules || null,
     motivazione: ''
   };
+}
+
+// --- Check Subject Match (flessibile) ---
+function checkSubjectMatch(materia1, materia2) {
+  if (!materia1 || !materia2) return false;
+  
+  const m1 = materia1.toLowerCase().trim();
+  const m2 = materia2.toLowerCase().trim();
+  
+  // Match esatto
+  if (m1 === m2) return true;
+  
+  // Inclusione parziale
+  if (m1.includes(m2) || m2.includes(m1)) return true;
+  
+  // Similarità alta
+  if (levenshteinSimilarity(m1, m2) > 0.75) return true;
+  
+  // Sinonimi noti
+  const synonyms = [
+    ['chimica generale', 'chimica generale e inorganica', 'chimica di base'],
+    ['chimica organica', 'chimica organica e bioorganica'],
+    ['fisica', 'fisica generale', 'fisica 1', 'fisica 2'],
+    ['economia', 'economia politica', 'economia di base'],
+    ['istologia', 'istologia e embriologia'],
+    ['biologia', 'biologia cellulare', 'biologia generale'],
+  ];
+  
+  for (const group of synonyms) {
+    const m1Match = group.some(s => m1.includes(s) || s.includes(m1));
+    const m2Match = group.some(s => m2.includes(s) || s.includes(m2));
+    if (m1Match && m2Match) return true;
+  }
+  
+  return false;
+}
+
+// --- Verifica autore Zanichelli ---
+function isZanichelliAuthor(authorStr) {
+  if (!authorStr) return false;
+  const lower = authorStr.toLowerCase();
+  return CONFIG.ZANICHELLI_AUTHORS.some(a => lower.includes(a));
 }
 
 // --- Similarità Levenshtein (semplificata) ---
@@ -553,8 +742,8 @@ function renderTargets(targets) {
   if (targets.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="px-4 py-8 text-center text-gray-400">
-          Nessun target trovato con rilevanza sufficiente
+        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+          Nessun target trovato — nessun programma corrisponde alla materia della campagna
         </td>
       </tr>`;
     return;
@@ -562,19 +751,31 @@ function renderTargets(targets) {
 
   tbody.innerHTML = targets.map((t, i) => {
     const rowBg = t.rilevanza === 'alta' ? 'bg-green-50/50' : t.rilevanza === 'media' ? 'bg-yellow-50/30' : '';
+    const manualeStr = t.manuale_principale 
+      ? `<div class="text-xs text-gray-400 mt-1" title="${t.manuale_principale}"><i class="fas fa-book text-[10px] mr-1"></i>${truncate(t.manuale_principale, 30)}</div>` 
+      : '';
+    const fwBadge = t.framework_score > 0 
+      ? `<div class="text-xs text-blue-500 mt-1" title="Copertura framework disciplinare"><i class="fas fa-chart-bar text-[10px] mr-1"></i>FW ${t.framework_score}%</div>` 
+      : '';
+    
     return `
       <tr class="border-t ${rowBg}">
         <td class="px-4 py-3 text-gray-500 text-xs">${i + 1}</td>
         <td class="px-4 py-3">
           <div class="font-medium text-gray-800">${t.docente_nome || '—'}</div>
           ${t.docente_email ? `<div class="text-xs text-gray-400">${t.docente_email}</div>` : ''}
+          ${manualeStr}
         </td>
-        <td class="px-4 py-3 text-gray-600 text-sm">${t.ateneo || '—'}</td>
+        <td class="px-4 py-3 text-gray-600 text-sm">
+          ${t.ateneo || '—'}
+          ${t.classe_laurea ? `<div class="text-xs text-gray-400">${t.classe_laurea}</div>` : ''}
+        </td>
         <td class="px-4 py-3 text-gray-600 text-sm">${t.materia || '—'}</td>
         <td class="px-4 py-3">${scenarioBadge(t.scenario)}</td>
         <td class="px-4 py-3">
           ${relevanceBadge(t.rilevanza)}
           <div class="text-xs text-gray-400 mt-1">${t.overlap_pct || 0}% overlap</div>
+          ${fwBadge}
         </td>
         <td class="px-4 py-3 text-sm text-gray-600 max-w-xs">${t.motivazione || '—'}</td>
       </tr>`;

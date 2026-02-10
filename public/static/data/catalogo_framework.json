@@ -1,0 +1,2660 @@
+{
+  "version": "1.0.0",
+  "source": "github.com/sartinisergio/matrix-analisi-programmi/frameworks",
+  "total_frameworks": 21,
+  "frameworks": [
+    {
+      "id": "analisi_1",
+      "name": "Analisi 1",
+      "subject": "Analisi Matematica",
+      "program_profiles": [
+        {
+          "name": "L-35 Matematica",
+          "priority_modules": "Cruciale il massimo rigore teorico su tutti i moduli. Focus assoluto sulle dimostrazioni (costruzione di R, topologia, teoremi globali). I moduli 9 e 10 (Serie e Successioni di funzioni) sono centrali per l'Analisi successiva. Meno enfasi sul calcolo meccanico ripetitivo, più sulla logica deduttiva."
+        },
+        {
+          "name": "L-30 Fisica",
+          "priority_modules": "Cruciale la padronanza operativa e teorica di derivate, integrali e serie (Moduli 6, 7, 9) e le equazioni differenziali (13). Fondamentale l'espansione di Taylor per le approssimazioni fisiche. Necessario un ottimo equilibrio tra rigore formale e intuizione applicativa."
+        },
+        {
+          "name": "L-7-8-9 Ingegneria",
+          "priority_modules": "Focus strategico sul 'saper fare i calcoli': studio di funzione (6), integrali (7), numeri complessi (spesso inclusi nel cap 1 o a parte) e serie (9). Le dimostrazioni più astratte di topologia (2) sono marginali. Fondamentale l'introduzione alle funzioni di più variabili (11) e ODE (13) come base per corsi successivi."
+        },
+        {
+          "name": "L-27 Scienze Chimiche",
+          "priority_modules": "Focus strumentale su derivate e integrali (6, 7) per la termodinamica e cinetica. Fondamentali le equazioni differenziali (13). Meno rilevante la topologia astratta, la continuità uniforme o le serie di funzioni complesse. Serve un approccio pratico."
+        },
+        {
+          "name": "L-34 Geologia",
+          "priority_modules": "Livello base. Focus essenziale su limiti, derivate e integrali semplici (Moduli 4, 6, 7) per comprendere i modelli fisici. Tutto ciò che è astrazione teorica, serie complesse o topologia avanzata è marginale."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Numeri reali e strutture algebriche",
+          "core_contents": "Costruzione assiomatica dei numeri reali (Assioma di completezza/Dedekind). Concetti di estremo superiore/inferiore, valore assoluto, disuguaglianze fondamentali e topologia della retta.",
+          "key_concepts": [
+            "Costruzione assiomatica numeri reali",
+            "Assioma di completezza",
+            "Estremo superiore e inferiore"
+          ]
+        },
+        {
+          "name": "2. Topologia della retta reale",
+          "core_contents": "Definizioni topologiche essenziali: intorni, punti di accumulazione, insiemi aperti/chiusi. Teoremi sui compatti (Heine-Borel) e connessi.",
+          "key_concepts": [
+            "Intorni sulla retta reale",
+            "Punti di accumulazione",
+            "Insiemi aperti e chiusi"
+          ]
+        },
+        {
+          "name": "3. Successioni reali",
+          "core_contents": "Limiti di successioni, teoremi di convergenza, successioni di Cauchy e completezza. Criteri di convergenza, gerarchia degli infiniti e numero di Nepero.",
+          "key_concepts": [
+            "Limiti di successioni",
+            "Convergenza di successioni",
+            "Successioni di Cauchy"
+          ]
+        },
+        {
+          "name": "4. Limiti di funzioni",
+          "core_contents": "Definizione formale (epsilon-delta), algebra dei limiti, forme indeterminate e limiti notevoli. Concetti di 'o piccolo', asintotici e simboli di Landau.",
+          "key_concepts": [
+            "Definizione formale limite (epsilon-delta)",
+            "Algebra dei limiti",
+            "Limiti notevoli"
+          ]
+        },
+        {
+          "name": "5. Continuità",
+          "core_contents": "Funzioni continue, classificazione delle discontinuità. Teoremi globali fondamentali: Zeri, Valori Intermedi, Weierstrass. Continuità uniforme.",
+          "key_concepts": [
+            "Definizione di funzione continua",
+            "Classificazione delle discontinuità",
+            "Discontinuità di prima specie"
+          ]
+        },
+        {
+          "name": "6. Derivabilità",
+          "core_contents": "Definizione di derivata e significato geometrico/fisico. Calcolo differenziale, Teoremi di Rolle, Lagrange, Cauchy. Sviluppi di Taylor/Maclaurin con resto (Peano/Lagrange) e studio completo di funzione (convessità, flessi).",
+          "key_concepts": [
+            "Definizione di Derivata",
+            "Significato Geometrico Derivata",
+            "Calcolo Differenziale"
+          ]
+        },
+        {
+          "name": "7. Integrale di Riemann",
+          "core_contents": "Costruzione dell'integrale (somme inferiori/superiori), integrabilità. Teorema Fondamentale del Calcolo Integrale. Tecniche di integrazione (parti, sostituzione) e applicazioni geometriche (aree, volumi).",
+          "key_concepts": [
+            "Teorema Fondamentale del Calcolo Integrale",
+            "Definizione Integrale di Riemann",
+            "Condizioni di Integrabilità"
+          ]
+        },
+        {
+          "name": "8. Integrali impropri",
+          "core_contents": "Integrazione su intervalli illimitati o funzioni non limitate. Criteri di convergenza e confronto asintotico.",
+          "key_concepts": [
+            "Integrali Impropri",
+            "Integrazione Intervalli Illimitati",
+            "Funzioni Non Limitate"
+          ]
+        },
+        {
+          "name": "9. Serie numeriche",
+          "core_contents": "Carattere di una serie. Criteri per serie a termini positivi (radice, rapporto, confronto). Serie a segni alterni (Leibniz) e convergenza assoluta. Serie geometrica e armonica.",
+          "key_concepts": [
+            "Carattere di una serie",
+            "Criteri per serie positive",
+            "Criterio della radice"
+          ]
+        },
+        {
+          "name": "10. Successioni e serie di funzioni",
+          "core_contents": "Distinzione tra convergenza puntuale e uniforme. Teoremi di passaggio al limite sotto segno di integrale/derivata. Serie di potenze (raggio di convergenza) e basi delle Serie di Fourier.",
+          "key_concepts": [
+            "Convergenza uniforme",
+            "Convergenza puntuale",
+            "Serie di funzioni"
+          ]
+        },
+        {
+          "name": "11. Funzioni di più variabili",
+          "core_contents": "Elementi di topologia in R^n, limiti e continuità. Calcolo differenziale multivariato: derivate parziali, gradiente, differenziabilità e piano tangente. Ottimizzazione libera e vincolata (Moltiplicatori di Lagrange).",
+          "key_concepts": [
+            "Topologia Spazi Euclidei R^n",
+            "Limiti Funzioni Multivariabili",
+            "Continuità Funzioni Multivariabili"
+          ]
+        },
+        {
+          "name": "12. Curve parametriche",
+          "core_contents": "Rappresentazione parametrica, regolarità, vettore tangente, calcolo della lunghezza d'arco e curvatura.",
+          "key_concepts": [
+            "Rappresentazione parametrica di curve",
+            "Dominio e codominio della parametrizzazione",
+            "Regolarità delle curve parametriche"
+          ]
+        },
+        {
+          "name": "13. Equazioni differenziali ordinarie elementari",
+          "core_contents": "Risoluzione di ODE del primo ordine (variabili separabili, lineari) e secondo ordine a coefficienti costanti. Problema di Cauchy.",
+          "key_concepts": [
+            "Equazioni Differenziali Ordinarie (ODE)",
+            "Problema di Cauchy",
+            "ODE Primo Ordine"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "analisi_2",
+      "name": "Analisi 2",
+      "subject": "Analisi Matematica",
+      "program_profiles": [
+        {
+          "name": "L-35 Matematica",
+          "priority_modules": "Cruciale il rigore teorico assoluto. Il modulo 8 (Lebesgue) è fondamentale e distingue questo corso da tutti gli altri. Essenziali i moduli 1, 3 (Dini) e 11 (Spazi di Hilbert). Le trasformate (10) e i calcoli ingegneristici sono secondari rispetto alla comprensione profonda della topologia e della misura."
+        },
+        {
+          "name": "L-30 Fisica",
+          "priority_modules": "Focus critico sui moduli 7 (Calcolo Vettoriale), 9 (PDE), 10 (Fourier) e 11 (Ortogonali/Hilbert). Questi sono gli strumenti base per la Meccanica Quantistica e l'Elettromagnetismo. Lebesgue (8) è utile ma spesso trattato in modo più funzionale che costruttivo."
+        },
+        {
+          "name": "L-7-8-9 Ingegneria (Industriale/Informazione)",
+          "priority_modules": "Strategico il 'saper calcolare'. Cruciali le Trasformate di Laplace (10) per Controlli/Elettronica, le ODE (2) e il Calcolo Vettoriale (6-7) per Fisica Tecnica/Campi. I moduli teorici come Lebesgue (8) o la teoria fine delle serie di funzioni (1) sono spesso marginali o del tutto assenti. Focus su stabilità (Lyapunov)."
+        },
+        {
+          "name": "L-7-8 Ingegneria (Civile/Edile)",
+          "priority_modules": "Focus pesante su Meccanica del Continuo: fondamentali i moduli 4 (Hessiana), 5 (Integrali multipli per baricentri/inerzia) e 6-7 (Calcolo vettoriale). Meno enfasi su Trasformate e PDE complesse."
+        },
+        {
+          "name": "L-27 Scienze Chimiche",
+          "priority_modules": "Serve una solida base di calcolo multivariabile (Moduli 3, 4, 5) per la Termodinamica. Importante l'introduzione alle funzioni d'onda e ortogonali (11, 12) per la Chimica Fisica/Quantistica. Lebesgue e Analisi Funzionale astratta sono trascurabili."
+        },
+        {
+          "name": "L-34 Geologia",
+          "priority_modules": "Versione applicativa ridotta. Focus su Integrali Multipli (5) e Vettoriali (6-7) per la fluidodinamica sotterranea. ODE base (2). Tutto il resto (Lebesgue, Hilbert, Trasformate, Funzioni implicite complesse) è generalmente fuori target."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Successioni e serie di funzioni",
+          "core_contents": "Distinzione critica tra convergenza puntuale e uniforme. Teoremi di continuità, derivabilità e integrabilità sotto il segno di serie (incluso Weierstrass). Studio approfondito delle Serie di Potenze (raggio di convergenza) e introduzione alle Serie di Fourier (convergenza quadratica e puntuale).",
+          "key_concepts": [
+            "Convergenza uniforme",
+            "Convergenza puntuale",
+            "Serie di funzioni"
+          ]
+        },
+        {
+          "name": "2. Equazioni differenziali ordinarie (ODE)",
+          "core_contents": "Teoria generale: esistenza e unicità locale e globale (Cauchy-Lipschitz). Metodi risolutivi per equazioni lineari a coefficienti costanti e sistemi di ODE. Analisi qualitativa e stabilità delle soluzioni (Metodo di Lyapunov).",
+          "key_concepts": [
+            "Equazioni differenziali ordinarie",
+            "Teorema di Cauchy-Lipschitz",
+            "Esistenza e unicità locale"
+          ]
+        },
+        {
+          "name": "3. Calcolo differenziale per funzioni di più variabili",
+          "core_contents": "Topologia in Rn. Concetto di differenziabilità, piano tangente e matrice Jacobiana. Teorema delle Funzioni Implicite (Dini) e applicazioni all'invertibilità locale. Ottimizzazione vincolata tramite Moltiplicatori di Lagrange.",
+          "key_concepts": [
+            "Differenziabilità funzioni più variabili",
+            "Matrice Jacobiana",
+            "Teorema Funzioni Implicite (Dini)"
+          ]
+        },
+        {
+          "name": "4. Serie e polinomi di Taylor in più variabili",
+          "core_contents": "Formula di Taylor multivariata, matrice Hessiana e studio della natura dei punti critici (massimi, minimi, sella).",
+          "key_concepts": [
+            "Formula di Taylor multivariata",
+            "Punti critici",
+            "Matrice Hessiana"
+          ]
+        },
+        {
+          "name": "5. Calcolo integrale in più variabili",
+          "core_contents": "Costruzione dell'integrale multiplo (Riemann), domini normali e Teoremi di Fubini/Tonelli. Tecniche di cambio di variabile tramite Jacobiano (coordinate polari, cilindriche, sferiche). Integrali impropri in più dimensioni.",
+          "key_concepts": [
+            "Integrale multiplo di Riemann",
+            "Domini di integrazione normali",
+            "Teorema di Fubini-Tonelli"
+          ]
+        },
+        {
+          "name": "6. Integrali di linea e di superficie",
+          "core_contents": "Curve e superfici parametriche. Integrali di prima specie (massa/area) e seconda specie (lavoro/flusso). Concetto di campo conservativo, potenziale e irrotazionalità.",
+          "key_concepts": [
+            "Integrali di linea",
+            "Integrali di superficie",
+            "Curve parametriche"
+          ]
+        },
+        {
+          "name": "7. Calcolo vettoriale e teoremi fondamentali",
+          "core_contents": "Operatori differenziali vettoriali: Gradiente, Divergenza, Rotore. I grandi teoremi dell'analisi vettoriale: Green (piano), Stokes (rotore) e Gauss (divergenza). Applicazioni fisiche dei flussi.",
+          "key_concepts": [
+            "Teoremi fondamentali analisi vettoriale",
+            "Operatori differenziali vettoriali",
+            "Teorema di Stokes"
+          ]
+        },
+        {
+          "name": "8. Misura e integrazione di Lebesgue",
+          "core_contents": "Fondamenti di teoria della misura (insiemi misurabili, misura nulla). Costruzione dell'integrale di Lebesgue e confronto con Riemann. Teoremi di passaggio al limite (Convergenza Monotona di Beppo Levi, Convergenza Dominata).",
+          "key_concepts": [
+            "Integrale di Lebesgue",
+            "Teoria della Misura",
+            "Insiemi Misurabili"
+          ]
+        },
+        {
+          "name": "9. Equazioni alle derivate parziali (PDE) elementari",
+          "core_contents": "Classificazione base delle PDE. Metodo di separazione delle variabili. Analisi delle equazioni modello: Calore (parabolica), Onde (iperbolica), Laplace (ellittica).",
+          "key_concepts": [
+            "Equazioni alle derivate parziali (PDE)",
+            "Classificazione base delle PDE",
+            "Metodo di separazione delle variabili"
+          ]
+        },
+        {
+          "name": "10. Trasformate integrali",
+          "core_contents": "Trasformata di Laplace: definizione, proprietà e applicazione alla risoluzione di ODE. Trasformata di Fourier: proprietà e legame con la frequenza. Convoluzione.",
+          "key_concepts": [
+            "Trasformata di Laplace: Definizione",
+            "Proprietà della Trasformata di Laplace",
+            "Risoluzione di ODE tramite Laplace"
+          ]
+        },
+        {
+          "name": "11. Serie e sistemi di funzioni ortogonali",
+          "core_contents": "Cenni agli Spazi di Hilbert e L2. Basi ortonormali, serie di Fourier generalizzate e teoria di Sturm-Liouville.",
+          "key_concepts": [
+            "Serie di Fourier generalizzate",
+            "Spazi di Hilbert",
+            "Spazio delle funzioni L2"
+          ]
+        },
+        {
+          "name": "12. Funzioni speciali",
+          "core_contents": "Funzioni Gamma e Beta di Eulero. Polinomi ortogonali (Legendre, Chebyshev, Hermite) come soluzioni di equazioni differenziali notevoli.",
+          "key_concepts": [
+            "Funzione Gamma di Eulero",
+            "Funzione Beta di Eulero",
+            "Polinomi ortogonali"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "biologia_semestre_filtro",
+      "name": "Biologia semestre filtro",
+      "subject": "Biologia",
+      "program_profiles": [
+        {
+          "name": "Semestre Filtro (Medicina/Odontoiatria/Veterinaria)",
+          "priority_modules": "Copertura totale obbligatoria. Cruciale il collegamento tra biologia cellulare e patologia (es. ciclo cellulare -> cancro; lisosomi -> malattie da accumulo; citoscheletro -> distrofie).",
+          "textbook_advice": "Testi di 'Biologia Cellulare e Genetica' con taglio medico."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Organizzazione Biologica e Molecolare",
+          "core_contents": "Teoria cellulare e virus (ciclo litico/lisogeno, retrovirus). Macromolecole biologiche (carboidrati, lipidi, acidi nucleici, proteine). Differenze procarioti/eucarioti. Origine endosimbiotica dei mitocondri.",
+          "key_concepts": [
+            "Macromolecole biologiche fondamentali",
+            "Struttura e funzione proteine",
+            "Teoria cellulare"
+          ]
+        },
+        {
+          "name": "2. Genoma e Cromatina",
+          "core_contents": "Organizzazione del genoma eucariotico. Cromatina, istoni, nucleosomi. Epigenetica (metilazione, acetilazione). Sequenze ripetute e telomeri.",
+          "key_concepts": [
+            "Organizzazione Genoma Eucariotico",
+            "Cromatina",
+            "Istoni"
+          ]
+        },
+        {
+          "name": "3. Flusso dell'Informazione",
+          "core_contents": "Replicazione del DNA. Trascrizione (promotori, fattori di trascrizione). Maturazione RNA (splicing, capping). Traduzione e codice genetico. Controllo post-traduzionale (folding, ubiquitina-proteasoma).",
+          "key_concepts": [
+            {
+              "concept": "Replicazione DNA semiconservativa"
+            },
+            {
+              "concept": "Trascrizione genica"
+            },
+            {
+              "concept": "Codice genetico e traduzione"
+            }
+          ]
+        },
+        {
+          "name": "4. Genetica e Variazioni del Genoma",
+          "core_contents": "Mutazioni geniche e cromosomiche. Meccanismi di riparo. Genetica Mendeliana: leggi, segregazione, alleli multipli (AB0), epistasi, pleiotropia. Pedigree e genetica umana. Cariotipo umano e aneuploidie (es. Trisomia 21).",
+          "key_concepts": [
+            "Genetica Mendeliana Classica",
+            "Mutazioni Geniche e Cromosomiche",
+            "Leggi di Segregazione e Assortimento"
+          ]
+        },
+        {
+          "name": "5. Strutture e Funzioni Cellulari",
+          "core_contents": "Membrane (trasporto attivo/passivo, potenziale). Nucleo e traffico nucleare. Mitocondri (bioenergetica e dinamica). Sistema endomembrane (RE, Golgi, Lisosomi, traffico vescicolare). Citoscheletro (microtubuli, actina, filamenti intermedi) e motori molecolari.",
+          "key_concepts": [
+            "Trasporto di membrana attivo e passivo",
+            "Potenziale di membrana",
+            "Bioenergetica mitocondriale"
+          ]
+        },
+        {
+          "name": "6. Segnalazione e Adesione Cellulare",
+          "core_contents": "Matrice extracellulare e adesione (integrine, caderine). Giunzioni cellulari. Trasduzione del segnale: recettori (GPCR, RTK), secondi messaggeri, cascate chinasi (MAPK).",
+          "key_concepts": [
+            "Trasduzione del segnale",
+            "Recettori di membrana",
+            "Cascate chinasi MAPK"
+          ]
+        },
+        {
+          "name": "7. Ciclo Cellulare e Morte",
+          "core_contents": "Fasi del ciclo e checkpoint (cicline/CDK). Mitosi e Meiosi (gametogenesi). Controllo proliferazione (Rb, p53, oncogeni). Apoptosi (vie intrinseca/estrinseca) e necrosi.",
+          "key_concepts": [
+            "Ciclo Cellulare: Fasi e Checkpoint",
+            "Regolazione Ciclo: Cicline e CDK",
+            "Mitosi: Meccanismi e Significato"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chimica_generale",
+      "name": "Chimica Generale",
+      "subject": "Chimica Generale",
+      "program_profiles": [
+        {
+          "name": "L-2 Biotecnologie",
+          "priority_modules": "Cruciale una comprensione profonda delle soluzioni, degli equilibri acido-base e della cinetica (in ottica enzimatica). Fondamentale la chimica del coordinamento per le applicazioni bioinorganiche. Meno rilevante la parte approfondita sui materiali solidi e metallurgia."
+        },
+        {
+          "name": "L-7-8-9 Ingegneria",
+          "priority_modules": "Focus assoluto su stechiometria applicativa, termodinamica, elettrochimica (batterie/corrosione) e stati della materia (scienza dei materiali). La chimica descrittiva e nucleare sono marginali, salvo per ingegneria chimica o energetica."
+        },
+        {
+          "name": "L-13 Scienze biologiche",
+          "priority_modules": "Cruciale la padronanza di soluzioni, pH, tamponi e legami chimici (interazioni molecolari). Fondamentale la cinetica e la termodinamica di base per comprendere i processi biologici. Marginale la chimica inorganica descrittiva dettagliata e la chimica nucleare."
+        },
+        {
+          "name": "L-25/L-26 Agraria e Alimentare",
+          "priority_modules": "Fondamentale la chimica delle soluzioni, acidi/basi e le proprietà colligative. Importante la chimica organica descrittiva degli elementi nutrienti (N, P, K) e la cinetica per la conservazione degli alimenti. Meno focus sulla struttura atomica quantistica avanzata."
+        },
+        {
+          "name": "L-27 Scienze chimiche",
+          "priority_modules": "Richiede una copertura esaustiva e approfondita di tutti i moduli senza esclusioni. Cruciale il rigore formale in termodinamica, quantistica (struttura atomica/legame) e chimica inorganica descrittiva e di coordinazione."
+        },
+        {
+          "name": "L-29/LM-13 Farmacia e CTF",
+          "priority_modules": "Focus critico su stechiometria (dosaggi), soluzioni, equilibri e acidi-basi. Molto importante la struttura atomica e il legame per la futura chimica farmaceutica. La parte inorganica descrittiva deve concentrarsi sugli elementi di interesse biologico e tossicologico."
+        },
+        {
+          "name": "L-32/L-34 Scienze Naturali e Geologia",
+          "priority_modules": "Cruciale la chimica inorganica descrittiva (mineralogia), gli stati della materia (fasi solide) e la termodinamica geochimica. Fondamentale la chimica nucleare per le datazioni radiometriche. Meno rilevante la cinetica complessa o l'elettrochimica avanzata."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Struttura dell'atomo",
+          "core_contents": "Analisi approfondita delle particelle subatomiche, definizione di numero atomico, massa e isotopia. Studio degli spettri atomici, evoluzione dei modelli atomici, configurazioni elettroniche con focus sui principi di Pauli, Aufbau e Hund.",
+          "key_concepts": [
+            "Configurazioni elettroniche",
+            "Principi di Aufbau, Pauli, Hund",
+            "Particelle subatomiche"
+          ]
+        },
+        {
+          "name": "2. Tavola periodica e proprietà periodiche",
+          "core_contents": "Organizzazione strutturale della tavola periodica. Analisi dei trend periodici riguardanti raggio atomico e ionico, energia di ionizzazione, affinità elettronica ed elettronegatività.",
+          "key_concepts": [
+            "Organizzazione strutturale Tavola Periodica",
+            "Trend periodici",
+            "Raggio atomico"
+          ]
+        },
+        {
+          "name": "3. Legame chimico",
+          "core_contents": "Studio comparato dei legami ionico, covalente e metallico. Applicazione della teoria VSEPR per la geometria molecolare, concetti di ibridazione e teoria degli orbitali molecolari. Approfondimento su polarità, momento dipolare e forze intermolecolari.",
+          "key_concepts": [
+            "Tipi di Legame Chimico",
+            "Legame Covalente",
+            "Legame Ionico"
+          ]
+        },
+        {
+          "name": "4. Stechiometria",
+          "core_contents": "Concetti fondamentali di mole e massa molare (Numero di Avogadro). Bilanciamento reazioni, identificazione del reagente limitante, calcolo delle rese (teorica e percentuale) e conversioni tra unità di concentrazione.",
+          "key_concepts": [
+            "Concetto di mole",
+            "Massa molare",
+            "Numero di Avogadro"
+          ]
+        },
+        {
+          "name": "5. Stati della materia",
+          "core_contents": "Leggi dei gas ideali e comportamento dei gas reali. Studio dei liquidi (tensione superficiale), classificazione dei solidi (cristallini vs amorfi), lettura dei diagrammi di fase e termodinamica dei passaggi di stato.",
+          "key_concepts": [
+            "Leggi Gas Ideali",
+            "Comportamento Gas Reali",
+            "Termodinamica Passaggi Stato"
+          ]
+        },
+        {
+          "name": "6. Termochimica",
+          "core_contents": "Definizione di sistemi e funzioni di stato. Applicazioni di calorimetria, calcolo dell'entalpia di reazione, formazione e legame. Applicazione della Legge di Hess e relazione tra energia interna e lavoro.",
+          "key_concepts": [
+            "Entalpia di reazione",
+            "Legge di Hess",
+            "Funzioni di stato"
+          ]
+        },
+        {
+          "name": "7. Termodinamica chimica",
+          "core_contents": "Concetti di entropia ed energia libera di Gibbs per la previsione della spontaneità e dell'equilibrio. Definizione di potenziale chimico e relazioni matematiche tra ΔG, ΔH e ΔS.",
+          "key_concepts": [
+            "Energia libera di Gibbs",
+            "Entropia termodinamica",
+            "Criteri di spontaneità"
+          ]
+        },
+        {
+          "name": "8. Cinetica chimica",
+          "core_contents": "Analisi della velocità di reazione, definizione dell'ordine di reazione e meccanismi. Studio della catalisi, energia di attivazione e teoria dello stato di transizione.",
+          "key_concepts": [
+            "Velocità di reazione",
+            "Ordine di reazione",
+            "Legge cinetica"
+          ]
+        },
+        {
+          "name": "9. Equilibrio chimico",
+          "core_contents": "Costanti di equilibrio Kc e Kp, applicazione del Principio di Le Châtelier. Studio degli equilibri in fase gassosa e in soluzione, con focus sulle relazioni termodinamiche sottostanti.",
+          "key_concepts": [
+            "Equilibrio chimico",
+            "Costante di equilibrio (Kc)",
+            "Costante di equilibrio (Kp)"
+          ]
+        },
+        {
+          "name": "10. Chimica delle soluzioni",
+          "core_contents": "Classificazione delle soluzioni, unità di concentrazione e calcoli sulle diluizioni. Studio del prodotto di solubilità (Ksp) e analisi dettagliata delle proprietà colligative inclusa la pressione osmotica.",
+          "key_concepts": [
+            "Classificazione delle soluzioni",
+            "Unità di concentrazione",
+            "Calcoli sulle diluizioni"
+          ]
+        },
+        {
+          "name": "11. Acidi e basi",
+          "core_contents": "Confronto tra le teorie di Arrhenius, Brønsted-Lowry e Lewis. Calcolo del pH per acidi/basi forti e deboli (Ka, Kb, Kw), funzionamento delle soluzioni tampone, curve di titolazione e uso degli indicatori.",
+          "key_concepts": [
+            "Teorie acido-base (Arrhenius, Brønsted-Lowry, Lewis)",
+            "Calcolo del pH (Acidi e basi forti)",
+            "Costanti di equilibrio acido-base (Ka, Kb, Kw)"
+          ]
+        },
+        {
+          "name": "12. Elettrochimica",
+          "core_contents": "Bilanciamento redox, funzionamento delle celle galvaniche e potenziali standard. Applicazione dell'equazione di Nernst, processi di elettrolisi, tecnologie delle batterie/celle a combustibile e fenomeni di corrosione.",
+          "key_concepts": [
+            "Bilanciamento reazioni redox",
+            "Celle galvaniche e funzionamento",
+            "Potenziali standard di riduzione"
+          ]
+        },
+        {
+          "name": "13. Chimica nucleare",
+          "core_contents": "Stabilità del nucleo, difetto di massa, tipologie di decadimento radioattivo e serie. Differenze tra fissione e fusione, cenni di dosimetria e applicazioni pratiche.",
+          "key_concepts": [
+            "Stabilità nucleare",
+            "Difetto di massa",
+            "Energia di legame nucleare"
+          ]
+        },
+        {
+          "name": "14. Chimica inorganica descrittiva",
+          "core_contents": "Sistematica degli elementi chimici dai gruppi principali (1-2, 13-18) ai metalli di transizione, lantanidi e attinidi. Focus su idrogeno, composti binari e leghe.",
+          "key_concepts": [
+            "Sistematica elementi chimici",
+            "Elementi gruppi principali",
+            "Metalli di transizione"
+          ]
+        },
+        {
+          "name": "15. Chimica del coordinamento",
+          "core_contents": "Nomenclatura dei complessi, numero di coordinazione e geometrie. Isomeria, Teoria del Campo Cristallino e del Campo dei Leganti. Proprietà magnetiche, ottiche (colore), reattività e ruolo bioinorganico.",
+          "key_concepts": [
+            "Nomenclatura dei complessi",
+            "Numero di coordinazione",
+            "Geometrie di coordinazione"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chimica_organica",
+      "name": "Chimica Organica",
+      "subject": "Chimica Organica",
+      "program_profiles": [
+        {
+          "name": "L-27 Scienze chimiche",
+          "priority_modules": "Cruciale la copertura totale e approfondita. Priorità massima su meccanismi (Moduli 5-13), sintesi avanzata e retrosintesi (18-20), spettroscopia avanzata (26) e chimica fisica organica (29). Necessaria competenza sui metodi computazionali (27)."
+        },
+        {
+          "name": "L-29/LM-13 Farmacia e CTF",
+          "priority_modules": "Focus assoluto su gruppi funzionali (Moduli 6-13), stereochimica (2) e biomolecole (14-17). Fondamentale la chimica medicinale (25), la sintesi di eterocicli e l'analisi spettroscopica (3). Marginale la parte computazionale avanzata e i polimeri industriali."
+        },
+        {
+          "name": "L-2/L-13 Biotecnologie e Biologia",
+          "priority_modules": "Cruciale la chimica delle biomolecole (Moduli 14-17) e i meccanismi enzimatici/metabolici (28). Fondamentale la stereochimica e le basi dei gruppi funzionali. Marginale la sintesi complessa, organometallica (18), polimeri (21) e spettroscopia avanzata fisica."
+        },
+        {
+          "name": "L-9 Ingegneria industriale",
+          "priority_modules": "Cruciale il modulo sui polimeri (21), chimica verde (23) e sicurezza (30). Importante la conoscenza di base dei gruppi funzionali e delle proprietà fisiche (4-5). Marginale tutta la parte bio-organica (zuccheri, DNA, peptidi) e la sintesi farmaceutica."
+        },
+        {
+          "name": "L-25/L-26 Agraria e Alimentare",
+          "priority_modules": "Focus strategico su lipidi, zuccheri e proteine (Moduli 14-16) per la chimica degli alimenti. Importante la sicurezza (30) e i metodi analitici (3). Meno rilevante la sintesi organica avanzata, organometallica e pericoiclica."
+        },
+        {
+          "name": "L-32/L-34 Scienze Naturali e Geologia",
+          "priority_modules": "Fondamentale la chimica degli idrocarburi (Moduli 4, 6) per la geochimica e la sicurezza ambientale (30, 23). Utile la spettroscopia di base (3) per l'analisi. Marginale la sintesi complessa, farmaceutica e biomolecolare avanzata."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Fondamenti di chimica organica",
+          "core_contents": "Struttura elettronica, modelli di legame covalente, ibridazione e risonanza. Concetti di acidità e basicità secondo Brønsted e Lewis nel contesto organico, forze intermolecolari e nomenclatura sistematica IUPAC.",
+          "key_concepts": [
+            "Ibridazione e Geometria Molecolare",
+            "Struttura Elettronica",
+            "Risonanza e Delocalizzazione"
+          ]
+        },
+        {
+          "name": "2. Stereochimica",
+          "core_contents": "Classificazione dell'isomeria (costituzionale vs configurazionale), chiralità, enantiomeri e diastereoisomeri. Analisi conformazionale, attività ottica, risoluzione di racemi e proiezioni stereochimiche.",
+          "key_concepts": [
+            "Classificazione dell'isomeria",
+            "Isomeria configurazionale",
+            "Chiralità molecolare"
+          ]
+        },
+        {
+          "name": "3. Metodi di studio delle molecole organiche",
+          "core_contents": "Principi fondamentali di caratterizzazione strutturale tramite spettroscopia IR (gruppi funzionali), NMR (connettività), Spettrometria di Massa, UV-Vis e tecniche cromatografiche di base.",
+          "key_concepts": [
+            "Caratterizzazione strutturale molecole organiche",
+            "Spettroscopia NMR (Risonanza Magnetica Nucleare)",
+            "Principi connettività strutturale NMR"
+          ]
+        },
+        {
+          "name": "4. Alcani e cicloalcani",
+          "core_contents": "Proprietà fisiche e reattività radicalica (alogenazione, combustione). Analisi conformazionale approfondita dei cicloalcani e stabilità dell'anello.",
+          "key_concepts": [
+            "Proprietà fisiche alcani",
+            "Reattività radicalica",
+            "Alogenazione radicalica"
+          ]
+        },
+        {
+          "name": "5. Alcheni e alchini",
+          "core_contents": "Meccanismi di addizione elettrofila, radicalica e nucleofila. Reazioni di ossidazione e riduzione, polimerizzazione e principi di regioselettività (Markovnikov) e stereoselettività.",
+          "key_concepts": [
+            "Meccanismi di addizione elettrofila",
+            "Regioselettività (Regola di Markovnikov)",
+            "Meccanismi di addizione radicalica"
+          ]
+        },
+        {
+          "name": "6. Composti aromatici",
+          "core_contents": "Teoria dell'aromaticità (Hückel), reazioni di Sostituzione Elettrofila Aromatica (SEAr) con effetti dei sostituenti (attivanti/disattivanti). Sostituzione nucleofila aromatica e sistemi eterociclici.",
+          "key_concepts": [
+            "Sostituzione Elettrofila Aromatica",
+            "Teoria dell'Aromaticità",
+            "Regola di Hückel"
+          ]
+        },
+        {
+          "name": "7. Alogenuri alchilici e solfonati",
+          "core_contents": "Analisi comparativa e meccanicistica delle reazioni di sostituzione nucleofila (SN1 vs SN2) e di eliminazione (E1 vs E2). Reattività degli alogenuri vinilici e arilici.",
+          "key_concepts": [
+            "Sostituzione Nucleofila (SN)",
+            "Meccanismo SN2",
+            "Meccanismo SN1"
+          ]
+        },
+        {
+          "name": "8. Alcoli, fenoli ed eteri",
+          "core_contents": "Sintesi e reattività degli alcoli (ossidazione, disidratazione). Acidità dei fenoli e loro reazioni specifiche. Sintesi (Williamson) e scissione degli eteri.",
+          "key_concepts": [
+            "Sintesi alcoli",
+            "Reattività alcoli",
+            "Ossidazione alcoli"
+          ]
+        },
+        {
+          "name": "9. Epossidi e ossiranni",
+          "core_contents": "Sintesi da alcheni, reattività di apertura dell'anello in condizioni acide vs basiche, stereochimica dell'apertura e sintesi asimmetrica.",
+          "key_concepts": [
+            "Sintesi epossidi da alcheni",
+            "Apertura anello epossidico",
+            "Reattività condizioni acide"
+          ]
+        },
+        {
+          "name": "10. Composti carbonilici: aldeidi e chetoni",
+          "core_contents": "Reattività del gruppo carbonilico: addizione nucleofila, formazione di acetali, imine ed enamine. Reazioni redox e condensazioni aldoliche semplici.",
+          "key_concepts": [
+            "Reattività Gruppo Carbonilico",
+            "Addizione Nucleofila",
+            "Aldeidi e Chetoni"
+          ]
+        },
+        {
+          "name": "11. Acidi carbossilici e derivati",
+          "core_contents": "Relazione struttura-acidità. Meccanismi di interconversione dei derivati (cloruri, anidridi, esteri, ammidi). Meccanismo di esterificazione di Fischer e saponificazione.",
+          "key_concepts": [
+            "Acidi carbossilici",
+            "Derivati degli acidi carbossilici",
+            "Relazione struttura-acidità"
+          ]
+        },
+        {
+          "name": "12. Composti con enolati e alfa-carbonili",
+          "core_contents": "Chimica degli ioni enolato: acidità in alpha, condensazioni aldoliche, di Claisen e reazioni di Michael. Sintesi malonica e acetoacetica, annelazione di Robinson.",
+          "key_concepts": [
+            "Chimica degli ioni enolato",
+            "Acidità in alfa",
+            "Condensazione aldolica"
+          ]
+        },
+        {
+          "name": "13. Ammine e composti azotati",
+          "core_contents": "Basicità e nucleofilia delle ammine. Metodi di sintesi (alchilazione, riduzione), reazioni dei sali di diazonio (Sandmeyer) e chimica delle ammine aromatiche.",
+          "key_concepts": [
+            "Basicità delle ammine",
+            "Nucleofilia delle ammine",
+            "Sintesi ammine per alchilazione"
+          ]
+        },
+        {
+          "name": "14. Zuccheri e carboidrati",
+          "core_contents": "Struttura e stereochimica (Fischer/Haworth), mutarotazione, glicosidazione. Reazioni di ossido-riduzione dei monosaccaridi, formazione di disaccaridi e polisaccaridi.",
+          "key_concepts": [
+            "Struttura dei carboidrati",
+            "Stereochimica dei monosaccaridi",
+            "Proiezioni di Fischer"
+          ]
+        },
+        {
+          "name": "15. Aminoacidi e peptidi",
+          "core_contents": "Struttura zwitterionica, punto isoelettrico, formazione del legame peptidico. Strategie di sintesi peptidica (gruppi protettori, fase solida) e sequenziamento.",
+          "key_concepts": [
+            "Struttura zwitterionica aminoacidi",
+            "Punto isoelettrico (pI)",
+            "Formazione legame peptidico"
+          ]
+        },
+        {
+          "name": "16. Lipidi",
+          "core_contents": "Classificazione e struttura di acidi grassi, trigliceridi, fosfolipidi e steroidi. Reazioni di saponificazione, idrogenazione e ossidazione lipidica.",
+          "key_concepts": [
+            "Struttura Acidi Grassi",
+            "Classificazione Lipidi",
+            "Struttura Trigliceridi"
+          ]
+        },
+        {
+          "name": "17. Nucleotidi e acidi nucleici",
+          "core_contents": "Componenti strutturali (basi, zuccheri, fosfati), struttura primaria e secondaria di DNA/RNA. Cenni sulla sintesi chimica di oligonucleotidi e interazioni con farmaci.",
+          "key_concepts": [
+            "Struttura nucleotidica fondamentale",
+            "Basi azotate (purine/pirimidine)",
+            "Zuccheri (ribosio/deossiribosio)"
+          ]
+        },
+        {
+          "name": "18. Chimica organometallica",
+          "core_contents": "Reattivi di Grignard e organolitio. Catalisi con metalli di transizione (Palladio), reazioni di coupling (Suzuki, Heck, Sonogashira) e metatesi delle olefine.",
+          "key_concepts": [
+            "Chimica Organometallica",
+            "Reattivi di Grignard",
+            "Composti Organolitio"
+          ]
+        },
+        {
+          "name": "19. Reazioni pericicliche",
+          "core_contents": "Classificazione (cicloaddizioni, sigmatropiche, elettrociclizzazioni). Analisi degli orbitali di frontiera (FMO) e regole di Woodward-Hoffmann. Focus sulla Diels-Alder.",
+          "key_concepts": [
+            "Regole di Woodward-Hoffmann",
+            "Analisi Orbitali di Frontiera (FMO)",
+            "Reazioni pericicliche"
+          ]
+        },
+        {
+          "name": "20. Sintesi e strategia",
+          "core_contents": "Approccio retrosintetico, disconnessioni logiche, uso strategico dei gruppi protettori, sintesi convergente vs lineare e controllo stereochimico.",
+          "key_concepts": [
+            "Approccio retrosintetico",
+            "Strategia di sintesi organica",
+            "Disconnessioni logiche"
+          ]
+        },
+        {
+          "name": "21. Polimeri",
+          "core_contents": "Meccanismi di polimerizzazione (radicalica, ionica, a stadi). Relazione struttura-proprietà, copolimeri e materiali biodegradabili.",
+          "key_concepts": [
+            "Meccanismi di polimerizzazione",
+            "Polimerizzazione a stadi",
+            "Polimerizzazione radicalica"
+          ]
+        },
+        {
+          "name": "22. Fotochimica organica",
+          "core_contents": "Principi di fotofisica (Jablonski), reazioni fotochimiche fondamentali (isomerizzazioni, cicloaddizioni [2+2]) e applicazioni tecnologiche.",
+          "key_concepts": [
+            "Principi di Fotofisica",
+            "Diagramma di Jablonski",
+            "Reazioni Fotochimiche Fondamentali"
+          ]
+        },
+        {
+          "name": "23. Chimica verde e sostenibile",
+          "core_contents": "I 12 principi della Green Chemistry, metriche di efficienza (atom economy), solventi alternativi, catalisi e riduzione dell'impatto ambientale.",
+          "key_concepts": [
+            "Dodici Principi Chimica Verde",
+            "Economia Atomica (Atom Economy)",
+            "Metriche Efficienza Reazione"
+          ]
+        },
+        {
+          "name": "24. Tecniche sperimentali in organica",
+          "core_contents": "Operazioni unitarie di laboratorio: purificazione (distillazione, cristallizzazione, cromatografia), estrazione e manipolazione in atmosfera inerte.",
+          "key_concepts": [
+            "Operazioni unitarie di laboratorio",
+            "Tecniche di purificazione",
+            "Distillazione frazionata"
+          ]
+        },
+        {
+          "name": "25. Bioorganica e chimica medicinale",
+          "core_contents": "Relazioni struttura-attività (SAR), progettazione di farmaci, interazioni ligando-recettore, profarmaci e inibitori enzimatici.",
+          "key_concepts": [
+            "Relazioni Struttura-Attività (SAR)",
+            "Progettazione Razionale di Farmaci",
+            "Interazioni Ligando-Recettore"
+          ]
+        },
+        {
+          "name": "26. Spettroscopia avanzata",
+          "core_contents": "Tecniche NMR bidimensionali (COSY, HSQC, HMBC), EPR e metodi fisici avanzati per la determinazione strutturale complessa.",
+          "key_concepts": [
+            "Spettroscopia NMR bidimensionale",
+            "Determinazione strutturale complessa",
+            "Tecnica COSY (Correlation Spectroscopy)"
+          ]
+        },
+        {
+          "name": "27. Chimica computazionale organica",
+          "core_contents": "Modellistica molecolare, calcoli DFT, dinamica molecolare e docking per la previsione di proprietà e reattività.",
+          "key_concepts": [
+            "Calcoli di Teoria del Funzionale della Densità (DFT)",
+            "Modellistica Molecolare",
+            "Dinamica Molecolare"
+          ]
+        },
+        {
+          "name": "28. Metabolismo organico",
+          "core_contents": "Meccanismi chimici delle vie metaboliche principali: glicolisi, Krebs, biosintesi di terpeni e alcaloidi, biotrasformazioni.",
+          "key_concepts": [
+            "Meccanismi vie metaboliche",
+            "Glicolisi chimica",
+            "Ciclo di Krebs"
+          ]
+        },
+        {
+          "name": "29. Cinetica e termodinamica delle reazioni organiche",
+          "core_contents": "Profilo energetico di reazione, stato di transizione, postulato di Hammond, effetti isotopici e catalisi omogenea/eterogenea.",
+          "key_concepts": [
+            "Profilo energetico di reazione",
+            "Stato di transizione",
+            "Postulato di Hammond"
+          ]
+        },
+        {
+          "name": "30. Sicurezza in laboratorio di organica",
+          "core_contents": "Gestione del rischio chimico, schede di sicurezza (SDS), smaltimento rifiuti, DPI e procedure per sostanze pericolose.",
+          "key_concepts": [
+            "Gestione del rischio chimico",
+            "Schede di dati di sicurezza (SDS)",
+            "Dispositivi di protezione individuale (DPI)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chimica_semestre_filtro",
+      "name": "Chimica semestre filtro",
+      "subject": "Chimica Generale",
+      "program_profiles": [
+        {
+          "name": "Semestre Filtro (Medicina/Odontoiatria/Veterinaria)",
+          "priority_modules": "Priorità massima ai Moduli 3 (Soluzioni/Osmosi), 5 (pH/Tamponi) e 7 (Biomolecole). Questi sono i pilastri su cui si costruirà tutto il corso di laurea. La chimica organica (6) deve essere funzionale al Modulo 7.",
+          "textbook_advice": "Testi unici di 'Chimica e Propedeutica Biochimica'. Evitare testi separati di Generale e Organica se troppo voluminosi."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Struttura Atomica e Legami",
+          "core_contents": "Struttura atomica, isotopi (radioattività medica). Tavola periodica e proprietà periodiche. Legami chimici (ionico, covalente, VSEPR). Interazioni deboli (Idrogeno, Van der Waals) cruciali per le macromolecole.",
+          "key_concepts": [
+            "Struttura Atomica",
+            "Legami Chimici",
+            "Tavola Periodica"
+          ]
+        },
+        {
+          "name": "2. Stati della Materia e Termodinamica",
+          "core_contents": "Gas ideali e reali (respirazione). Liquidi e tensione superficiale. Termodinamica: Entalpia, Entropia, Energia Libera di Gibbs (reazioni endo/esoergoniche).",
+          "key_concepts": [
+            "Termodinamica Chimica",
+            "Energia Libera di Gibbs",
+            "Entropia (S)"
+          ]
+        },
+        {
+          "name": "3. Soluzioni e Proprietà Colligative",
+          "core_contents": "Concentrazioni (Molarità, % p/v). Solubilità e legge di Henry (gas nel sangue). Proprietà colligative: Osmosi, pressione osmotica, soluzioni iso/ipo/ipertoniche (fluidi biologici).",
+          "key_concepts": [
+            "Concentrazioni delle Soluzioni",
+            "Molarità (M)",
+            "Percentuale peso/volume (% p/v)"
+          ]
+        },
+        {
+          "name": "4. Equilibri e Cinetica",
+          "core_contents": "Velocità di reazione, energia di attivazione e catalisi (enzimi). Equilibrio chimico, Le Chatelier. Equilibri eterogenei (prodotto di solubilità - calcoli renali/ossei).",
+          "key_concepts": [
+            "Equilibrio Chimico",
+            "Cinetica Chimica",
+            "Principio Le Chatelier"
+          ]
+        },
+        {
+          "name": "5. Acidi, Basi e Elettrochimica",
+          "core_contents": "pH, pOH, acidi/basi forti e deboli. Idrolisi salina. Soluzioni tampone ed equazione di Henderson-Hasselbalch (tamponi ematici). Redox, Potenziali standard ed equazione di Nernst.",
+          "key_concepts": [
+            "Equilibri Acido-Base",
+            "pH e pOH",
+            "Acidi e Basi Forti/Deboli"
+          ]
+        },
+        {
+          "name": "6. Chimica Organica: Gruppi Funzionali",
+          "core_contents": "Ibridazione del Carbonio. Isomeria (strutturale e stereoisomeria/chiralità). Reattività di: Alcani/Alcheni/Aromatici (cenni), Alcoli/Fenoli/Eteri/Tioli, Aldeidi/Chetoni (tautomeria), Acidi Carbossilici e derivati (esteri, ammidi), Ammine.",
+          "key_concepts": [
+            "Ibridazione del Carbonio",
+            "Isomeria e Chiralità",
+            "Reattività dei Gruppi Funzionali"
+          ]
+        },
+        {
+          "name": "7. Propedeutica Biochimica (Macromolecole)",
+          "core_contents": "Carboidrati (monosaccaridi, legame glicosidico, polisaccaridi). Lipidi (acidi grassi, trigliceridi, fosfolipidi, steroidi). Amminoacidi (struttura, punto isoelettrico, legame peptidico). Nucleotidi (ATP, legami fosfodiesterici).",
+          "key_concepts": [
+            "Struttura Amminoacidi",
+            "Legame Peptidico",
+            "Punto Isoelettrico"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "economia_politica",
+      "name": "Economia politica",
+      "subject": "Economia Politica",
+      "program_profiles": [
+        {
+          "name": "L-18 Economia Aziendale / L-41 Statistica",
+          "priority_modules": "Cruciale il rigore formale. Focus assoluto su Moduli 2 (Impresa/Costi), 4 (Teoria dei Giochi) e 6-7 (IS-LM, AD-AS). Richiede un testo che usi derivate e ottimizzazione. Il modello di crescita (8) deve includere Solow analitico. Marginale l'approccio puramente discorsivo."
+        },
+        {
+          "name": "L-36 Scienze Politiche / L-16 Amministrazione",
+          "priority_modules": "Focus su Policy e Storia. Cruciale il Modulo 3 (Fallimenti di mercato/Stato) e 5-6 (Politiche Macro). Importante la comprensione delle scuole di pensiero (Keynes vs Neoclassici). Il formalismo matematico deve essere minimo (solo grafico/algebrico semplice), privilegiando l'intuizione economica e le implicazioni sociali."
+        },
+        {
+          "name": "LMG-01 Giurisprudenza / L-14 Servizi Giuridici",
+          "priority_modules": "Focus Istituzionale. Priorità massima ai Moduli 3 (Antitrust, Regolamentazione, Esternalità) e 1 (Concetti base). La parte Macro deve concentrarsi sul ruolo della BCE e sul Bilancio dello Stato (Patto di Stabilità). Evitare testi con dimostrazioni matematiche complesse o Teoria dei Giochi avanzata."
+        },
+        {
+          "name": "L-15 Turismo / L-20 Comunicazione / L-39 Sociale",
+          "priority_modules": "Focus Applicativo 'Light'. Cruciale la comprensione intuitiva di Domanda/Offerta (1) ed Elasticità. Importante il Modulo 9 (Internazionale/Cambi) per il turismo e il Modulo 8 (Disuguaglianze) per il sociale. Evitare modelli macro complessi (IS-LM a 3 equazioni) e concentrarsi su concetti base di inflazione e PIL."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Micro - Fondamenti e Teoria del Consumatore",
+          "core_contents": "Analisi della domanda e offerta, concetto di equilibrio e spostamenti delle curve. Elasticità (prezzo, reddito, incrociata). Teoria della scelta del consumatore: preferenze, vincolo di bilancio, curve di indifferenza e utilità marginale.",
+          "key_concepts": [
+            "Equilibrio di mercato",
+            "Teoria della scelta del consumatore",
+            "Elasticità della domanda"
+          ]
+        },
+        {
+          "name": "2. Micro - Teoria dell'Impresa e Strutture di Mercato",
+          "core_contents": "Funzioni di produzione e curve di costo (breve vs lungo periodo). Massimizzazione del profitto. Analisi comparata delle forme di mercato: Concorrenza Perfetta (efficienza), Monopolio (deadweight loss, discriminazione), Oligopolio e Concorrenza Monopolistica.",
+          "key_concepts": [
+            "Massimizzazione del profitto",
+            "Analisi delle strutture di mercato",
+            "Funzioni di produzione"
+          ]
+        },
+        {
+          "name": "3. Micro - Fallimenti di Mercato e Intervento Pubblico",
+          "core_contents": "Esternalità (positive/negative), Beni Pubblici e risorse comuni. Asimmetrie informative (azzardo morale, selezione avversa). Strumenti di policy: tasse pigouviane, sussidi, regolamentazione prezzi e quantità, antitrust.",
+          "key_concepts": [
+            "Fallimenti di Mercato",
+            "Asimmetrie Informative",
+            "Esternalità Negative"
+          ]
+        },
+        {
+          "name": "4. Micro - Interazione Strategica",
+          "core_contents": "Teoria dei Giochi di base: giochi simultanei (Equilibrio di Nash), giochi sequenziali, dilemma del prigioniero. Applicazioni alle strategie d'impresa.",
+          "key_concepts": [
+            "Teoria dei Giochi",
+            "Equilibrio di Nash",
+            "Giochi simultanei"
+          ]
+        },
+        {
+          "name": "5. Macro - Contabilità e Modello Reddito-Spesa",
+          "core_contents": "Definizioni di PIL, PNL, Inflazione (CPI, deflatore). Modello Keynesiano semplice (croce keynesiana): funzione del consumo, moltiplicatore della spesa pubblica e degli investimenti.",
+          "key_concepts": [
+            "Modello Keynesiano Semplice",
+            "Moltiplicatore della Spesa Pubblica",
+            "Prodotto Interno Lordo (PIL)"
+          ]
+        },
+        {
+          "name": "6. Macro - Mercati Reali e Finanziari (IS-LM)",
+          "core_contents": "Mercato dei beni (Curva IS) e mercato della moneta/titoli (Curva LM). Ruolo delle Banche Centrali, offerta di moneta e tassi di interesse. Efficacia relativa della politica fiscale e monetaria nel breve periodo.",
+          "key_concepts": [
+            "Modello IS-LM",
+            "Mercato dei beni",
+            "Curva IS (Investment-Saving)"
+          ]
+        },
+        {
+          "name": "7. Macro - Mercato del Lavoro e Inflazione (AD-AS)",
+          "core_contents": "Definizioni di disoccupazione (frizionale, ciclica, strutturale). Curva di Phillips e aspettative. Modello di Offerta Aggregata e Domanda Aggregata (AD-AS). Analisi degli shock di domanda e offerta.",
+          "key_concepts": [
+            {
+              "concetto": "Modello Domanda-Offerta Aggregata (AD-AS)"
+            },
+            {
+              "concetto": "Curva di Phillips e aspettative"
+            },
+            {
+              "concetto": "Shock di domanda e offerta aggregata"
+            }
+          ]
+        },
+        {
+          "name": "8. Macro - Lungo Periodo: Crescita e Sviluppo",
+          "core_contents": "Teoria della crescita: contabilità della crescita, Modello di Solow (accumulazione capitale), cenni alla crescita endogena (capitale umano, tecnologia). Indicatori di sviluppo (HDI, Gini) e disuguaglianze.",
+          "key_concepts": [
+            "Teoria della Crescita Economica",
+            "Modello di Solow",
+            "Accumulazione del Capitale"
+          ]
+        },
+        {
+          "name": "9. Economia Internazionale",
+          "core_contents": "Vantaggio comparato (Ricardo) e guadagni dallo scambio. Bilancia dei pagamenti, tassi di cambio (fissi vs flessibili) e impatto sulle politiche macroeconomiche.",
+          "key_concepts": [
+            "Vantaggio Comparato",
+            "Modello Ricardiano",
+            "Guadagni dallo Scambio"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fisica_1",
+      "name": "Fisica 1",
+      "subject": "Fisica",
+      "program_profiles": [
+        {
+          "name": "L-30 Fisica / L-35 Matematica",
+          "priority_modules": "Focus sul rigore teorico assoluto. Cruciali i Moduli 1-3 (formalismi vettoriali), 5 (Corpo Rigido complesso) e 9 (Entropia teorica). Fondamentale la Relatività (10). Meno enfasi sugli aspetti tecnici dei fluidi o delle macchine termiche reali."
+        },
+        {
+          "name": "L-7-8-9 Ingegneria Industriale/Civile",
+          "priority_modules": "Focus sul 'Problem Solving' applicativo. Priorità assoluta ai Moduli 3 (Energia), 5 (Corpo Rigido per la Meccanica Razionale futura), 8-9 (Termodinamica per Energetica/Macchine). La Relatività è spesso marginale o assente. I fluidi (6) sono essenziali per Civili/Aerospaziali."
+        },
+        {
+          "name": "L-8 Ingegneria dell'Informazione",
+          "priority_modules": "Focus su Oscillazioni e Onde (7) come base per Segnali e Campi. Meccanica (1-3) fondamentale. Meno enfasi su Fluidi (6) e Termodinamica applicata alle macchine (8-9), spesso ridotta ai concetti base di entropia/informazione."
+        },
+        {
+          "name": "L-27 Scienze Chimiche",
+          "priority_modules": "Focus su Energia e Termodinamica. Cruciali i Moduli 3 (Lavoro/Energia) e soprattutto 8-9 (Termodinamica formale) come prerequisito per Chimica Fisica. Meccanica del corpo rigido (5) e Relatività (10) sono meno prioritarie rispetto alla comprensione dei gas e dell'energia."
+        },
+        {
+          "name": "L-34 Geologia",
+          "priority_modules": "Focus su Gravità e Fluidi. Cruciali i Moduli 4 (Gravitazione/Maree), 6 (Fluidi/Elasticità per la geofisica) e 1-2 (Dinamica base). Tutto ciò che è corpo rigido complesso o relatività è marginale."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Cinematica del Punto Materiale",
+          "core_contents": "Moto rettilineo e curvilineo (circolare uniforme/vario). Vettori posizione, velocità, accelerazione (tangenziale/normale). Moto relativo (trasformazioni di Galileo).",
+          "key_concepts": [
+            "Vettore Posizione",
+            "Vettore Velocità Istantanea",
+            "Vettore Accelerazione"
+          ]
+        },
+        {
+          "name": "2. Dinamica del Punto e Forze",
+          "core_contents": "I tre principi di Newton. Classificazione delle forze (attrito, tensione, elastiche). Sistemi di riferimento non inerziali e forze fittizie (Coriolis, centrifuga). Dinamica del moto circolare.",
+          "key_concepts": [
+            "Principi di Newton",
+            "Dinamica del Punto Materiale",
+            "Classificazione delle Forze"
+          ]
+        },
+        {
+          "name": "3. Lavoro, Energia e Quantità di Moto",
+          "core_contents": "Teorema dell'energia cinetica e lavoro di forze variabili (integrale). Forze conservative e potenziale. Conservazione dell'energia meccanica. Teorema dell'impulso, conservazione della quantità di moto e urti (elastici/anelastici/centrali).",
+          "key_concepts": [
+            "Conservazione Energia Meccanica",
+            "Teorema Energia Cinetica",
+            "Forze Conservative e Potenziale"
+          ]
+        },
+        {
+          "name": "4. Gravitazione Universale",
+          "core_contents": "Legge di Newton e campo gravitazionale. Leggi di Keplero, orbite satellitari, velocità di fuga e potenziale effettivo. Effetti mareali.",
+          "key_concepts": [
+            "Legge di Gravitazione Universale",
+            "Campo Gravitazionale",
+            "Leggi di Keplero"
+          ]
+        },
+        {
+          "name": "5. Dinamica dei Sistemi e del Corpo Rigido",
+          "core_contents": "Centro di massa e teoremi di König. Momento d'inerzia (Huygens-Steiner). Equazioni cardinali della dinamica. Moto di rotolamento puro, momento angolare e sua conservazione. Fenomeni giroscopici.",
+          "key_concepts": [
+            "Equazioni cardinali dinamica",
+            "Centro di massa",
+            "Momento d'inerzia"
+          ]
+        },
+        {
+          "name": "6. Meccanica dei Fluidi ed Elasticità",
+          "core_contents": "Statica (Stevino, Archimede). Dinamica dei fluidi ideali (Bernoulli) e reali (Poiseuille, Reynolds). Moduli di elasticità (Young, taglio) e legge di Hooke generalizzata.",
+          "key_concepts": [
+            "Statica dei fluidi",
+            "Principio di Archimede",
+            "Legge di Stevino"
+          ]
+        },
+        {
+          "name": "7. Oscillazioni e Onde Meccaniche",
+          "core_contents": "Oscillatore armonico semplice, smorzato e forzato (risonanza). Equazione delle onde, sovrapposizione, interferenza, stazionarie, battimenti ed effetto Doppler.",
+          "key_concepts": [
+            "Oscillatore armonico semplice",
+            "Risonanza fisica",
+            "Equazione delle onde"
+          ]
+        },
+        {
+          "name": "8. Termodinamica: Primo Principio e Gas",
+          "core_contents": "Calorimetria e trasmissione del calore. Primo principio, energia interna e lavoro termodinamico. Trasformazioni dei gas perfetti e Teoria Cinetica (distribuzione di Maxwell-Boltzmann).",
+          "key_concepts": [
+            "Primo Principio della Termodinamica",
+            "Energia Interna",
+            "Lavoro Termodinamico"
+          ]
+        },
+        {
+          "name": "9. Termodinamica: Secondo Principio ed Entropia",
+          "core_contents": "Cicli termodinamici (Carnot, Otto, Diesel). Enunciati del Secondo Principio, teorema di Clausius e definizione di Entropia. Irreversibilità e potenziale termodinamico.",
+          "key_concepts": [
+            "Secondo Principio della Termodinamica",
+            "Definizione di Entropia",
+            "Ciclo di Carnot"
+          ]
+        },
+        {
+          "name": "10. Cenni di Relatività Ristretta",
+          "core_contents": "Postulati di Einstein, trasformazioni di Lorentz. Dilatazione tempi, contrazione lunghezze e dinamica relativistica ($$E=mc^2$$).",
+          "key_concepts": [
+            "Postulati di Einstein",
+            "Trasformazioni di Lorentz",
+            "Dilatazione temporale"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fisica_2",
+      "name": "Fisica 2",
+      "subject": "Fisica",
+      "program_profiles": [
+        {
+          "name": "L-30 Fisica / L-35 Matematica",
+          "priority_modules": "Focus sul rigore teorico dei Campi. Priorità assoluta ai Moduli 1, 4, 7 (Maxwell completo in forma differenziale) e 10 (Ottica fisica). I dielettrici e il magnetismo nella materia (2, 5) sono trattati a livello microscopico. I circuiti (3, 8) sono secondari rispetto alla teoria di campo."
+        },
+        {
+          "name": "L-8 Ingegneria dell'Informazione (Elettronica/Tlc/Informatica)",
+          "priority_modules": "Focus sui Segnali e Circuiti. Cruciali i Moduli 3 (Ohm/Kirchhoff), 6 (Induzione), 7 (Onde per le telecomunicazioni) e 8 (Circuiti AC e risonanza). L'ottica (9-10) è fondamentale per la fotonica. Serve un approccio molto operativo."
+        },
+        {
+          "name": "L-9 Ingegneria Industriale (Elettrica/Energetica)",
+          "priority_modules": "Focus sulla Potenza e Macchine. Cruciali i Moduli 6 (Induzione - base per motori/generatori), 5 (Ferromagnetismo/Isteresi) e 8 (Sistemi trifase/Potenza). L'ottica (9-10) è spesso marginale o assente."
+        },
+        {
+          "name": "L-27 Scienze Chimiche",
+          "priority_modules": "Focus sulle interazioni Materia-Campo. Fondamentali i Moduli 1 (Elettrostatica per legami ionici), 2 (Dielettrici/Solventi), 5 (Magnetismo/Spin) e 10 (Ottica per spettroscopia). Meno enfasi sui circuiti complessi o sulle equazioni di Maxwell differenziali pure."
+        },
+        {
+          "name": "L-7 Ingegneria Civile / L-34 Geologia",
+          "priority_modules": "Versione ridotta. Focus sui concetti base di Elettricità e Magnetismo (1, 3, 4) per applicazioni geofisiche o impiantistiche. Ottica geometrica (9) utile per topografia. Equazioni differenziali e teoria dei campi avanzata sono superflue."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Elettrostatica nel vuoto",
+          "core_contents": "Legge di Coulomb. Campo elettrico (E) e linee di forza. Legge di Gauss (flusso) e applicazioni. Potenziale elettrico (V), superfici equipotenziali e relazione tra E e V (gradiente). Dipolo elettrico.",
+          "key_concepts": [
+            "Legge di Coulomb",
+            "Campo elettrico",
+            "Legge di Gauss"
+          ]
+        },
+        {
+          "name": "2. Conduttori e Dielettrici",
+          "core_contents": "Proprietà dei conduttori in equilibrio, capacità e condensatori. Energia del campo elettrostatico. Dielettrici: polarizzazione, vettore spostamento elettrico (D) e costante dielettrica.",
+          "key_concepts": [
+            "Capacità e Condensatori",
+            "Proprietà Conduttori Equilibrio Elettrostatico",
+            "Energia Campo Elettrostatico"
+          ]
+        },
+        {
+          "name": "3. Corrente Elettrica Stazionaria",
+          "core_contents": "Intensità e densità di corrente, modello di conduzione (Drude). Legge di Ohm (microscopica e macroscopica) e resistenza. Effetto Joule. Circuiti in corrente continua e leggi di Kirchhoff.",
+          "key_concepts": [
+            "Leggi di Kirchhoff",
+            "Legge di Ohm (macroscopica)",
+            "Circuiti in Corrente Continua (CC)"
+          ]
+        },
+        {
+          "name": "4. Magnetostatica nel vuoto",
+          "core_contents": "Forza di Lorentz e moto di cariche in campi magnetici. Legge di Biot-Savart. Teorema di Ampère (circuitazione). Forza tra correnti e definizione dell'Ampère. Proprietà del campo magnetico (B).",
+          "key_concepts": [
+            "Forza di Lorentz vettoriale",
+            "Campo magnetico B",
+            "Legge di Biot-Savart"
+          ]
+        },
+        {
+          "name": "5. Magnetismo nella materia",
+          "core_contents": "Magnetizzazione e vettore intensità magnetica (H). Classificazione dei materiali: diamagnetismo, paramagnetismo e ferromagnetismo (ciclo di isteresi).",
+          "key_concepts": [
+            "Magnetismo nella materia",
+            "Vettore Magnetizzazione (M)",
+            "Vettore Intensità Magnetica (H)"
+          ]
+        },
+        {
+          "name": "6. Campi elettrici e magnetici variabili (Induzione)",
+          "core_contents": "Legge di Faraday-Neumann-Lenz sull'induzione elettromagnetica. Autoinduzione e Mutua induzione. Energia magnetica. Circuiti RL.",
+          "key_concepts": [
+            "Induzione elettromagnetica",
+            "Legge di Faraday-Neumann-Lenz",
+            "Flusso magnetico variabile"
+          ]
+        },
+        {
+          "name": "7. Equazioni di Maxwell e Onde Elettromagnetiche",
+          "core_contents": "Corrente di spostamento e generalizzazione della legge di Ampère. Le 4 Equazioni di Maxwell (forme integrali e differenziali). Equazione delle onde, velocità della luce, vettore di Poynting (trasporto di energia), pressione di radiazione e polarizzazione.",
+          "key_concepts": [
+            "Equazioni di Maxwell (Forma Differenziale)",
+            "Equazioni di Maxwell (Forma Integrale)",
+            "Corrente di Spostamento"
+          ]
+        },
+        {
+          "name": "8. Circuiti in Corrente Alternata (AC)",
+          "core_contents": "Generatori AC. Circuiti RLC serie e parallelo. Metodo dei fasori (impedenza, reattanza). Risonanza elettrica, potenza attiva e reattiva. Trasformatore.",
+          "key_concepts": [
+            "Metodo dei Fasori",
+            "Impedenza complessa",
+            "Circuiti RLC serie"
+          ]
+        },
+        {
+          "name": "9. Ottica Geometrica",
+          "core_contents": "Approssimazione dell'ottica geometrica. Riflessione e rifrazione (Legge di Snell). Specchi, diottri e lenti sottili. Strumenti ottici (occhio, microscopio, telescopio).",
+          "key_concepts": [
+            "Approssimazione ottica geometrica",
+            "Principio di Fermat",
+            "Leggi riflessione e rifrazione"
+          ]
+        },
+        {
+          "name": "10. Ottica Ondulatoria",
+          "core_contents": "Interferenza (esperimento di Young). Diffrazione (fenditura singola, reticoli). Criterio di risoluzione di Rayleigh. Dispersione e spettri.",
+          "key_concepts": [
+            "Ottica Ondulatoria",
+            "Principio di Huygens",
+            "Interferenza di onde"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fisica_generale",
+      "name": "Fisica Generale",
+      "subject": "Fisica",
+      "program_profiles": [
+        {
+          "name": "L-27 Scienze Chimiche",
+          "priority_modules": "Focus 'Strumentale'. Cruciale l'Elettromagnetismo (6) per capire i legami chimici e la strumentazione. Fondamentale la Termodinamica (5) e la Fisica Moderna (7) come prerequisito alla Chimica Fisica. Serve un approccio 'Calculus-based' rigoroso. Meno rilevante la fluidodinamica complessa."
+        },
+        {
+          "name": "L-13 Biologia / L-2 Biotecnologie / LM-13 Farmacia",
+          "priority_modules": "Focus 'Fisiologico'. Priorità assoluta ai Fluidi (4) per la circolazione/trasporti e all'Elettricità (6) per i potenziali di membrana/nerve impulse. Termodinamica (5) essenziale per il metabolismo. La meccanica del corpo rigido (3) e la fisica moderna (7) sono marginali. Spesso preferito approccio con meno calcolo integrale."
+        },
+        {
+          "name": "L-34 Geologia / L-32 Scienze Naturali",
+          "priority_modules": "Focus 'Meccanico-Ambientale'. Cruciale la Meccanica (1-2), la Gravitazione (4) e la Fluidodinamica (4) per idrogeologia e geofisica. Importante la Termodinamica (5) per i processi magmatici/atmosferici. Elettromagnetismo e Fisica Moderna sono molto meno prioritari."
+        },
+        {
+          "name": "L-25/L-26 Agraria e Alimentare",
+          "priority_modules": "Focus 'Tecnologico'. Fondamentale la Termodinamica (5) per i processi di conservazione/trasformazione e la Fluidodinamica (4) per impianti e irrigazione. La meccanica (1-2) serve per le macchine agricole. Elettromagnetismo e Quantistica sono marginali."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Cinematica e Dinamica del Punto",
+          "core_contents": "Algebra vettoriale. Moto rettilineo, circolare e parabolico. I tre principi della Dinamica (Newton). Analisi delle forze: peso, normale, tensione, attrito viscoso e radente.",
+          "key_concepts": [
+            "Algebra Vettoriale",
+            "Principi Dinamica Newton",
+            "Cinematica Punto Materiale"
+          ]
+        },
+        {
+          "name": "2. Lavoro ed Energia",
+          "core_contents": "Lavoro come prodotto scalare. Teorema dell'energia cinetica. Forze conservative ed energia potenziale (gravitazionale ed elastica). Conservazione dell'energia meccanica. Quantità di moto, impulso e urti (elastici/anelastici).",
+          "key_concepts": [
+            "Lavoro come prodotto scalare",
+            "Teorema dell'energia cinetica",
+            "Forze conservative e non conservative"
+          ]
+        },
+        {
+          "name": "3. Dinamica dei Sistemi e Corpo Rigido",
+          "core_contents": "Centro di massa. Momento d'inerzia e assi principali. Momento torcente e momento angolare. Equilibrio statico dei corpi rigidi (leve) e dinamica rotazionale di base.",
+          "key_concepts": [
+            "Centro di Massa",
+            "Momento d'Inerzia",
+            "Dinamica Rotazionale"
+          ]
+        },
+        {
+          "name": "4. Fluidi e Gravitazione",
+          "core_contents": "Legge di Gravitazione Universale e leggi di Keplero. Oscillatore armonico semplice. Statica dei fluidi (Stevino, Archimede) e Dinamica dei fluidi ideali (Bernoulli, Continuità) con cenni alla viscosità (Poiseuille).",
+          "key_concepts": [
+            "Legge di Gravitazione Universale",
+            "Leggi di Keplero",
+            "Dinamica dei fluidi ideali"
+          ]
+        },
+        {
+          "name": "5. Termodinamica",
+          "core_contents": "Calorimetria e dilatazione termica. Primo principio della termodinamica e trasformazioni dei gas ideali. Secondo principio, macchine termiche (Carnot) ed Entropia. Cenni ai gas reali (Van der Waals) e teoria cinetica.",
+          "key_concepts": [
+            "Primo Principio Termodinamica",
+            "Trasformazioni Gas Ideali",
+            "Secondo Principio Termodinamica"
+          ]
+        },
+        {
+          "name": "6. Elettromagnetismo",
+          "core_contents": "Elettrostatica: Legge di Coulomb, Campo Elettrico, Potenziale e Condensatori. Corrente continua: Legge di Ohm e circuiti RC. Magnetismo: Forza di Lorentz, sorgenti del campo (Biot-Savart/Ampère). Induzione elettromagnetica (Faraday-Lenz).",
+          "key_concepts": [
+            "Leggi fondamentali Elettrostatica",
+            "Campo e Potenziale Elettrico",
+            "Condensatori e Dielettrici"
+          ]
+        },
+        {
+          "name": "7. Elementi di Fisica Moderna",
+          "core_contents": "Crisi della fisica classica (corpo nero, effetto fotoelettrico). Dualismo onda-particella (De Broglie). Relatività Ristretta (dilatazione tempi/contrazione lunghezze). Modello atomico di Bohr e quantizzazione.",
+          "key_concepts": [
+            "Crisi della Fisica Classica",
+            "Dualismo Onda-Particella",
+            "Quantizzazione dell'Energia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fisica_semestre_filtro",
+      "name": "Fisica semestre filtro",
+      "subject": "Fisica",
+      "program_profiles": [
+        {
+          "name": "Semestre Filtro (Medicina/Odontoiatria/Veterinaria)",
+          "priority_modules": "Priorità assoluta ai Moduli 2 (Fluidi - Cardiovascolare), 5 (Elettricità - Neurofisiologia) e 6 (Radiazioni - Diagnostica). La meccanica classica (1) serve solo come base per la biomeccanica.",
+          "textbook_advice": "Testi specifici di 'Fisica Medica' o 'Fisica per le Scienze Biomediche'."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Metodi e Meccanica del Punto",
+          "core_contents": "Grandezze fisiche, vettori, errori. Cinematica (moto rettilineo, circolare, armonico). Dinamica (Newton, forze fondamentali). Lavoro, Energia Cinetica/Potenziale e Potenza (metabolica).",
+          "key_concepts": [
+            "Dinamica Newtoniana",
+            "Vettori e Operazioni Vettoriali",
+            "Lavoro ed Energia"
+          ]
+        },
+        {
+          "name": "2. Meccanica dei Sistemi e Fluidi",
+          "core_contents": "Leve e statica del corpo (biomeccanica). Elasticità (Legge di Hooke, ossa/vasi). Statica dei fluidi (Stevino, Pascal, Archimede). Idrodinamica ideale (Bernoulli - aneurisma/stenosi) e reale (Poiseuille - resistenza vascolare). Tensione superficiale e Laplace (alveoli/capillari).",
+          "key_concepts": [
+            "Statica dei Fluidi",
+            "Principio di Archimede",
+            "Equazione di Bernoulli"
+          ]
+        },
+        {
+          "name": "3. Onde Meccaniche e Acustica",
+          "core_contents": "Onde periodiche. Suono e percezione (decibel, soglia uditiva). Effetto Doppler (flussimetria). Ultrasuoni.",
+          "key_concepts": [
+            "Onde periodiche",
+            "Onde meccaniche",
+            "Propagazione del suono"
+          ]
+        },
+        {
+          "name": "4. Termodinamica",
+          "core_contents": "Gas perfetti e reali. Primo principio (metabolismo). Trasmissione del calore (conduzione, convezione, irraggiamento/termoregolazione). Secondo principio ed Entropia nei sistemi biologici.",
+          "key_concepts": [
+            "Primo Principio Termodinamica",
+            "Secondo Principio Termodinamica",
+            "Entropia Sistemi Biologici"
+          ]
+        },
+        {
+          "name": "5. Elettricità e Magnetismo",
+          "core_contents": "Legge di Coulomb e Campo Elettrico. Potenziale e Condensatori (membrana cellulare). Corrente continua, Ohm, Joule. Magnetismo e Induzione (basi per risonanza magnetica e stimolazione nervosa).",
+          "key_concepts": [
+            "Legge di Coulomb",
+            "Campo Elettrico (Definizione e Calcolo)",
+            "Potenziale Elettrico"
+          ]
+        },
+        {
+          "name": "6. Radiazioni e Ottica",
+          "core_contents": "Spettro elettromagnetico. Fotoni ed effetto fotoelettrico. Radiazioni ionizzanti (raggi X, gamma) e decadimento radioattivo (Medicina Nucleare). Ottica geometrica (rifrazione, lenti, occhio, microscopio).",
+          "key_concepts": [
+            "Spettro elettromagnetico",
+            "Effetto fotoelettrico",
+            "Radiazioni ionizzanti"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "biochimica",
+      "name": "biochimica",
+      "subject": "Biochimica",
+      "program_profiles": [
+        {
+          "name": "LM-41 Medicina / LM-42 Veterinaria",
+          "priority_modules": "Focus assoluto sul Metabolismo Integrato (Moduli 6-9) e sulla sua regolazione ormonale. Cruciale la Bioenergetica (5) e le Vitamine (11). La struttura (2) è funzionale alla comprensione delle emoglobinopatie e degli enzimi sierici. Marginale la biochimica industriale e le tecniche di purificazione spinte."
+        },
+        {
+          "name": "L-29/LM-13 Farmacia e CTF",
+          "priority_modules": "Cruciale l'Enzimologia (3) come base per la farmacodinamica (inibitori). Fondamentale la struttura delle proteine (2) e dei recettori (10). Molto importante il metabolismo (6-9) per comprendere tossicità e metabolismo dei farmaci. Marginale l'evoluzione molecolare."
+        },
+        {
+          "name": "L-2 Biotecnologie",
+          "priority_modules": "Focus strategico sulle Tecniche (12) e sulla struttura/funzione delle proteine (2, 3) per la produzione di enzimi ricombinanti. Fondamentale la comprensione della bioenergetica (5). Il metabolismo clinico d'organo è meno prioritario rispetto ai pathway metabolici di base manipolabili."
+        },
+        {
+          "name": "L-26 Scienze Alimentari",
+          "priority_modules": "Cruciale la chimica di Carboidrati e Lipidi (4) e i relativi metabolismi. Fondamentale l'enzimologia (3) applicata alle trasformazioni alimentari. Importante il metabolismo nutrizionale (9, 11). Meno focus sulla biochimica del DNA o sulla segnalazione cellulare complessa."
+        },
+        {
+          "name": "L-27 Scienze Chimiche",
+          "priority_modules": "Approccio meccanicistico. Priorità massima su Termodinamica (1), Cinetica Enzimatica (3) e Struttura molecolare (2, 4). Il metabolismo (6-9) va visto come serie di reazioni organiche più che come fisiologia. Marginale la parte clinica e diagnostica."
+        },
+        {
+          "name": "L-13 Scienze Biologiche",
+          "priority_modules": "Approccio bilanciato. Tutti i pathway metabolici (6-9) sono fondamentali. Importante la visione evolutiva e la relazione struttura-funzione. Meno enfasi sulla patologia umana rispetto a Medicina."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Fondamenti Chimico-Fisici",
+          "core_contents": "Interazioni deboli nelle macromolecole biologiche. Termodinamica dei sistemi viventi, proprietà dell'acqua e sistemi tampone fisiologici (pH).",
+          "key_concepts": [
+            "Termodinamica dei sistemi viventi",
+            "Interazioni deboli non covalenti",
+            "Proprietà chimico-fisiche dell'acqua"
+          ]
+        },
+        {
+          "name": "2. Struttura e Funzione delle Proteine",
+          "core_contents": "Biochimica degli amminoacidi. Livelli strutturali (primaria-quaternaria), motivi e domini. Folding assistito da chaperoni, modificazioni post-traduzionali e relazione struttura-funzione (es. emoglobina/mioglobina).",
+          "key_concepts": [
+            "Livelli Strutturali Proteici",
+            "Relazione Struttura-Funzione",
+            "Biochimica degli Amminoacidi"
+          ]
+        },
+        {
+          "name": "3. Enzimologia",
+          "core_contents": "Classificazione e nomenclatura. Cinetica di Michaelis-Menten, inibizione competitiva/non competitiva e regolazione allosterica. Ruolo di coenzimi e vitamine come cofattori.",
+          "key_concepts": [
+            "Cinetica Michaelis-Menten",
+            "Regolazione allosterica enzimatica",
+            "Inibizione competitiva/non competitiva"
+          ]
+        },
+        {
+          "name": "4. Glucidi e Lipidi Strutturali",
+          "core_contents": "Chimica dei monosaccaridi, disaccaridi e polisaccaridi (glicogeno, amido, cellulosa). Struttura e classificazione dei lipidi: acidi grassi, trigliceridi, fosfolipidi di membrana, steroidi ed eicosanoidi.",
+          "key_concepts": [
+            "Chimica Fosfolipidi Membrana",
+            "Struttura Classificazione Lipidi",
+            "Chimica Polisaccaridi Strutturali"
+          ]
+        },
+        {
+          "name": "5. Bioenergetica e Fosforilazione Ossidativa",
+          "core_contents": "Ruolo dell'ATP e composti ad alta energia. Catena di trasporto degli elettroni mitocondriale, gradiente protonico e sintesi di ATP. Disaccoppianti e termogenesi.",
+          "key_concepts": [
+            "Fosforilazione Ossidativa",
+            "Catena di Trasporto Elettroni",
+            "Sintesi di ATP (ATP Sintasi)"
+          ]
+        },
+        {
+          "name": "6. Metabolismo dei Carboidrati",
+          "core_contents": "Glicolisi, destino anaerobico del piruvato (fermentazioni). Ciclo di Krebs (TCA), Gluconeogenesi, Via dei Pentoso Fosfati e metabolismo del Glicogeno.",
+          "key_concepts": [
+            "Glicolisi",
+            "Ciclo di Krebs (TCA)",
+            "Gluconeogenesi"
+          ]
+        },
+        {
+          "name": "7. Metabolismo dei Lipidi",
+          "core_contents": "Beta-ossidazione degli acidi grassi e chetogenesi. Biosintesi degli acidi grassi (lipogenesi), dei trigliceridi e del colesterolo. Metabolismo delle lipoproteine.",
+          "key_concepts": [
+            "Beta-ossidazione acidi grassi",
+            "Biosintesi acidi grassi (Lipogenesi)",
+            "Metabolismo delle Lipoproteine"
+          ]
+        },
+        {
+          "name": "8. Metabolismo dell'Azoto",
+          "core_contents": "Degradazione degli amminoacidi, transaminazione e Ciclo dell'Urea. Biosintesi degli amminoacidi non essenziali. Metabolismo dei nucleotidi (purine e pirimidine) e vie di recupero.",
+          "key_concepts": [
+            "Ciclo dell'Urea",
+            "Degradazione amminoacidi",
+            "Transaminazione e deaminazione"
+          ]
+        },
+        {
+          "name": "9. Regolazione Metabolica Integrata",
+          "core_contents": "Controllo ormonale (Insulina, Glucagone, Adrenalina). Metabolismo tessuto-specifico (fegato, muscolo, cervello, adipe) nel ciclo digiuno-alimentazione.",
+          "key_concepts": [
+            "Regolazione Metabolica Integrata",
+            "Controllo Ormonale Metabolismo",
+            "Ruolo Fisiologico Insulina"
+          ]
+        },
+        {
+          "name": "10. Segnalazione Cellulare (Biochimica)",
+          "core_contents": "Meccanismi molecolari della trasduzione del segnale: recettori GPCR, RTK, secondi messaggeri (cAMP, IP3, DAG) e cascate di fosforilazione.",
+          "key_concepts": [
+            "Trasduzione del segnale",
+            "Meccanismi molecolari",
+            "Recettori GPCR"
+          ]
+        },
+        {
+          "name": "11. Vitamine e Cofattori",
+          "core_contents": "Struttura chimica e funzione coenzimatica delle vitamine idrosolubili (Gruppo B, C) e ruolo delle liposolubili (A, D, E, K). Patologie da carenza.",
+          "key_concepts": [
+            "Funzione coenzimatica vitamine",
+            "Struttura chimica vitamine",
+            "Vitamine idrosolubili"
+          ]
+        },
+        {
+          "name": "12. Tecniche e Biochimica Applicata",
+          "core_contents": "Metodologie di purificazione (cromatografia, elettroforesi), analisi strutturale e dosaggi enzimatici. Cenni di biochimica clinica (biomarcatori) e industriale.",
+          "key_concepts": [
+            "Metodologie di purificazione proteica",
+            "Cromatografia biochimica avanzata",
+            "Tecniche elettroforetiche analitiche"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "biologia_cellulare",
+      "name": "biologia cellulare",
+      "subject": "Biologia",
+      "program_profiles": [
+        {
+          "name": "L-2 Biotecnologie",
+          "priority_modules": "Cruciale la 'manipolabilità' della cellula: focus assoluto su DNA/RNA (Moduli 3-6), sintesi proteica (7) e Tecniche avanzate (16, CRISPR). Fondamentale il traffico vescicolare (9) per la produzione di proteine ricombinanti. Meno rilevante l'istologia e l'adesione cellulare complessa."
+        },
+        {
+          "name": "LM-41 Medicina / LM-13 Farmacia",
+          "priority_modules": "Focus patologico e farmacologico. Cruciale la Segnalazione cellulare (13) target dei farmaci, il Ciclo cellulare/Cancro (14-15) e i recettori di membrana. Fondamentale il Citoscheletro (11) e l'Adesione (12) per capire l'istologia. Tecniche di laboratorio meno prioritarie rispetto ai meccanismi molecolari."
+        },
+        {
+          "name": "L-13 Scienze Biologiche",
+          "priority_modules": "Approccio olistico ed evolutivo. Tutti i moduli sono importanti, con particolare enfasi su Bioenergetica (10), Citoscheletro (11) e Regolazione genica (5). Fondamentale la comprensione della diversità cellulare e degli organismi modello."
+        },
+        {
+          "name": "L-9 Ingegneria Biomedica",
+          "priority_modules": "Focus strutturale e meccanico. Cruciale il Citoscheletro (11), l'Adesione/ECM (12) e le proprietà fisiche della membrana (8). Importante la Segnalazione (13) per la biosensoristica. Meno rilevante il dettaglio fine della maturazione dell'RNA o della trascrizione."
+        },
+        {
+          "name": "L-32 Scienze Naturali",
+          "priority_modules": "Focus comparativo ed evolutivo. Fondamentali i concetti di base (1-2), la Bioenergetica (10, inclusa fotosintesi) e la Meiosi (14). Molto meno approfondita la parte di Segnalazione molecolare complessa (13) e le Tecniche di editing genomico (16)."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Introduzione e metodi",
+          "core_contents": "Teoria cellulare, diversità tra procarioti ed eucarioti. Panoramica sulle tecniche fondamentali: microscopia (ottica, elettronica, fluorescenza), frazionamento cellulare e colture in vitro.",
+          "key_concepts": [
+            "Teoria Cellulare",
+            "Diversità Procarioti Eucarioti",
+            "Microscopia Ottica"
+          ]
+        },
+        {
+          "name": "2. Chimica della vita e macromolecole",
+          "core_contents": "Struttura e funzione delle macromolecole biologiche: proteine (folding), acidi nucleici, lipidi e carboidrati. Principi di bioenergetica e termodinamica cellulare.",
+          "key_concepts": [
+            "Struttura e funzione macromolecole",
+            "Proteine e folding proteico",
+            "Acidi nucleici (DNA/RNA)"
+          ]
+        },
+        {
+          "name": "3. Genoma e organizzazione del DNA",
+          "core_contents": "Struttura della doppia elica, organizzazione della cromatina (istoni, nucleosomi) e dei cromosomi. Concetti di epigenetica e modificazioni istoniche. Differenze genomiche procarioti/eucarioti.",
+          "key_concepts": [
+            "Struttura doppia elica DNA",
+            "Organizzazione della cromatina",
+            "Concetto di nucleosoma"
+          ]
+        },
+        {
+          "name": "4. Replicazione e mantenimento del DNA",
+          "core_contents": "Meccanismi molecolari della replicazione (enzimi, forcella). Telomeri e telomerasi. Sistemi di riparazione del danno al DNA e meccanismi di ricombinazione omologa/non omologa.",
+          "key_concepts": [
+            "Replicazione DNA molecolare",
+            "Forcella di replicazione",
+            "Enzimi della replicazione"
+          ]
+        },
+        {
+          "name": "5. Trascrizione e regolazione genica",
+          "core_contents": "Funzionamento delle RNA polimerasi, promotori, enhancer e fattori di trascrizione. Regolazione dell'espressione genica e ruolo degli RNA non codificanti (miRNA, siRNA).",
+          "key_concepts": [
+            "Regolazione Espressione Genica",
+            "Funzionamento RNA Polimerasi",
+            "Fattori di Trascrizione"
+          ]
+        },
+        {
+          "name": "6. Maturazione dell'RNA",
+          "core_contents": "Processamento dell'mRNA eucariotico: Capping, Splicing (e splicing alternativo), Poliadenilazione. Editing e meccanismi di trasporto nucleo-citoplasma.",
+          "key_concepts": [
+            "Splicing dell'mRNA eucariotico",
+            "Splicing alternativo",
+            "Capping 5' mRNA"
+          ]
+        },
+        {
+          "name": "7. Traduzione e proteostasi",
+          "core_contents": "Meccanismo della sintesi proteica sul ribosoma (codice genetico, tRNA). Folding assistito da chaperoni, modificazioni post-traduzionali e degradazione via ubiquitina-proteasoma o autofagia.",
+          "key_concepts": [
+            "Sintesi proteica ribosomiale",
+            "Codice genetico",
+            "Ruolo del tRNA"
+          ]
+        },
+        {
+          "name": "8. Struttura e trasporto di membrana",
+          "core_contents": "Modello a mosaico fluido, asimmetria lipidica e raft. Meccanismi di trasporto: diffusione, canali ionici, pompe ATPasi e cotrasportatori. Potenziale di membrana.",
+          "key_concepts": [
+            "Modello a mosaico fluido",
+            "Trasporto di membrana",
+            "Asimmetria lipidica"
+          ]
+        },
+        {
+          "name": "9. Sistema delle endomembrane e traffico",
+          "core_contents": "Struttura e funzione di RE, Golgi, Lisosomi. Traffico vescicolare (COP, Clatrina, SNARE), meccanismi di endocitosi ed esocitosi. Sorting e indirizzamento delle proteine (segnali).",
+          "key_concepts": [
+            "Sistema delle endomembrane",
+            "Struttura e funzione RE",
+            "Struttura e funzione Golgi"
+          ]
+        },
+        {
+          "name": "10. Bioenergetica: Mitocondri e Cloroplasti",
+          "core_contents": "Struttura dei mitocondri e meccanismo chemiosmotico della fosforilazione ossidativa. Cenni su cloroplasti e fotosintesi. Teoria endosimbiotica.",
+          "key_concepts": [
+            "Fosforilazione ossidativa",
+            "Meccanismo chemiosmotico",
+            "Struttura dei mitocondri"
+          ]
+        },
+        {
+          "name": "11. Citoscheletro e motilità",
+          "core_contents": "Microtubuli, microfilamenti (actina) e filamenti intermedi. Proteine motrici (chinesine, dineine, miosine). Ruolo nella mitosi, nel trasporto intracellulare e nella contrazione muscolare.",
+          "key_concepts": [
+            "Citoscheletro: Componenti Strutturali",
+            "Microtubuli: Struttura e Funzione",
+            "Microfilamenti (Actina): Ruolo Cellulare"
+          ]
+        },
+        {
+          "name": "12. Adesione e matrice extracellulare (ECM)",
+          "core_contents": "Giunzioni cellulari (tight, gap, desmosomi, aderenti). Molecole di adesione (integrine, cadherine). Composizione della ECM (collagene, proteoglicani) e interazione cellula-ambiente.",
+          "key_concepts": [
+            "Giunzioni cellulari",
+            "Matrice Extracellulare (ECM)",
+            "Molecole di adesione"
+          ]
+        },
+        {
+          "name": "13. Segnalazione cellulare (Signal Transduction)",
+          "core_contents": "Recettori di membrana (GPCR, RTK) e vie di trasduzione del segnale. Secondi messaggeri (cAMP, Calcio), cascate di chinasi e regolazione della risposta cellulare.",
+          "key_concepts": [
+            "Trasduzione del segnale",
+            "Recettori di membrana",
+            "Recettori accoppiati a proteine G (GPCR)"
+          ]
+        },
+        {
+          "name": "14. Ciclo cellulare, Mitosi e Meiosi",
+          "core_contents": "Fasi del ciclo e sistema di controllo (Ciclina-CDK, checkpoint). Meccanica della divisione mitotica e meiotica. Origine della variabilità genetica nei gameti.",
+          "key_concepts": [
+            "Ciclo Cellulare: Fasi",
+            "Sistema di Controllo (Ciclina-CDK)",
+            "Meccanismo della Mitosi"
+          ]
+        },
+        {
+          "name": "15. Morte cellulare, Staminali e Cancro",
+          "core_contents": "Apoptosi (vie intrinseca/estrinseca). Biologia delle cellule staminali (potenza, differenziamento, iPSC). Basi molecolari del cancro (oncogeni, oncosoppressori, metastasi).",
+          "key_concepts": [
+            "Apoptosi",
+            "Vie intrinseca apoptosi",
+            "Vie estrinseca apoptosi"
+          ]
+        },
+        {
+          "name": "16. Tecniche avanzate e Organismi modello",
+          "core_contents": "Editing genomico (CRISPR), sequenziamento massivo (NGS), tecniche omiche. Principali organismi modello nella ricerca biologica.",
+          "key_concepts": [
+            "Editing Genomico CRISPR-Cas9",
+            "Sequenziamento Massivo NGS",
+            "Tecnologie Omiche"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "biologia_molecolare",
+      "name": "biologia molecolare",
+      "subject": "Biologia",
+      "program_profiles": [
+        {
+          "name": "L-2 Biotecnologie",
+          "priority_modules": "Focus assoluto sul 'saper fare': Modulo 6 (Tecnologie Ricombinanti/CRISPR) e Modulo 7 (Genomica/NGS) sono il cuore del corso. Cruciale la Regolazione (5) per ingegnerizzare l'espressione. Meno prioritari i dettagli evolutivi o la struttura chimica fine delle forme Z del DNA."
+        },
+        {
+          "name": "LM-41 Medicina / LM-42 Veterinaria",
+          "priority_modules": "Focus patologico. Cruciale capire le Mutazioni/Riparazione (2) come base del cancro e delle malattie genetiche. Fondamentale la Genetica Virale (8) e le prospettive della Terapia Genica (9). Le tecniche di laboratorio (clonaggio, vettori plasmidici) sono trattate solo a livello concettuale."
+        },
+        {
+          "name": "L-13 Scienze Biologiche",
+          "priority_modules": "Approccio teorico-meccanicistico completo. Fondamentale il Dogma Centrale (Moduli 2, 3, 4) in ogni dettaglio molecolare. Importante l'aspetto evolutivo e la struttura della cromatina (1). Le applicazioni biotecnologiche spinte (Biologia sintetica) sono meno centrali rispetto alla comprensione dei processi naturali."
+        },
+        {
+          "name": "LM-13 Farmacia / CTF",
+          "priority_modules": "Focus sui target farmacologici. Cruciale la Sintesi Proteica (4) e la Replicazione (2) come bersagli di antibiotici e chemioterapici. Importante la Regolazione (5) e le nuove frontiere terapeutiche (RNA therapeutics, Terapia Genica 9). Tecniche di sequenziamento e bioinformatica sono marginali."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Struttura e Organizzazione del Genoma",
+          "core_contents": "Chimica del DNA (forme A, B, Z) e topologia (superavvolgimenti). Organizzazione della cromatina (istoni, nucleosomi) e differenze strutturali tra genoma procariotico ed eucariotico (sequenze ripetute, DNA satellite).",
+          "key_concepts": [
+            "Organizzazione del Genoma",
+            "Struttura e Chimica del DNA",
+            "Topologia del DNA"
+          ]
+        },
+        {
+          "name": "2. Replicazione e Mantenimento del DNA",
+          "core_contents": "Meccanismo della forcella replicativa, enzimologia (polimerasi, primasi, elicasi) e gestione dei telomeri. Sistemi di riparazione del danno (BER, NER, MMR, SOS) e meccanismi di ricombinazione omologa e sito-specifica (inclusi trasposoni).",
+          "key_concepts": [
+            "Meccanismo forcella replicativa",
+            "Enzimologia replicazione DNA",
+            "DNA polimerasi"
+          ]
+        },
+        {
+          "name": "3. Trascrizione e Maturazione dell'RNA",
+          "core_contents": "RNA polimerasi e promotori (prok vs euk). Fattori di trascrizione generali. Processamento dell'mRNA: Capping, Poliadenilazione e meccanismo molecolare dello Splicing (spliceosoma). Degradazione e turnover dell'RNA.",
+          "key_concepts": [
+            "RNA Polimerasi",
+            "Promotori (Prokaryota vs Eukaryota)",
+            "Fattori di Trascrizione Generali"
+          ]
+        },
+        {
+          "name": "4. Sintesi Proteica e Post-Traduzione",
+          "core_contents": "Funzionamento del ribosoma, caricamento dei tRNA e fasi della traduzione (inizio, allungamento, termine). Controllo qualità, folding assistito da chaperoni e indirizzamento (targeting) delle proteine ai comparti cellulari.",
+          "key_concepts": [
+            "Fasi della Traduzione (Inizio, Allungamento, Termine)",
+            "Funzionamento e Struttura del Ribosoma",
+            "Caricamento e Ruolo dei tRNA"
+          ]
+        },
+        {
+          "name": "5. Regolazione dell'Espressione Genica",
+          "core_contents": "Operoni batterici (Lac, Trp). Regolazione eucariotica: enhancer, silencer, insulator e fattori di trascrizione. Epigenetica: metilazione del DNA e codice istonico. Ruolo dell'RNA interference (miRNA, siRNA).",
+          "key_concepts": [
+            "Regolazione dell'Espressione Genica",
+            "Operoni Batterici",
+            "Fattori di Trascrizione"
+          ]
+        },
+        {
+          "name": "6. Tecnologie del DNA Ricombinante",
+          "core_contents": "Enzimi di restrizione, vettori di clonaggio e plasmidi. PCR e sue varianti. Editing genomico tramite sistema CRISPR-Cas9. Tecniche di analisi dell'interazione DNA-proteina (EMSA, ChIP).",
+          "key_concepts": [
+            "Tecnologie DNA Ricombinante",
+            "Sistema CRISPR-Cas9",
+            "Reazione a Catena Polimerasi"
+          ]
+        },
+        {
+          "name": "7. Genomica, Sequenziamento e Omiche",
+          "core_contents": "Dal metodo Sanger al Next Generation Sequencing (NGS). Assemblaggio genomico, annotazione e metagenomica. Tecniche di trascrittomica (RNA-Seq, Microarray) e proteomica di base.",
+          "key_concepts": [
+            "Next Generation Sequencing (NGS)",
+            "Sequenziamento del DNA",
+            "Assemblaggio Genomico"
+          ]
+        },
+        {
+          "name": "8. Genetica Virale e Retroelementi",
+          "core_contents": "Organizzazione dei genomi virali (DNA/RNA), strategie di replicazione e trascrizione. Ciclo dei retrovirus, integrazione e trascrittasi inversa.",
+          "key_concepts": [
+            "Ciclo dei retrovirus",
+            "Trascrizione inversa",
+            "Integrazione genomica virale"
+          ]
+        },
+        {
+          "name": "9. Applicazioni Mediche e Biotecnologiche",
+          "core_contents": "Terapia genica (vettori virali e non), correzione di difetti genetici in vivo/ex vivo. Biologia sintetica (sintesi geni/genomi) e bioinformatica applicata (banche dati, BLAST).",
+          "key_concepts": [
+            "Terapia genica",
+            "Vettori virali",
+            "Correzione difetti genetici"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chimica_generale",
+      "name": "chimica_generale",
+      "subject": "Chimica Generale",
+      "program_profiles": [
+        {
+          "name": "L-2 Biotecnologie",
+          "priority_modules": "Cruciale una comprensione profonda delle soluzioni, degli equilibri acido-base e della cinetica (in ottica enzimatica). Fondamentale la chimica del coordinamento per le applicazioni bioinorganiche. Meno rilevante la parte approfondita sui materiali solidi e metallurgia."
+        },
+        {
+          "name": "L-7-8-9 Ingegneria",
+          "priority_modules": "Focus assoluto su stechiometria applicativa, termodinamica, elettrochimica (batterie/corrosione) e stati della materia (scienza dei materiali). La chimica descrittiva e nucleare sono marginali, salvo per ingegneria chimica o energetica."
+        },
+        {
+          "name": "L-13 Scienze biologiche",
+          "priority_modules": "Cruciale la padronanza di soluzioni, pH, tamponi e legami chimici (interazioni molecolari). Fondamentale la cinetica e la termodinamica di base per comprendere i processi biologici. Marginale la chimica inorganica descrittiva dettagliata e la chimica nucleare."
+        },
+        {
+          "name": "L-25/L-26 Agraria e Alimentare",
+          "priority_modules": "Fondamentale la chimica delle soluzioni, acidi/basi e le proprietà colligative. Importante la chimica organica descrittiva degli elementi nutrienti (N, P, K) e la cinetica per la conservazione degli alimenti. Meno focus sulla struttura atomica quantistica avanzata."
+        },
+        {
+          "name": "L-27 Scienze chimiche",
+          "priority_modules": "Richiede una copertura esaustiva e approfondita di tutti i moduli senza esclusioni. Cruciale il rigore formale in termodinamica, quantistica (struttura atomica/legame) e chimica inorganica descrittiva e di coordinazione."
+        },
+        {
+          "name": "L-29/LM-13 Farmacia e CTF",
+          "priority_modules": "Focus critico su stechiometria (dosaggi), soluzioni, equilibri e acidi-basi. Molto importante la struttura atomica e il legame per la futura chimica farmaceutica. La parte inorganica descrittiva deve concentrarsi sugli elementi di interesse biologico e tossicologico."
+        },
+        {
+          "name": "L-32/L-34 Scienze Naturali e Geologia",
+          "priority_modules": "Cruciale la chimica inorganica descrittiva (mineralogia), gli stati della materia (fasi solide) e la termodinamica geochimica. Fondamentale la chimica nucleare per le datazioni radiometriche. Meno rilevante la cinetica complessa o l'elettrochimica avanzata."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Struttura dell'atomo",
+          "core_contents": "Analisi approfondita delle particelle subatomiche, definizione di numero atomico, massa e isotopia. Studio degli spettri atomici, evoluzione dei modelli atomici, configurazioni elettroniche con focus sui principi di Pauli, Aufbau e Hund.",
+          "key_concepts": [
+            "Configurazioni elettroniche",
+            "Principi di Aufbau, Pauli, Hund",
+            "Particelle subatomiche"
+          ]
+        },
+        {
+          "name": "2. Tavola periodica e proprietà periodiche",
+          "core_contents": "Organizzazione strutturale della tavola periodica. Analisi dei trend periodici riguardanti raggio atomico e ionico, energia di ionizzazione, affinità elettronica ed elettronegatività.",
+          "key_concepts": [
+            "Organizzazione strutturale Tavola Periodica",
+            "Trend periodici",
+            "Raggio atomico"
+          ]
+        },
+        {
+          "name": "3. Legame chimico",
+          "core_contents": "Studio comparato dei legami ionico, covalente e metallico. Applicazione della teoria VSEPR per la geometria molecolare, concetti di ibridazione e teoria degli orbitali molecolari. Approfondimento su polarità, momento dipolare e forze intermolecolari.",
+          "key_concepts": [
+            "Tipi di Legame Chimico",
+            "Legame Covalente",
+            "Legame Ionico"
+          ]
+        },
+        {
+          "name": "4. Stechiometria",
+          "core_contents": "Concetti fondamentali di mole e massa molare (Numero di Avogadro). Bilanciamento reazioni, identificazione del reagente limitante, calcolo delle rese (teorica e percentuale) e conversioni tra unità di concentrazione.",
+          "key_concepts": [
+            "Concetto di mole",
+            "Massa molare",
+            "Numero di Avogadro"
+          ]
+        },
+        {
+          "name": "5. Stati della materia",
+          "core_contents": "Leggi dei gas ideali e comportamento dei gas reali. Studio dei liquidi (tensione superficiale), classificazione dei solidi (cristallini vs amorfi), lettura dei diagrammi di fase e termodinamica dei passaggi di stato.",
+          "key_concepts": [
+            "Leggi Gas Ideali",
+            "Comportamento Gas Reali",
+            "Termodinamica Passaggi Stato"
+          ]
+        },
+        {
+          "name": "6. Termochimica",
+          "core_contents": "Definizione di sistemi e funzioni di stato. Applicazioni di calorimetria, calcolo dell'entalpia di reazione, formazione e legame. Applicazione della Legge di Hess e relazione tra energia interna e lavoro.",
+          "key_concepts": [
+            "Entalpia di reazione",
+            "Legge di Hess",
+            "Funzioni di stato"
+          ]
+        },
+        {
+          "name": "7. Termodinamica chimica",
+          "core_contents": "Concetti di entropia ed energia libera di Gibbs per la previsione della spontaneità e dell'equilibrio. Definizione di potenziale chimico e relazioni matematiche tra ΔG, ΔH e ΔS.",
+          "key_concepts": [
+            "Energia libera di Gibbs",
+            "Entropia termodinamica",
+            "Criteri di spontaneità"
+          ]
+        },
+        {
+          "name": "8. Cinetica chimica",
+          "core_contents": "Analisi della velocità di reazione, definizione dell'ordine di reazione e meccanismi. Studio della catalisi, energia di attivazione e teoria dello stato di transizione.",
+          "key_concepts": [
+            "Velocità di reazione",
+            "Ordine di reazione",
+            "Legge cinetica"
+          ]
+        },
+        {
+          "name": "9. Equilibrio chimico",
+          "core_contents": "Costanti di equilibrio Kc e Kp, applicazione del Principio di Le Châtelier. Studio degli equilibri in fase gassosa e in soluzione, con focus sulle relazioni termodinamiche sottostanti.",
+          "key_concepts": [
+            "Equilibrio chimico",
+            "Costante di equilibrio (Kc)",
+            "Costante di equilibrio (Kp)"
+          ]
+        },
+        {
+          "name": "10. Chimica delle soluzioni",
+          "core_contents": "Classificazione delle soluzioni, unità di concentrazione e calcoli sulle diluizioni. Studio del prodotto di solubilità (Ksp) e analisi dettagliata delle proprietà colligative inclusa la pressione osmotica.",
+          "key_concepts": [
+            "Classificazione delle soluzioni",
+            "Unità di concentrazione",
+            "Calcoli sulle diluizioni"
+          ]
+        },
+        {
+          "name": "11. Acidi e basi",
+          "core_contents": "Confronto tra le teorie di Arrhenius, Brønsted-Lowry e Lewis. Calcolo del pH per acidi/basi forti e deboli (Ka, Kb, Kw), funzionamento delle soluzioni tampone, curve di titolazione e uso degli indicatori.",
+          "key_concepts": [
+            "Teorie acido-base (Arrhenius, Brønsted-Lowry, Lewis)",
+            "Calcolo del pH (Acidi e basi forti)",
+            "Costanti di equilibrio acido-base (Ka, Kb, Kw)"
+          ]
+        },
+        {
+          "name": "12. Elettrochimica",
+          "core_contents": "Bilanciamento redox, funzionamento delle celle galvaniche e potenziali standard. Applicazione dell'equazione di Nernst, processi di elettrolisi, tecnologie delle batterie/celle a combustibile e fenomeni di corrosione.",
+          "key_concepts": [
+            "Bilanciamento reazioni redox",
+            "Celle galvaniche e funzionamento",
+            "Potenziali standard di riduzione"
+          ]
+        },
+        {
+          "name": "13. Chimica nucleare",
+          "core_contents": "Stabilità del nucleo, difetto di massa, tipologie di decadimento radioattivo e serie. Differenze tra fissione e fusione, cenni di dosimetria e applicazioni pratiche.",
+          "key_concepts": [
+            "Stabilità nucleare",
+            "Difetto di massa",
+            "Energia di legame nucleare"
+          ]
+        },
+        {
+          "name": "14. Chimica inorganica descrittiva",
+          "core_contents": "Sistematica degli elementi chimici dai gruppi principali (1-2, 13-18) ai metalli di transizione, lantanidi e attinidi. Focus su idrogeno, composti binari e leghe.",
+          "key_concepts": [
+            "Sistematica elementi chimici",
+            "Elementi gruppi principali",
+            "Metalli di transizione"
+          ]
+        },
+        {
+          "name": "15. Chimica del coordinamento",
+          "core_contents": "Nomenclatura dei complessi, numero di coordinazione e geometrie. Isomeria, Teoria del Campo Cristallino e del Campo dei Leganti. Proprietà magnetiche, ottiche (colore), reattività e ruolo bioinorganico.",
+          "key_concepts": [
+            "Nomenclatura dei complessi",
+            "Numero di coordinazione",
+            "Geometrie di coordinazione"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "genetica",
+      "name": "genetica",
+      "subject": "Genetica",
+      "program_profiles": [
+        {
+          "name": "LM-41 Medicina / LM-13 Farmacia / L-29 Scienze Farmaceutiche",
+          "priority_modules": "ATTENZIONE: Corso spesso integrato con Biologia. Richiede un testo sintetico o una sezione dedicata. Priorità assoluta ai Moduli 1 (Mendel), 3 (Mutazioni patologiche) e 7 (Genetica Umana/Malattie). Il Modulo 8 (Agraria) è totalmente inutile. I Moduli 4 e 5 devono essere essenziali per non duplicare Biologia Molecolare/Microbiologia."
+        },
+        {
+          "name": "L-13 Scienze Biologiche / L-32 Scienze Naturali",
+          "priority_modules": "Corso Standalone. Richiede copertura completa. Cruciale la Genetica di Popolazioni (6) e la Citogenetica (2) per la visione evolutiva. Fondamentale il rigore negli esercizi di genetica formale (1). Il Modulo 8 è opzionale ma gradito se orientato alla conservazione della biodiversità."
+        },
+        {
+          "name": "L-25 Scienze Agrarie / Produzioni Animali",
+          "priority_modules": "Focus Applicativo. Il Modulo 8 (Miglioramento Genetico) è il cuore del corso e differenzia il libro. Cruciale la Genetica Quantitativa (6) e la Citogenetica (2, specialmente poliploidie vegetali). La Genetica Umana (7) è marginale o va sostituita con esempi animali/vegetali."
+        },
+        {
+          "name": "L-2 Biotecnologie",
+          "priority_modules": "Focus Tecnologico. Priorità assoluta ai Moduli 5 (Molecolare), 7 (Tecnologie/CRISPR) e 4 (Batterica per il clonaggio). Meno rilevante la genetica di popolazioni classica o i pedigree medici descrittivi. Serve un approccio sperimentale."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Genetica Mendeliana e Estensioni",
+          "core_contents": "Leggi di Mendel e calcolo delle probabilità. Analisi statistica (Chi-quadro). Estensioni: alleli multipli, epistasi, pleiotropia, penetranza ed espressività.",
+          "key_concepts": [
+            "Leggi di Mendel",
+            "Calcolo delle probabilità",
+            "Segregazione allelica"
+          ]
+        },
+        {
+          "name": "2. Citogenetica e Mappatura",
+          "core_contents": "Struttura del cromosoma eucariotico e cariotipo. Meccanismi della Meiosi e Teoria Cromosomica. Linkage, Crossing-over e costruzione di mappe genetiche (frequenza di ricombinazione).",
+          "key_concepts": [
+            "Meiosi",
+            "Teoria Cromosomica dell'Eredità",
+            "Struttura del Cromosoma Eucariotico"
+          ]
+        },
+        {
+          "name": "3. Mutazioni e Riparazione",
+          "core_contents": "Classificazione delle mutazioni geniche (puntiformi) e cromosomiche (strutturali/numeriche). Meccanismi di insorgenza e sistemi di riparazione del DNA.",
+          "key_concepts": [
+            "Mutazioni geniche e cromosomiche",
+            "Classificazione delle mutazioni",
+            "Mutazioni puntiformi"
+          ]
+        },
+        {
+          "name": "4. Genetica Microbica (Procarioti e Virus)",
+          "core_contents": "Trasferimento genico orizzontale (coniugazione, trasformazione, trasduzione). Genetica dei fagi e regolazione negli operoni batterici.",
+          "key_concepts": [
+            "Regolazione operoni batterici",
+            "Trasferimento genico orizzontale",
+            "Coniugazione batterica"
+          ]
+        },
+        {
+          "name": "5. Genetica Molecolare e Regolazione",
+          "core_contents": "Dogma centrale (Replicazione, Trascrizione, Traduzione). Regolazione dell'espressione genica negli eucarioti ed epigenetica. (Modulo spesso condiviso con Biologia Molecolare).",
+          "key_concepts": [
+            "Dogma Centrale della Biologia",
+            "Replicazione del DNA",
+            "Trascrizione genica"
+          ]
+        },
+        {
+          "name": "6. Genetica di Popolazioni ed Evoluzionistica",
+          "core_contents": "Legge di Hardy-Weinberg e fattori evolutivi (deriva, selezione, migrazione). Genetica quantitativa (tratti poligenici ed ereditabilità).",
+          "key_concepts": [
+            "Legge di Hardy-Weinberg",
+            "Fattori evolutivi",
+            "Deriva genetica"
+          ]
+        },
+        {
+          "name": "7. Genetica Umana e Tecnologie",
+          "core_contents": "Analisi dei pedigree umani. Patologie monogeniche e complesse. Tecnologie del DNA ricombinante (PCR, NGS, CRISPR) e diagnostica.",
+          "key_concepts": [
+            "Analisi dei Pedigree Umani",
+            "Patologie Monogeniche",
+            "Tecnologie DNA Ricombinante"
+          ]
+        },
+        {
+          "name": "8. Genetica Applicata (Agraria/Veterinaria)",
+          "core_contents": "Miglioramento genetico (breeding) animale e vegetale. Eterosi, ibridi, poliploidia nelle colture. Marcatori molecolari (QTL) per la selezione.",
+          "key_concepts": [
+            "Miglioramento genetico (breeding)",
+            "Selezione assistita da marcatori (MAS)",
+            "Quantitative Trait Loci (QTL)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "istologia",
+      "name": "istologia",
+      "subject": "Istologia",
+      "program_profiles": [
+        {
+          "name": "LM-41 Medicina / LM-46 Odontoiatria",
+          "priority_modules": "Focus Clinico Assoluto. Richiede la copertura totale di tutti i moduli. Cruciale il Modulo 6 (Anatomia Microscopica) per preparare a Patologia. Fondamentale il Modulo 8 (Organogenesi) per Pediatria e Chirurgia. Se il libro manca di Embriologia, va abbinato obbligatoriamente a un testo specifico. Iconografia mista (schemi + vetrini) essenziale."
+        },
+        {
+          "name": "L-2 Biotecnologie / L-13 Scienze Biologiche",
+          "priority_modules": "Focus su Citologia e Differenziamento. Priorità massima ai Moduli 1 (Cellula), 2-5 (Tessuti base) e 7 (Embriologia Generale/Gastrulazione). L'Anatomia Microscopica dettagliata (6) e l'Organogenesi clinica fine (8) sono meno rilevanti rispetto ai meccanismi molecolari di sviluppo e differenziamento."
+        },
+        {
+          "name": "L-SNT Professioni Sanitarie",
+          "priority_modules": "Focus Essenziale. Priorità ai Moduli 2-5 (I 4 tessuti fondamentali) per capire la fisiologia. L'Anatomia Microscopica (6) è ridotta agli organi principali. L'Embriologia (7-8) è spesso marginale o limitata ai concetti generali di sviluppo e placenta (per Ostetricia)."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Citologia e Metodi",
+          "core_contents": "Tecniche istologiche (preparazione, colorazioni, microscopia). Struttura della cellula eucariotica: membrana, organuli, nucleo, citoscheletro. Ciclo cellulare e differenziamento.",
+          "key_concepts": [
+            "Struttura cellula eucariotica",
+            "Tecniche istologiche fondamentali",
+            "Microscopia ottica ed elettronica"
+          ]
+        },
+        {
+          "name": "2. Istologia: Tessuti Epiteliali",
+          "core_contents": "Epiteli di rivestimento (classificazione, specializzazioni di superficie). Epiteli ghiandolari esocrini ed endocrini. Giunzioni cellulari e polarità.",
+          "key_concepts": [
+            "Classificazione degli Epiteli di Rivestimento",
+            "Polarità Cellulare Epiteliale",
+            "Giunzioni Cellulari Interepiteliali"
+          ]
+        },
+        {
+          "name": "3. Istologia: Tessuti Connettivi",
+          "core_contents": "Connettivi propriamente detti (cellule, matrice extracellulare, fibre). Tessuto adiposo (bianco/bruno). Tessuti di sostegno: Cartilagine e Osso (ossificazione, rimodellamento). Sangue e Linfa (elementi figurati).",
+          "key_concepts": [
+            "Tessuti Connettivi Propriamente Detti",
+            "Matrice Extracellulare e Fibre",
+            "Tessuto Osseo"
+          ]
+        },
+        {
+          "name": "4. Istologia: Tessuti Muscolari",
+          "core_contents": "Muscolo scheletrico (sarcomero, contrazione). Muscolo cardiaco (dischi intercalari). Muscolo liscio. Basi strutturali della contrazione.",
+          "key_concepts": [
+            "Tessuti muscolari",
+            "Muscolo scheletrico",
+            "Sarcomero"
+          ]
+        },
+        {
+          "name": "5. Istologia: Tessuto Nervoso",
+          "core_contents": "Neuroni (struttura, classificazione, trasporto assonico). Cellule della glia (SNC e SNP). Sinapsi e mielinizzazione.",
+          "key_concepts": [
+            "Struttura istologica del Neurone",
+            "Classificazione funzionale Neuroni",
+            "Cellule della Glia (SNC)"
+          ]
+        },
+        {
+          "name": "6. Anatomia Microscopica (Istologia degli Organi)",
+          "core_contents": "Analisi microscopica sistematica degli organi: Apparato Cardiovascolare, Linfatico/Immunitario, Respiratorio, Digerente (con ghiandole annesse), Urinario, Endocrino, Riproduttivo (M/F), Tegumentario e Organi di senso.",
+          "key_concepts": [
+            "Istologia Apparato Digerente e Ghiandole",
+            "Istologia Apparato Cardiovascolare",
+            "Istologia Apparato Respiratorio"
+          ]
+        },
+        {
+          "name": "7. Embriologia Generale",
+          "core_contents": "Gametogenesi (spermatogenesi/ovogenesi) e Fecondazione. Prima settimana (segmentazione, blastocisti, impianto). Seconda settimana (disco bilaminare). Terza settimana (Gastrulazione, foglietti embrionali, notocorda). Quarta settimana (ripiegamenti, neurulazione, somiti). Annessi fetali e Placenta.",
+          "key_concepts": [
+            "Gastrulazione e Foglietti Embrionali",
+            "Neurulazione e Tubo Neurale",
+            "Gametogenesi (Spermatogenesi/Ovogenesi)"
+          ]
+        },
+        {
+          "name": "8. Embriologia Speciale (Organogenesi)",
+          "core_contents": "Sviluppo dei singoli apparati: Scheletrico/Muscolare, Cardiovascolare (cuore e vasi), Respiratorio, Digerente, Urogenitale, Sistema Nervoso (SNC/SNP) e Organi di senso. Teratologia (malformazioni congenite).",
+          "key_concepts": [
+            "Organogenesi apparati specifici",
+            "Sviluppo sistema nervoso centrale",
+            "Embriogenesi cardiovascolare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "macroeconomia",
+      "name": "macroeconomia",
+      "subject": "Economia Politica",
+      "program_profiles": [
+        {
+          "name": "L-33 Scienze Economiche",
+          "priority_modules": "Focus sul rigore modellistico. Cruciale l'analisi formale dei Moduli 2 (Solow dinamico), 5-6 (IS-LM/AD-AS con formule) e 4 (Meccanismi di trasmissione monetaria). Il testo deve trattare le aspettative in modo esplicito. Fondamentale il dibattito sulle scuole di pensiero."
+        },
+        {
+          "name": "L-18 Economia Aziendale",
+          "priority_modules": "Focus sul contesto operativo per l'impresa. Priorità assoluta ai Moduli 4 (Tassi di interesse/Banche Centrali), 7 (Cambi/Export) e 1 (Contabilità). I modelli teorici complessi (crescita endogena o dinamica AD-AS avanzata) sono meno rilevanti rispetto alla comprensione degli shock esterni e delle politiche fiscali (8)."
+        },
+        {
+          "name": "L-36 Scienze Politiche",
+          "priority_modules": "Focus sulle implicazioni sociali e di policy. Cruciali i Moduli 3 (Disoccupazione/Lavoro), 8 (Debito/Welfare) e 1 (Disuguaglianze/Sostenibilità). Il formalismo matematico deve essere minimo (grafico/qualitativo), privilegiando la storia economica e l'economia politica delle scelte pubbliche."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Fondamenti e Contabilità Nazionale",
+          "core_contents": "Definizione degli aggregati (PIL, PNL, Reddito Nazionale). Identità fondamentali (Risparmio-Investimento). Indicatori di benessere alternativi (BES, HDI) e limiti del PIL come misura di benessere.",
+          "key_concepts": [
+            "Prodotto Interno Lordo (PIL)",
+            "Contabilità Nazionale",
+            "Identità Risparmio-Investimento"
+          ]
+        },
+        {
+          "name": "2. Crescita Economica (Lungo Periodo)",
+          "core_contents": "Fattori della crescita: accumulazione di capitale fisico, umano e progresso tecnologico. Funzione di produzione aggregata e rendimenti di scala. Modello di Solow (convergenza, stato stazionario) e cenni alla sostenibilità ambientale.",
+          "key_concepts": [
+            "Modello di Solow",
+            "Fattori della crescita economica",
+            "Accumulazione di capitale fisico"
+          ]
+        },
+        {
+          "name": "3. Mercato del Lavoro e Disoccupazione",
+          "core_contents": "Definizioni di disoccupazione (frizionale, ciclica, strutturale) e Legge di Okun. Determinazione dei salari e dei prezzi (WS-PS setting). Concetto di tasso naturale di disoccupazione (NAIRU) e rigidità del mercato.",
+          "key_concepts": [
+            "Tasso Naturale di Disoccupazione (NAIRU)",
+            "Determinazione Salari e Prezzi (WS-PS)",
+            "Legge di Okun"
+          ]
+        },
+        {
+          "name": "4. Moneta, Finanza e Inflazione",
+          "core_contents": "Funzioni della moneta e ruolo delle Banche Centrali. Creazione di base monetaria e moltiplicatore dei depositi. Strumenti di policy (tassi ufficiali, Quantitative Easing). Misurazione dell'inflazione, costi sociali e Curva di Phillips (relazione inflazione-disoccupazione).",
+          "key_concepts": [
+            "Funzioni della Moneta",
+            "Ruolo Banche Centrali",
+            "Moltiplicatore dei Depositi"
+          ]
+        },
+        {
+          "name": "5. Il Breve Periodo: Domanda Aggregata (IS-LM)",
+          "core_contents": "Modello Reddito-Spesa (moltiplicatore keynesiano). Costruzione e analisi del modello IS-LM (mercato beni e moneta). Efficacia della politica fiscale e monetaria nel breve termine. Derivazione della Domanda Aggregata (AD).",
+          "key_concepts": [
+            "Modello IS-LM",
+            "Domanda Aggregata (AD)",
+            "Politica Fiscale (Breve Periodo)"
+          ]
+        },
+        {
+          "name": "6. Il Medio Periodo: Modello AD-AS",
+          "core_contents": "Offerta Aggregata (AS) e aggiustamento dei prezzi/salari. Equilibrio di medio periodo e ritorno al potenziale. Analisi degli shock di domanda e offerta (stagflazione).",
+          "key_concepts": [
+            "Modello AD-AS",
+            "Offerta Aggregata",
+            "Aggiustamento Prezzi Salari"
+          ]
+        },
+        {
+          "name": "7. Economia Aperta",
+          "core_contents": "Bilancia dei pagamenti e tassi di cambio (nominali/reali). Parità dei tassi di interesse. Modello Mundell-Fleming (IS-LM in economia aperta): efficacia delle politiche con cambi fissi vs flessibili.",
+          "key_concepts": [
+            "Modello Mundell-Fleming",
+            "Efficacia politiche economiche",
+            "Cambi fissi e flessibili"
+          ]
+        },
+        {
+          "name": "8. Politica Economica e Debito Pubblico",
+          "core_contents": "Vincolo di bilancio del governo. Dinamica del rapporto Debito/PIL. Regole fiscali (es. Patto di Stabilità) e interazione tra politica monetaria e fiscale.",
+          "key_concepts": [
+            "Vincolo di bilancio intertemporale",
+            "Dinamica rapporto Debito/PIL",
+            "Sostenibilità del debito pubblico"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "matematica_per_biologia",
+      "name": "matematica per biologia",
+      "subject": "Matematica",
+      "program_profiles": [
+        {
+          "name": "L-13 Scienze Biologiche / L-2 Biotecnologie / LM-13 Farmacia",
+          "priority_modules": "Focus 'Statistico-Modellistico'. Priorità assoluta al Modulo 7 (Statistica - indispensabile per i laboratori) e al Modulo 3 (Studio di funzione). Le ODE (5) sono importanti per la dinamica di popolazioni/cinetica enzimatica. L'algebra lineare astratta (6) è spesso marginale o limitata al calcolo matriciale base.",
+          "textbook_advice": "Cercare testi con molti esempi biologici e poca astrazione teorica."
+        },
+        {
+          "name": "L-27 Scienze Chimiche",
+          "priority_modules": "Focus 'Strumentale-Algebrico'. Cruciale il Modulo 6 (Algebra Lineare/Autovalori) per la meccanica quantistica futura. Fondamentale il Calcolo Differenziale e Integrale (3, 4) e le ODE (5) per la cinetica e termodinamica. La Statistica (7) è importante per l'analisi dell'errore. Serve un rigore maggiore rispetto ai biologi."
+        },
+        {
+          "name": "L-34 Geologia / L-32 Scienze Naturali",
+          "priority_modules": "Focus 'Geometrico-Descrittivo'. Importante la Geometria Analitica e i Vettori (6) per la cartografia e cristallografia. Calcolo (3, 4) essenziale per la fisica terrestre. Statistica (7) utile per l'analisi dati ambientali."
+        },
+        {
+          "name": "L-25/L-26 Agraria e Alimentare",
+          "priority_modules": "Focus 'Applicativo'. Priorità a Funzioni (1, 3) e Statistica (7) per l'analisi dati e controllo qualità. Algebra Lineare e Serie complesse sono spesso superflue."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Fondamenti e Numeri",
+          "core_contents": "Insiemistica e logica di base. Numeri reali (sup/inf) e Cenni ai Numeri Complessi (forme algebriche/polari). Funzioni elementari e loro grafici.",
+          "key_concepts": [
+            "Funzioni elementari e grafici",
+            "Numeri reali: estremo superiore",
+            "Insiemistica e logica di base"
+          ]
+        },
+        {
+          "name": "2. Successioni e Serie",
+          "core_contents": "Limiti di successioni. Serie numeriche e criteri di convergenza. Spesso propedeutico allo studio di popolazioni discrete.",
+          "key_concepts": [
+            "Limiti di successioni",
+            "Convergenza di successioni",
+            "Serie numeriche"
+          ]
+        },
+        {
+          "name": "3. Calcolo Differenziale (Funzioni di 1 variabile)",
+          "core_contents": "Limiti e continuità. Derivate e regole di calcolo. Teoremi fondamentali (Rolle, Lagrange, De L'Hôpital). Studio di funzione (massimi, minimi, flessi) e sviluppo di Taylor.",
+          "key_concepts": [
+            "Derivate di funzioni",
+            "Limiti e continuità",
+            "Regole di derivazione"
+          ]
+        },
+        {
+          "name": "4. Calcolo Integrale",
+          "core_contents": "Integrale definito e indefinito. Metodi di integrazione (sostituzione, parti). Teorema Fondamentale del Calcolo. Integrali impropri.",
+          "key_concepts": [
+            "Teorema Fondamentale del Calcolo",
+            "Integrale Definito",
+            "Integrale Indefinito"
+          ]
+        },
+        {
+          "name": "5. Equazioni Differenziali Ordinarie (ODE)",
+          "core_contents": "Equazioni a variabili separabili e lineari del primo ordine. Equazioni lineari del secondo ordine a coefficienti costanti. Modelli di crescita esponenziale e logistica.",
+          "key_concepts": [
+            "Equazioni Differenziali Ordinarie",
+            "Modelli crescita biologica",
+            "Equazioni variabili separabili"
+          ]
+        },
+        {
+          "name": "6. Algebra Lineare e Geometria",
+          "core_contents": "Vettori nel piano e nello spazio. Matrici e determinanti. Sistemi lineari (Cramer, Rouché-Capelli). Autovalori e autovettori (diagonalizzazione). Elementi di geometria analitica (rette, piani, coniche).",
+          "key_concepts": [
+            "Sistemi di equazioni lineari",
+            "Matrici e loro operazioni",
+            "Vettori nello spazio euclideo"
+          ]
+        },
+        {
+          "name": "7. Probabilità e Statistica",
+          "core_contents": "Statistica descrittiva (media, moda, varianza). Calcolo combinatorio. Probabilità elementare e condizionata (Bayes). Distribuzioni discrete (Binomiale, Poisson) e continue (Gaussiana).",
+          "key_concepts": [
+            "Statistica Descrittiva",
+            "Misure di Tendenza Centrale",
+            "Misure di Dispersione"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "microbiologia",
+      "name": "microbiologia",
+      "subject": "Microbiologia",
+      "program_profiles": [
+        {
+          "name": "LM-41 Medicina / LM-42 Veterinaria",
+          "priority_modules": "Focus assoluto e critico sulla clinica: Patogenesi (8), Virologia (5), Diagnostica (10) e soprattutto Antimicrobici/Resistenze (9). I moduli industriali o ambientali (11) sono trascurabili. Fondamentale il legame con l'immunologia (7)."
+        },
+        {
+          "name": "L-2 Biotecnologie",
+          "priority_modules": "Cruciale la comprensione profonda della Genetica (4), della Fisiologia (3) e delle Omiche (13) per la manipolazione dei microrganismi. Fondamentale il modulo Industriale (11). Meno rilevante la diagnostica clinica o la parassitologia descrittiva."
+        },
+        {
+          "name": "L-13 Scienze Biologiche",
+          "priority_modules": "Approccio bilanciato. Fondamentale la Citologia (2), la Fisiologia (3), la Genetica (4) e l'Ecologia microbica (11). La parte clinica (Patogenesi/Diagnostica) è importante ma trattata più come meccanismo biologico che come protocollo ospedaliero."
+        },
+        {
+          "name": "L-29/LM-13 Farmacia e CTF",
+          "priority_modules": "Focus strategico sul bersaglio del farmaco: Struttura (2) e Fisiologia (3). Cruciale il modulo Antimicrobici (9) e Resistenze. Importante la Biosicurezza (14) per la produzione sterile. Marginale l'ecologia e la diagnostica clinica."
+        },
+        {
+          "name": "L-25/L-26 Agraria e Alimentare",
+          "priority_modules": "Cruciale la Microbiologia Ambientale/Industriale (11) e le Fermentazioni (3). Fondamentale lo studio di muffe e lieviti (6) per le trasformazioni alimentari o le patologie vegetali. Marginale la patogenesi umana, salvo per le zoonosi e tossinfezioni alimentari."
+        },
+        {
+          "name": "L-SNT Professioni Sanitarie (Infermieristica/Tecnici)",
+          "priority_modules": "Focus estremamente pratico. Cruciale la Biosicurezza (14), la gestione del prelievo per la Diagnostica (10), la trasmissione delle infezioni (8, 12) e il controllo delle infezioni ospedaliere. Genetica molecolare, omiche e tassonomia complessa sono marginali."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Introduzione, storia e metodi",
+          "core_contents": "Evoluzione storica della disciplina, postulati di Koch, sviluppo della microscopia e delle tecniche di coltura pura. Impatto dei microrganismi sugli ecosistemi e sulla salute umana.",
+          "key_concepts": [
+            "Postulati di Koch",
+            "Tecniche di coltura pura",
+            "Sviluppo della microscopia"
+          ]
+        },
+        {
+          "name": "2. Struttura e funzione della cellula",
+          "core_contents": "Confronto procarioti/eucarioti. Dettaglio dell'envelope batterico (parete, membrane, LPS, colorazione di Gram). Strutture accessorie: flagelli, pili, capsule e formazione delle endospore. Morfologia di miceti e protozoi.",
+          "key_concepts": [
+            "Confronto Procarioti Eucarioti",
+            "Envelope Batterico Dettagliato",
+            "Struttura Parete Cellulare"
+          ]
+        },
+        {
+          "name": "3. Fisiologia microbica e metabolismo",
+          "core_contents": "Nutrizione microbica, classi nutrizionali (autotrofi, eterotrofi). Vie metaboliche centrali: respirazione aerobica/anaerobica, fermentazioni. Fattori di crescita fisici e chimici (temperatura, pH, osmolarità).",
+          "key_concepts": [
+            "Vie metaboliche centrali",
+            "Nutrizione microbica",
+            "Classi nutrizionali microbiche"
+          ]
+        },
+        {
+          "name": "4. Genetica microbica e variabilità",
+          "core_contents": "Struttura del genoma batterico, replicazione e regolazione genica (operoni). Meccanismi di Trasferimento Genico Orizzontale (HGT): trasformazione, trasduzione, coniugazione. Mutazioni spontanee e indotte.",
+          "key_concepts": [
+            "Trasferimento Genico Orizzontale",
+            "Struttura genoma batterico",
+            "Regolazione genica operoni"
+          ]
+        },
+        {
+          "name": "5. Virologia di base",
+          "core_contents": "Classificazione di Baltimore, struttura del virione (capside, envelope). Cicli replicativi litici e lisogeni. Meccanismi di ingresso, replicazione del genoma e rilascio virale.",
+          "key_concepts": [
+            "Cicli replicativi virali",
+            "Classificazione di Baltimore",
+            "Struttura del virione"
+          ]
+        },
+        {
+          "name": "6. Micologia e parassitologia essenziale",
+          "core_contents": "Biologia dei funghi (lieviti vs muffe), dimorfismo fungino. Panoramica sui protozoi patogeni e cicli vitali degli elminti di interesse sanitario.",
+          "key_concepts": [
+            "Biologia generale dei funghi",
+            "Morfologia fungina (lieviti/muffe)",
+            "Dimorfismo fungino"
+          ]
+        },
+        {
+          "name": "7. Interazione ospite–microrganismo",
+          "core_contents": "Concetti di microbiota, commensalismo, mutualismo e parassitismo. Barriere anatomiche, immunità innata (fagocitosi, infiammazione) e cenni di immunità specifica adattativa.",
+          "key_concepts": [
+            "Interazione ospite-microrganismo",
+            "Microbiota e suo ruolo",
+            "Commensalismo e mutualismo"
+          ]
+        },
+        {
+          "name": "8. Patogenesi e virulenza",
+          "core_contents": "Fattori di virulenza: adesine, esotossine, endotossine, sistemi di secrezione, meccanismi di evasione immunitaria. Vie di trasmissione e dinamiche dell'infezione.",
+          "key_concepts": [
+            "Fattori di virulenza microbica",
+            "Meccanismi di patogenesi batterica",
+            "Esotossine e loro azione"
+          ]
+        },
+        {
+          "name": "9. Antimicrobici e resistenza",
+          "core_contents": "Meccanismi d'azione di antibiotici, antifungini e antivirali. Meccanismi genetici e biochimici dell'antibiotico-resistenza (AMR). Concetti di stewardship antimicrobica.",
+          "key_concepts": [
+            "Antibiotico-resistenza (AMR)",
+            "Meccanismi genetici AMR",
+            "Meccanismi biochimici AMR"
+          ]
+        },
+        {
+          "name": "10. Diagnostica microbiologica",
+          "core_contents": "Fase pre-analitica (campionamento). Metodi diretti (microscopia, coltura, identificazione biochimica, MALDI-TOF, molecolari/PCR) e indiretti (sierologia). Interpretazione clinica del reperto.",
+          "key_concepts": [
+            "Diagnostica Microbiologica Clinica",
+            "Fase Pre-analitica e Campionamento",
+            "Metodi di Coltura Batterica"
+          ]
+        },
+        {
+          "name": "11. Microbiologia ambientale e industriale",
+          "core_contents": "Ruolo nei cicli biogeochimici (C, N, S). Applicazioni biotecnologiche: biorisanamento, fermentazioni industriali, produzione di biomasse e metaboliti.",
+          "key_concepts": [
+            "Cicli biogeochimici microbici",
+            "Biorisanamento ambientale",
+            "Fermentazioni industriali"
+          ]
+        },
+        {
+          "name": "12. Epidemiologia e sanità pubblica",
+          "core_contents": "Parametri epidemiologici (R0, incidenza, prevalenza), catene di contagio. Profilassi diretta (isolamento, sterilizzazione) e specifica (vaccini).",
+          "key_concepts": [
+            "Parametri epidemiologici",
+            "Tasso di riproduzione R0",
+            "Incidenza e prevalenza"
+          ]
+        },
+        {
+          "name": "13. Metodi omici",
+          "core_contents": "Sequenziamento massivo (NGS), metagenomica, trascrittomica. Analisi del microbioma e utilizzo delle banche dati bioinformatiche.",
+          "key_concepts": [
+            "Sequenziamento massivo (NGS)",
+            "Metagenomica",
+            "Trascrittomica"
+          ]
+        },
+        {
+          "name": "14. Biosicurezza ed etica",
+          "core_contents": "Livelli di biosicurezza (BSL 1-4), gestione del rischio biologico, smaltimento rifiuti infetti e norme comportamentali in laboratorio.",
+          "key_concepts": [
+            "Livelli di Biosicurezza (BSL 1-4)",
+            "Gestione del Rischio Biologico",
+            "Smaltimento Rifiuti Infetti"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "microeconomia",
+      "name": "microeconomia",
+      "subject": "Economia Politica",
+      "program_profiles": [
+        {
+          "name": "L-33 Scienze Economiche",
+          "priority_modules": "Focus sul rigore analitico. Cruciale la padronanza formale dei Moduli 1 (Slutsky, Dualità), 5 (Giochi avanzati) e 6 (Equilibrio Generale). Il testo deve usare il calcolo differenziale (Lagrangiane) in modo pervasivo. Importante l'introduzione ai temi avanzati (9) come le aste e il mechanism design."
+        },
+        {
+          "name": "L-18 Economia Aziendale",
+          "priority_modules": "Focus strategico-applicativo. Priorità assoluta ai Moduli 2 (Costi), 4 (Oligopolio/Strategia competitiva) e 7 (Incertezza/Contratti/Asimmetrie). La Teoria dei Giochi (5) serve come strumento per capire la concorrenza, non come fine teorico. Slutsky e l'Equilibrio Generale puro sono meno rilevanti rispetto alle applicazioni industriali."
+        },
+        {
+          "name": "L-36 Scienze Politiche",
+          "priority_modules": "Focus su Policy e Benessere. Cruciali i Moduli 3 (Interventi pubblici), 8 (Fallimenti di Mercato/Esternalità) e 4 (Monopolio/Regolamentazione). La formalizzazione matematica spinta (Dualità, Giochi Bayesiani) è superflua; serve capire le intuizioni economiche dietro l'efficienza e l'equità."
+        }
+      ],
+      "syllabus_modules": [
+        {
+          "name": "1. Teoria del Consumatore Avanzata",
+          "core_contents": "Preferenze e assiomi, massimizzazione dell'utilità con vincolo di bilancio. Derivazione della Domanda Marshalliana e Compensata (Hicksiana). Equazione di Slutsky (effetti reddito/sostituzione). Surplus del consumatore e Variazioni Equivalenti/Compensative.",
+          "key_concepts": [
+            "Massimizzazione Utilità con Vincolo",
+            "Assiomi e Struttura delle Preferenze",
+            "Domanda Marshalliana"
+          ]
+        },
+        {
+          "name": "2. Teoria della Produzione e dei Costi",
+          "core_contents": "Tecnologia e Isoquanti. Massimizzazione del profitto e minimizzazione dei costi (Dualità). Funzioni di costo (Totale, Medio, Marginale) di breve e lungo periodo. Domanda condizionata dei fattori.",
+          "key_concepts": [
+            "Minimizzazione dei Costi",
+            "Massimizzazione del Profitto",
+            "Funzioni di Costo"
+          ]
+        },
+        {
+          "name": "3. Mercati Concorrenziali ed Efficienza",
+          "core_contents": "Equilibrio parziale di breve e lungo periodo. Elasticità della domanda e dell'offerta. Analisi di benessere e perdita secca dovuta a tasse, sussidi e controlli sui prezzi.",
+          "key_concepts": [
+            "Equilibrio parziale",
+            "Mercati concorrenziali",
+            "Breve e lungo periodo"
+          ]
+        },
+        {
+          "name": "4. Strutture di Mercato Non Concorrenziali",
+          "core_contents": "Monopolio (potere di mercato, indice di Lerner) e Discriminazione di prezzo (I, II, III grado). Modelli di Oligopolio: Cournot (quantità), Bertrand (prezzo), Stackelberg (leader/follower). Collusione e Cartelli.",
+          "key_concepts": [
+            "Monopolio",
+            "Potere di Mercato",
+            "Indice di Lerner"
+          ]
+        },
+        {
+          "name": "5. Teoria dei Giochi Strategica",
+          "core_contents": "Giochi statici (Nash) e dinamici (induzione a ritroso). Strategie miste. Giochi ripetuti e credibilità delle minacce. Introduzione ai Giochi Bayesiani (informazione incompleta).",
+          "key_concepts": [
+            "Equilibrio di Nash",
+            "Giochi statici",
+            "Induzione a ritroso"
+          ]
+        },
+        {
+          "name": "6. Equilibrio Generale e Benessere",
+          "core_contents": "Scatola di Edgeworth (scambio e produzione). Frontiera delle possibilità produttive. Primo e Secondo Teorema dell'Economia del Benessere. Efficienza paretiana.",
+          "key_concepts": [
+            "Equilibrio Economico Generale",
+            "Efficienza Paretiana",
+            "Primo Teorema Benessere"
+          ]
+        },
+        {
+          "name": "7. Incertezza e Asimmetrie Informative",
+          "core_contents": "Teoria dell'Utilità Attesa (Von Neumann-Morgenstern) e avversione al rischio. Selezione Avversa (modello dei 'bidoni' di Akerlof), Azzardo Morale (relazione Principale-Agente), Segnalazione (modello di Spence) e Screening.",
+          "key_concepts": [
+            "Asimmetrie Informative",
+            "Teoria Utilità Attesa (VNM)",
+            "Selezione Avversa"
+          ]
+        },
+        {
+          "name": "8. Fallimenti del Mercato e Public Policy",
+          "core_contents": "Esternalità (Pigou vs Coase). Beni Pubblici (free-riding). Risorse comuni (Tragedia dei commons). Meccanismi di regolamentazione e permessi negoziabili.",
+          "key_concepts": [
+            "Esternalità Negative e Positive",
+            "Fallimenti del Mercato",
+            "Teorema di Coase"
+          ]
+        },
+        {
+          "name": "9. Temi Avanzati (Economia Digitale e Comportamentale)",
+          "core_contents": "Piattaforme a due versanti (Two-sided markets) ed effetti di rete. Teoria delle Aste. Economia Comportamentale: limiti della razionalità, euristiche, preferenze sociali.",
+          "key_concepts": [
+            "Economia Comportamentale",
+            "Piattaforme a due versanti",
+            "Limiti della razionalità"
+          ]
+        }
+      ]
+    }
+  ]
+}
