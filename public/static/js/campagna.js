@@ -6,6 +6,152 @@ let allCampaigns = [];
 let currentTargets = [];
 let currentCampaignId = null;
 
+// --- Catalogo MATRIX ---
+let catalogData = null;
+let catalogManuals = [];
+
+async function loadCatalog() {
+  if (catalogData) return; // Già caricato
+  
+  try {
+    const response = await fetch('/static/data/catalogo_manuali.json');
+    if (!response.ok) throw new Error('Catalogo non trovato');
+    catalogData = await response.json();
+    catalogManuals = catalogData.manuals || [];
+    
+    // Popola filtro materie
+    const subjectFilter = document.getElementById('catalog-subject-filter');
+    if (subjectFilter && catalogData.subjects) {
+      const subjects = Object.keys(catalogData.subjects).sort();
+      subjects.forEach(subj => {
+        const counts = catalogData.subjects[subj];
+        const opt = document.createElement('option');
+        opt.value = subj;
+        opt.textContent = `${subj} (${counts.total})`;
+        subjectFilter.appendChild(opt);
+      });
+    }
+    
+    // Aggiorna conteggio
+    const countEl = document.getElementById('catalog-count');
+    if (countEl) countEl.textContent = `${catalogManuals.length} manuali`;
+    
+    // Popola dropdown iniziale
+    filterCatalogManuals();
+    
+    console.log(`Catalogo MATRIX caricato: ${catalogManuals.length} manuali`);
+  } catch (e) {
+    console.error('Errore caricamento catalogo:', e);
+  }
+}
+
+function filterCatalogManuals() {
+  if (!catalogManuals.length) return;
+  
+  const subjectFilter = document.getElementById('catalog-subject-filter')?.value || '';
+  const publisherFilter = document.getElementById('catalog-publisher-filter')?.value || '';
+  const searchText = (document.getElementById('catalog-search')?.value || '').toLowerCase().trim();
+  
+  let filtered = [...catalogManuals];
+  
+  // Filtro materia
+  if (subjectFilter) {
+    filtered = filtered.filter(m => m.subject === subjectFilter);
+  }
+  
+  // Filtro editore
+  if (publisherFilter === 'zanichelli') {
+    filtered = filtered.filter(m => m.is_zanichelli);
+  } else if (publisherFilter === 'competitor') {
+    filtered = filtered.filter(m => !m.is_zanichelli);
+  }
+  
+  // Filtro ricerca
+  if (searchText) {
+    filtered = filtered.filter(m => 
+      m.title.toLowerCase().includes(searchText) || 
+      m.author.toLowerCase().includes(searchText) ||
+      m.id.toLowerCase().includes(searchText)
+    );
+  }
+  
+  // Popola dropdown manuali
+  const select = document.getElementById('catalog-manual-select');
+  if (!select) return;
+  
+  select.innerHTML = `<option value="">— Seleziona (${filtered.length} risultati) —</option>`;
+  
+  filtered.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    const badge = m.is_zanichelli ? ' [Z]' : '';
+    opt.textContent = `${m.title} — ${m.author} (${m.publisher})${badge}`;
+    select.appendChild(opt);
+  });
+}
+
+function selectManualFromCatalog() {
+  const select = document.getElementById('catalog-manual-select');
+  const manualId = select?.value;
+  
+  if (!manualId) {
+    clearCatalogSelection();
+    return;
+  }
+  
+  const manual = catalogManuals.find(m => m.id === manualId);
+  if (!manual) return;
+  
+  // Auto-compila i campi del form
+  document.getElementById('camp-titolo').value = manual.title;
+  document.getElementById('camp-autore').value = manual.author;
+  document.getElementById('camp-editore').value = manual.publisher;
+  document.getElementById('camp-materia').value = manual.subject;
+  
+  // Genera l'indice dal sommario dei capitoli
+  if (manual.chapters_summary) {
+    document.getElementById('camp-indice').value = manual.chapters_summary;
+    // Mostra badge "da catalogo"
+    const badge = document.getElementById('indice-source-badge');
+    if (badge) badge.classList.remove('hidden');
+  }
+  
+  // I temi verranno generati automaticamente dall'LLM al momento della creazione
+  document.getElementById('camp-temi').value = '';
+  
+  // Mostra info manuale selezionato
+  const infoBox = document.getElementById('catalog-selected-info');
+  if (infoBox) {
+    infoBox.classList.remove('hidden');
+    document.getElementById('catalog-selected-title').textContent = manual.title;
+    document.getElementById('catalog-selected-meta').textContent = 
+      `${manual.author} — ${manual.publisher} — ${manual.subject}`;
+    document.getElementById('catalog-selected-chapters').textContent = 
+      `${manual.chapters_count} capitoli caricati dal catalogo MATRIX`;
+  }
+  
+  showToast(`Manuale "${manual.title}" selezionato dal catalogo!`, 'success');
+}
+
+function clearCatalogSelection() {
+  const select = document.getElementById('catalog-manual-select');
+  if (select) select.value = '';
+  
+  const infoBox = document.getElementById('catalog-selected-info');
+  if (infoBox) infoBox.classList.add('hidden');
+  
+  const badge = document.getElementById('indice-source-badge');
+  if (badge) badge.classList.add('hidden');
+  
+  // Reset form
+  document.getElementById('camp-titolo').value = '';
+  document.getElementById('camp-autore').value = '';
+  document.getElementById('camp-editore').value = 'Zanichelli';
+  document.getElementById('camp-materia').value = '';
+  document.getElementById('camp-indice').value = '';
+  document.getElementById('camp-temi').value = '';
+}
+
 // --- Carica campagne ---
 async function loadCampaigns() {
   if (!supabaseClient) return;
@@ -86,6 +232,10 @@ function showNewCampaignForm() {
   document.getElementById('btn-new-campaign').classList.add('hidden');
   document.getElementById('campaign-form').reset();
   document.getElementById('camp-editore').value = 'Zanichelli';
+  clearCatalogSelection();
+  
+  // Carica il catalogo MATRIX (solo la prima volta)
+  loadCatalog();
 }
 
 function hideCampaignForm() {

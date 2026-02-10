@@ -503,6 +503,75 @@ function dashboardPage(): string {
               <i class="fas fa-book mr-2 text-zanichelli-light"></i>
               Nuova Campagna — Dettagli Libro
             </h3>
+
+            <!-- === SELETTORE CATALOGO MATRIX === -->
+            <div class="mb-6 bg-zanichelli-accent rounded-xl p-5 border border-blue-200">
+              <div class="flex items-center gap-2 mb-3">
+                <i class="fas fa-book-open text-zanichelli-blue"></i>
+                <h4 class="font-semibold text-zanichelli-blue">Seleziona dal Catalogo MATRIX</h4>
+                <span id="catalog-count" class="text-xs bg-zanichelli-blue text-white px-2 py-0.5 rounded-full ml-2">0 manuali</span>
+              </div>
+              <p class="text-xs text-zanichelli-blue/70 mb-3">Scegli un manuale dal catalogo e tutti i campi si compilano automaticamente</p>
+              
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Filtro Materia -->
+                <div>
+                  <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Materia</label>
+                  <select id="catalog-subject-filter" onchange="filterCatalogManuals()"
+                          class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                    <option value="">Tutte le materie</option>
+                  </select>
+                </div>
+                <!-- Filtro Editore -->
+                <div>
+                  <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Editore</label>
+                  <select id="catalog-publisher-filter" onchange="filterCatalogManuals()"
+                          class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                    <option value="">Tutti gli editori</option>
+                    <option value="zanichelli">Solo Zanichelli</option>
+                    <option value="competitor">Solo concorrenti</option>
+                  </select>
+                </div>
+                <!-- Selettore Manuale -->
+                <div>
+                  <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Manuale</label>
+                  <select id="catalog-manual-select" onchange="selectManualFromCatalog()"
+                          class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                    <option value="">— Seleziona un manuale —</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Ricerca rapida -->
+              <div class="mt-3">
+                <div class="relative">
+                  <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm"></i>
+                  <input type="text" id="catalog-search" placeholder="Cerca per titolo o autore..." oninput="filterCatalogManuals()"
+                         class="w-full pl-9 pr-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                </div>
+              </div>
+
+              <!-- Info manuale selezionato -->
+              <div id="catalog-selected-info" class="hidden mt-3 bg-white rounded-lg p-3 border border-blue-200">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span id="catalog-selected-title" class="font-medium text-gray-800"></span>
+                    <span id="catalog-selected-meta" class="text-xs text-gray-500 ml-2"></span>
+                  </div>
+                  <button onclick="clearCatalogSelection()" class="text-xs text-red-500 hover:text-red-700">
+                    <i class="fas fa-times mr-1"></i>Rimuovi
+                  </button>
+                </div>
+                <div id="catalog-selected-chapters" class="text-xs text-gray-500 mt-1"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 mb-4">
+              <div class="flex-1 border-t border-gray-200"></div>
+              <span class="text-xs text-gray-400 font-medium">oppure compila manualmente</span>
+              <div class="flex-1 border-t border-gray-200"></div>
+            </div>
+
             <form id="campaign-form" onsubmit="handleCreateCampaign(event)" class="space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -530,7 +599,12 @@ function dashboardPage(): string {
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Indice / Sommario del libro</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Indice / Sommario del libro
+                  <span id="indice-source-badge" class="hidden ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                    <i class="fas fa-magic mr-1"></i>da catalogo MATRIX
+                  </span>
+                </label>
                 <textarea id="camp-indice" rows="5"
                           class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none text-sm"
                           placeholder="Incolla qui l'indice del libro (capitoli principali)..."></textarea>
@@ -539,7 +613,7 @@ function dashboardPage(): string {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Temi chiave (separati da virgola)</label>
                 <input type="text" id="camp-temi"
                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
-                       placeholder="Es: termodinamica, cinetica chimica, equilibrio, acidi e basi">
+                       placeholder="Verranno generati automaticamente dall'indice, oppure inseriscili manualmente">
               </div>
               <div class="flex gap-3 pt-2">
                 <button type="submit"
