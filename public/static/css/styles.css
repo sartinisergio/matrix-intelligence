@@ -1,0 +1,111 @@
+/* ==========================================
+   MATRIX Intelligence — Stili Custom
+   ========================================== */
+
+/* Scrollbar personalizzata */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Transizioni smooth */
+* {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Drop zone active state */
+#drop-zone.dragover {
+  border-color: #0066CC;
+  background-color: rgba(232, 240, 254, 0.5);
+}
+
+/* Table row hover */
+table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Nav item active pulse */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background-color: white;
+  border-radius: 0 3px 3px 0;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  table {
+    font-size: 0.75rem;
+  }
+  table th, table td {
+    padding: 0.5rem;
+  }
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Modal animation */
+#modal-overlay {
+  backdrop-filter: blur(4px);
+}
+
+/* Badge animations */
+.bg-green-100, .bg-yellow-100, .bg-red-100, .bg-orange-100 {
+  transition: transform 0.15s ease;
+}
+
+.bg-green-100:hover, .bg-yellow-100:hover, .bg-red-100:hover, .bg-orange-100:hover {
+  transform: scale(1.05);
+}
+
+/* Progress bar animation */
+#progress-bar, #target-progress-bar {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Input focus glow */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+}
+
+/* Card hover effect */
+.bg-white.rounded-xl {
+  transition: box-shadow 0.2s ease;
+}
+
+/* Print styles */
+@media print {
+  aside, header, .no-print {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+  }
+}

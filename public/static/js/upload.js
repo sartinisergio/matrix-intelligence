@@ -1,0 +1,244 @@
+// ==========================================
+// MATRIX Intelligence — Upload & Pre-classificazione
+// ==========================================
+
+let fileQueue = [];
+let processingResults = { success: 0, errors: 0, skipped: 0, details: [] };
+
+// --- Configura PDF.js worker ---
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// --- Drag & Drop ---
+function handleDragOver(event) {
+  event.preventDefault();
+  event.currentTarget.classList.add('border-zanichelli-light', 'bg-zanichelli-accent/30');
+}
+
+function handleDragLeave(event) {
+  event.currentTarget.classList.remove('border-zanichelli-light', 'bg-zanichelli-accent/30');
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('border-zanichelli-light', 'bg-zanichelli-accent/30');
+  const files = Array.from(event.dataTransfer.files).filter(f => f.type === 'application/pdf');
+  if (files.length === 0) {
+    showToast('Seleziona solo file PDF', 'warning');
+    return;
+  }
+  addFilesToQueue(files);
+}
+
+function handleFileSelect(event) {
+  const files = Array.from(event.target.files);
+  addFilesToQueue(files);
+  event.target.value = ''; // Reset per permettere ri-selezione
+}
+
+function addFilesToQueue(files) {
+  files.forEach(f => {
+    if (!fileQueue.find(q => q.name === f.name && q.size === f.size)) {
+      fileQueue.push(f);
+    }
+  });
+  renderFileQueue();
+}
+
+function clearQueue() {
+  fileQueue = [];
+  renderFileQueue();
+  document.getElementById('text-preview-container').classList.add('hidden');
+}
+
+function removeFromQueue(index) {
+  fileQueue.splice(index, 1);
+  renderFileQueue();
+}
+
+function renderFileQueue() {
+  const container = document.getElementById('file-queue');
+  const list = document.getElementById('file-list');
+  const count = document.getElementById('queue-count');
+
+  if (fileQueue.length === 0) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.classList.remove('hidden');
+  count.textContent = `${fileQueue.length} file`;
+  
+  list.innerHTML = fileQueue.map((f, i) => `
+    <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-file-pdf text-red-400"></i>
+        <span class="text-sm text-gray-700">${f.name}</span>
+        <span class="text-xs text-gray-400">${(f.size / 1024).toFixed(0)} KB</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="previewPDF(${i})" class="text-xs text-zanichelli-light hover:text-zanichelli-blue" title="Anteprima testo">
+          <i class="fas fa-eye"></i>
+        </button>
+        <button onclick="removeFromQueue(${i})" class="text-xs text-red-400 hover:text-red-600" title="Rimuovi">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// --- Anteprima testo PDF ---
+async function previewPDF(index) {
+  const file = fileQueue[index];
+  const previewContainer = document.getElementById('text-preview-container');
+  const previewEl = document.getElementById('text-preview');
+
+  previewContainer.classList.remove('hidden');
+  previewEl.textContent = 'Estrazione testo in corso...';
+
+  try {
+    const text = await extractTextFromPDF(file);
+    previewEl.textContent = text.substring(0, 3000) + (text.length > 3000 ? '\n\n[...testo troncato per anteprima...]' : '');
+  } catch (e) {
+    previewEl.textContent = `Errore estrazione: ${e.message}`;
+  }
+}
+
+// --- Estrai testo da PDF ---
+async function extractTextFromPDF(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    fullText += pageText + '\n\n';
+  }
+
+  return fullText.trim();
+}
+
+// --- Avvia elaborazione batch ---
+async function startProcessing() {
+  if (fileQueue.length === 0) {
+    showToast('Nessun file in coda', 'warning');
+    return;
+  }
+
+  if (!CONFIG.OPENAI_API_KEY) {
+    showToast('Configura la API Key OpenAI nelle Impostazioni', 'error');
+    navigateTo('impostazioni');
+    return;
+  }
+
+  if (!supabase) {
+    showToast('Configura Supabase nelle Impostazioni', 'error');
+    navigateTo('impostazioni');
+    return;
+  }
+
+  // Verifica sessione
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    showToast('Sessione scaduta. Effettua nuovamente il login.', 'error');
+    window.location.href = '/login';
+    return;
+  }
+
+  // Setup UI
+  document.getElementById('btn-start-processing').disabled = true;
+  document.getElementById('processing-progress').classList.remove('hidden');
+  document.getElementById('upload-results').classList.add('hidden');
+
+  processingResults = { success: 0, errors: 0, skipped: 0, details: [] };
+  const total = fileQueue.length;
+
+  for (let i = 0; i < total; i++) {
+    const file = fileQueue[i];
+    updateProgress(i, total, `Analisi: ${file.name}`);
+
+    try {
+      // 1. Estrai testo
+      const text = await extractTextFromPDF(file);
+      
+      if (!text || text.length < 50) {
+        processingResults.skipped++;
+        processingResults.details.push({ name: file.name, status: 'skipped', message: 'Testo insufficiente (PDF scansione?)' });
+        continue;
+      }
+
+      // 2. Pre-classificazione LLM
+      const classification = await preClassifyProgram(text);
+
+      // 3. Salva su Supabase
+      const record = {
+        user_id: session.user.id,
+        docente_nome: classification.docente_nome,
+        docente_email: classification.docente_email,
+        ateneo: classification.ateneo,
+        corso_laurea: classification.corso_laurea,
+        classe_laurea: classification.classe_laurea,
+        materia_inferita: classification.materia_inferita,
+        manuali_citati: classification.manuali_citati || [],
+        temi_principali: classification.temi_principali || [],
+        scenario_zanichelli: classification.scenario_zanichelli,
+        testo_programma: text,
+        pdf_storage_path: file.name
+      };
+
+      const { error } = await supabase.from('programmi').insert(record);
+      if (error) throw new Error(error.message);
+
+      processingResults.success++;
+      processingResults.details.push({ name: file.name, status: 'success', message: `${classification.docente_nome || 'Docente'} — ${classification.materia_inferita || 'Materia'}` });
+
+    } catch (error) {
+      processingResults.errors++;
+      processingResults.details.push({ name: file.name, status: 'error', message: error.message });
+    }
+
+    // Pausa tra le chiamate (rate limiting)
+    if (i < total - 1) {
+      await sleep(CONFIG.BATCH_DELAY_MS);
+    }
+  }
+
+  // Mostra risultati
+  updateProgress(total, total, 'Completato!');
+  showResults();
+  fileQueue = [];
+  renderFileQueue();
+  document.getElementById('btn-start-processing').disabled = false;
+}
+
+// --- Aggiorna progress bar ---
+function updateProgress(current, total, detail) {
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${current}/${total}`;
+  document.getElementById('progress-detail').textContent = detail;
+}
+
+// --- Mostra risultati ---
+function showResults() {
+  document.getElementById('upload-results').classList.remove('hidden');
+  document.getElementById('result-success').textContent = processingResults.success;
+  document.getElementById('result-errors').textContent = processingResults.errors;
+  document.getElementById('result-skipped').textContent = processingResults.skipped;
+
+  const detailsEl = document.getElementById('result-details');
+  detailsEl.innerHTML = processingResults.details.map(d => {
+    const icon = d.status === 'success' ? 'fa-check text-green-500' : d.status === 'error' ? 'fa-times text-red-500' : 'fa-forward text-yellow-500';
+    const bg = d.status === 'success' ? 'bg-green-50' : d.status === 'error' ? 'bg-red-50' : 'bg-yellow-50';
+    return `
+      <div class="flex items-center gap-3 ${bg} rounded-lg px-3 py-2 text-sm">
+        <i class="fas ${icon}"></i>
+        <span class="font-medium text-gray-700">${d.name}</span>
+        <span class="text-gray-500 text-xs">${d.message}</span>
+      </div>`;
+  }).join('');
+}
