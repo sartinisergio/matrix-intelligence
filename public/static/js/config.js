@@ -43,13 +43,16 @@ const CONFIG = {
 };
 
 // Variabile globale per il client Supabase
-let supabase = null;
+let supabaseClient = null;
 
 // Inizializza Supabase se configurato
 function initSupabase() {
   if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
     try {
-      supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+      // window.supabase è la libreria CDN @supabase/supabase-js
+      const { createClient } = window.supabase;
+      supabaseClient = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+      console.log('Supabase inizializzato con successo');
       return true;
     } catch (e) {
       console.error('Errore inizializzazione Supabase:', e);

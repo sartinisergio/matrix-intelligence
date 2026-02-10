@@ -135,14 +135,14 @@ async function startProcessing() {
     return;
   }
 
-  if (!supabase) {
+  if (!supabaseClient) {
     showToast('Configura Supabase nelle Impostazioni', 'error');
     navigateTo('impostazioni');
     return;
   }
 
   // Verifica sessione
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) {
     showToast('Sessione scaduta. Effettua nuovamente il login.', 'error');
     window.location.href = '/login';
@@ -190,7 +190,7 @@ async function startProcessing() {
         pdf_storage_path: file.name
       };
 
-      const { error } = await supabase.from('programmi').insert(record);
+      const { error } = await supabaseClient.from('programmi').insert(record);
       if (error) throw new Error(error.message);
 
       processingResults.success++;

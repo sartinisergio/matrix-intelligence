@@ -8,13 +8,13 @@ let currentCampaignId = null;
 
 // --- Carica campagne ---
 async function loadCampaigns() {
-  if (!supabase) return;
+  if (!supabaseClient) return;
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('campagne')
       .select('*')
       .eq('user_id', session.user.id)
@@ -97,12 +97,12 @@ function hideCampaignForm() {
 async function handleCreateCampaign(event) {
   event.preventDefault();
 
-  if (!supabase) {
+  if (!supabaseClient) {
     showToast('Configura Supabase nelle Impostazioni', 'error');
     return;
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
 
   const temiInput = document.getElementById('camp-temi').value;
@@ -120,7 +120,7 @@ async function handleCreateCampaign(event) {
   };
 
   try {
-    const { data, error } = await supabase.from('campagne').insert(campaign).select().single();
+    const { data, error } = await supabaseClient.from('campagne').insert(campaign).select().single();
     if (error) throw error;
 
     showToast('Campagna creata! Ora genera la lista target.', 'success');
@@ -151,8 +151,8 @@ async function generateTargets(campaignId) {
   }
 
   // Carica tutti i programmi dell'utente
-  const { data: { session } } = await supabase.auth.getSession();
-  const { data: programs, error } = await supabase
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  const { data: programs, error } = await supabaseClient
     .from('programmi')
     .select('*')
     .eq('user_id', session.user.id);
@@ -175,7 +175,7 @@ async function generateTargets(campaignId) {
       bookThemes = themeResult.temi || [];
       
       // Aggiorna la campagna con i temi generati
-      await supabase.from('campagne').update({ libro_temi: bookThemes }).eq('id', campaignId);
+      await supabaseClient.from('campagne').update({ libro_temi: bookThemes }).eq('id', campaignId);
       campaign.libro_temi = bookThemes;
     } catch (e) {
       showToast('Errore generazione temi: ' + e.message, 'error');
@@ -282,7 +282,7 @@ async function generateTargets(campaignId) {
   }));
 
   try {
-    await supabase.from('campagne').update({
+    await supabaseClient.from('campagne').update({
       target_generati: targetData,
       stato: 'completata',
       updated_at: new Date().toISOString()
@@ -463,7 +463,7 @@ async function deleteCampaign(id) {
   if (!confirm('Eliminare questa campagna e tutti i target generati?')) return;
 
   try {
-    const { error } = await supabase.from('campagne').delete().eq('id', id);
+    const { error } = await supabaseClient.from('campagne').delete().eq('id', id);
     if (error) throw error;
 
     showToast('Campagna eliminata', 'success');

@@ -6,13 +6,13 @@ let allPrograms = [];
 
 // --- Carica programmi dal database ---
 async function loadDatabase() {
-  if (!supabase) return;
+  if (!supabaseClient) return;
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('programmi')
       .select('*')
       .eq('user_id', session.user.id)
@@ -305,7 +305,7 @@ async function saveEditProgram(event, id) {
   };
 
   try {
-    const { error } = await supabase.from('programmi').update(updates).eq('id', id);
+    const { error } = await supabaseClient.from('programmi').update(updates).eq('id', id);
     if (error) throw error;
 
     showToast('Programma aggiornato!', 'success');
@@ -321,7 +321,7 @@ async function deleteProgram(id) {
   if (!confirm('Eliminare questo programma? L\'operazione non è reversibile.')) return;
 
   try {
-    const { error } = await supabase.from('programmi').delete().eq('id', id);
+    const { error } = await supabaseClient.from('programmi').delete().eq('id', id);
     if (error) throw error;
 
     showToast('Programma eliminato', 'success');
