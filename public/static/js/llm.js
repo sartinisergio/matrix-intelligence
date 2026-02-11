@@ -100,42 +100,55 @@ RISPONDI ESCLUSIVAMENTE con un oggetto JSON con questa struttura:
 Se un campo non è determinabile, usa null (per stringhe) o [] (per array).`;
 }
 
-// --- Prompt Motivazione Target ---
+// --- Prompt Motivazione Target (FASE COMPLETA — con indice del volume) ---
+// Chiamato SOLO quando abbiamo temi/indice REALI del volume.
 function getTargetMotivationPrompt(bookData, targetData) {
   let frameworkContext = '';
   if (targetData.profilo_classe) {
     frameworkContext = `\nPROFILO CLASSE DI LAUREA (dal framework disciplinare MATRIX):\n${targetData.profilo_classe}\n`;
   }
-  if (targetData.framework_score !== undefined) {
+  if (targetData.framework_score !== undefined && targetData.framework_score > 0) {
     frameworkContext += `\nALLINEAMENTO FRAMEWORK: ${targetData.framework_score}% dei moduli disciplinari coperti dal programma del docente.\n`;
   }
 
-  return `Sei un consulente commerciale esperto per la casa editrice Zanichelli.
-Devi spiegare in 2-3 frasi CONCRETE perché un docente universitario dovrebbe considerare il nuovo libro proposto.
+  // Informazioni sull'indice (se disponibile)
+  const hasIndice = bookData.hasIndice;
+  const hasTemi = bookData.temi && bookData.temi.length > 0;
 
-REGOLE:
-- Sii specifico: menziona il manuale attuale del docente, le lacune che il nuovo libro colma, i punti di forza
-- Se il docente NON usa Zanichelli (scenario "assente"), sottolinea i vantaggi rispetto al concorrente attuale
-- Se il docente USA GIA' Zanichelli (scenario "principale" o "alternativo"), suggerisci aggiornamento/complemento
-- Se c'e un profilo classe di laurea, menziona l'aderenza ai requisiti del corso di studi
-- Nessun titolo, nessuna formattazione, solo 2-3 frasi dirette
-
-NUOVO LIBRO:
+  let bookInfo = `NUOVO VOLUME ZANICHELLI (in fase di lancio):
 - Titolo: ${bookData.titolo}
 - Autore: ${bookData.autore || 'N/D'}
-- Materia: ${bookData.materia}
-- Temi chiave: ${(bookData.temi || []).join(', ')}
+- Materia: ${bookData.materia}`;
+
+  if (hasTemi) {
+    bookInfo += `\n- Argomenti trattati (dal sommario): ${bookData.temi.join(', ')}`;
+  }
+
+  return `Sei un consulente commerciale per la casa editrice Zanichelli.
+Stai preparando una NOTA per un promotore editoriale che deve visitare un docente.
+Il volume "${bookData.titolo}" e in fase di lancio e il promotore deve capire PERCHE' questo docente e un target interessante.
+
+REGOLE FONDAMENTALI:
+- Basa le tue osservazioni ESCLUSIVAMENTE sui DATI FORNITI (programma del docente, manuale attuale, scenario)
+- NON inventare contenuti, capitoli, o caratteristiche del nuovo libro che non sono nei dati
+- NON dire "il libro colma lacune" se non sai quali lacune ci sono
+- Se il docente usa un concorrente, nomina il concorrente e suggerisci il confronto
+- Se il docente non usa Zanichelli, questo e il punto commerciale chiave
+- Se il docente usa gia Zanichelli, suggerisci consolidamento/aggiornamento
+- Scrivi 2-3 frasi dal punto di vista del promotore (tono professionale, concreto)
+
+${bookInfo}
 
 DOCENTE TARGET:
 - Nome: ${targetData.docente_nome || 'N/D'}
 - Ateneo: ${targetData.ateneo || 'N/D'}
 - Materia insegnata: ${targetData.materia_inferita || 'N/D'}
 - Classe di laurea: ${targetData.classe_laurea || 'N/D'}
-- Temi del corso: ${(targetData.temi_principali || []).join(', ')}
-- Manuale attuale: ${targetData.manuale_attuale || 'N/D'}
+- Temi del programma: ${(targetData.temi_principali || []).join(', ') || 'N/D'}
+- Manuale attualmente adottato: ${targetData.manuale_attuale || 'Nessun manuale citato'}
 - Scenario Zanichelli: ${targetData.scenario_zanichelli || 'N/D'}
 ${frameworkContext}
-Rispondi con esattamente 2-3 frasi. Nessun titolo, nessuna formattazione.`;
+Rispondi con 2-3 frasi concrete per il promotore. Nessun titolo, nessuna formattazione.`;
 }
 
 // --- Pre-classificazione di un programma ---
@@ -149,7 +162,7 @@ async function preClassifyProgram(rawText) {
 async function generateMotivation(bookData, targetData) {
   const prompt = getTargetMotivationPrompt(bookData, targetData);
   const result = await callOpenAI(
-    'Sei un consulente commerciale esperto del settore editoriale universitario.',
+    'Sei un consulente commerciale esperto del settore editoriale universitario. Basa le tue risposte solo sui dati forniti, non inventare informazioni.',
     prompt,
     false
   );
