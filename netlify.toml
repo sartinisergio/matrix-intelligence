@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build:netlify"
+  publish = "dist"
+  edge_functions = ".netlify/edge-functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Edge Function Hono — gestisce tutte le route dinamiche
+# preferStatic=true nel codice: Netlify serve prima file statici da dist/
+
+[[edge_functions]]
+  function = "index"
+  path = "/*"
+
+[dev]
+  command = "npm run dev"
+  port = 3000
