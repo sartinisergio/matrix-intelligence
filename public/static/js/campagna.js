@@ -1051,8 +1051,10 @@ async function generateTargets(campaignId) {
   const targetProgressBar = document.getElementById('target-progress-bar');
   const targetProgressText = document.getElementById('target-progress-text');
   
-  if (highMedTargets.length > 0 && hasApiKey && fase === 'completa') {
-    // === FASE COMPLETA: Motivazioni LLM personalizzate ===
+  if (highMedTargets.length > 0 && hasApiKey) {
+    // === MOTIVAZIONI LLM — sempre, se c'e API key ===
+    // In pre-valutazione: analisi competitiva (programma vs concorrente)
+    // In fase completa: analisi + confronto con il nuovo volume
     targetProgress.classList.remove('hidden');
     
     for (let i = 0; i < highMedTargets.length; i++) {
@@ -1062,18 +1064,38 @@ async function generateTargets(campaignId) {
       targetProgressText.textContent = `${i + 1}/${highMedTargets.length}`;
       
       try {
-        // Per le motivazioni LLM usa solo i temi REALI del libro, non quelli del framework
+        // Dati del volume (se disponibili)
         const bookData = {
           titolo: campaign.libro_titolo,
           autore: campaign.libro_autore,
           materia: campaign.libro_materia,
           temi: bookThemes.slice(0, 15),
-          hasIndice: hasIndice
+          hasIndice: hasIndice,
+          fase: fase
         };
         
+        // Manuali citati dal docente
         const manualiDocente = t.programData.manuali_citati || [];
         const princ = manualiDocente.find(m => m.ruolo === 'principale');
         const altri = manualiDocente.filter(m => m.ruolo !== 'principale');
+        
+        // ARRICCHIMENTO: cerca l'indice del concorrente nel catalogo
+        let indiceConcorrente = null;
+        if (princ && princ.titolo) {
+          const concorrenteCatalogo = findManualInCatalog(princ.titolo, princ.autore);
+          if (concorrenteCatalogo) {
+            indiceConcorrente = concorrenteCatalogo.chapters_summary || null;
+          }
+        }
+        
+        // Framework moduli dettagliati
+        let frameworkModuliDettaglio = [];
+        if (framework && framework.syllabus_modules) {
+          frameworkModuliDettaglio = framework.syllabus_modules.map(m => ({
+            nome: m.name,
+            concetti: (m.key_concepts || []).filter(k => typeof k === 'string').slice(0, 5)
+          }));
+        }
         
         const targetInfo = {
           docente_nome: t.programData.docente_nome,
@@ -1081,6 +1103,8 @@ async function generateTargets(campaignId) {
           materia_inferita: t.programData.materia_inferita,
           temi_principali: t.programData.temi_principali,
           manuale_attuale: princ ? `${princ.titolo || ''} (${princ.autore || ''})` : 'Nessuno citato',
+          manuale_editore: princ?.editore || '',
+          indice_concorrente: indiceConcorrente,
           manuali_complementari: altri.map(m => m.titolo || '').filter(Boolean).join(', ') || 'Nessuno',
           scenario_zanichelli: t.programData.scenario_zanichelli,
           classe_laurea: t.programData.classe_laurea,
@@ -1088,11 +1112,13 @@ async function generateTargets(campaignId) {
           framework_score: t.frameworkScore,
           temi_comuni_framework: t.temiComuni || [],
           overlap_pct: t.overlapPct || 0,
-          framework_moduli_coperti: t.frameworkModuliCoperti || []
+          framework_moduli_coperti: t.frameworkModuliCoperti || [],
+          framework_dettaglio: frameworkModuliDettaglio
         };
         
         t.motivazione = await generateMotivation(bookData, targetInfo);
       } catch (e) {
+        console.error('Errore motivazione LLM per', t.programData.docente_nome, e);
         t.motivazione = generateTemplateMotivation(campaign, t);
       }
       
@@ -1103,7 +1129,7 @@ async function generateTargets(campaignId) {
     
     targetProgress.classList.add('hidden');
   } else {
-    // === PRE-VALUTAZIONE: Motivazioni template (senza LLM) ===
+    // === FALLBACK senza API key: Motivazioni template ===
     highMedTargets.forEach(t => {
       t.motivazione = generateTemplateMotivation(campaign, t);
     });
@@ -1264,6 +1290,56 @@ function generateTemplateMotivation(campaign, target) {
   }
   
   return righe.join(' ');
+}
+
+// === LOOKUP CONCORRENTE NEL CATALOGO ===
+// Cerca un manuale nel catalogo MATRIX per recuperare l'indice completo.
+// Matching flessibile: confronta titolo e autore con tolleranza.
+function findManualInCatalog(titoloCercato, autoreCercato) {
+  if (!catalogManuals || !catalogManuals.length || !titoloCercato) return null;
+  
+  const titNorm = titoloCercato.toLowerCase().trim();
+  const autNorm = (autoreCercato || '').toLowerCase().trim();
+  
+  // 1. Match esatto sul titolo
+  let found = catalogManuals.find(m => 
+    m.title && m.title.toLowerCase().trim() === titNorm
+  );
+  if (found) return found;
+  
+  // 2. Match parziale: il titolo del catalogo contiene il cercato o viceversa
+  found = catalogManuals.find(m => {
+    if (!m.title) return false;
+    const catTit = m.title.toLowerCase().trim();
+    return catTit.includes(titNorm) || titNorm.includes(catTit);
+  });
+  if (found) return found;
+  
+  // 3. Match su autore + prima parola significativa del titolo
+  if (autNorm) {
+    const primaParola = titNorm.split(/\s+/).find(w => w.length > 3) || titNorm.split(/\s+/)[0];
+    found = catalogManuals.find(m => {
+      if (!m.author || !m.title) return false;
+      const catAut = m.author.toLowerCase();
+      const catTit = m.title.toLowerCase();
+      return catAut.includes(autNorm.split(',')[0].split(' ')[0]) && catTit.includes(primaParola);
+    });
+    if (found) return found;
+  }
+  
+  // 4. Levenshtein su titolo (soglia alta)
+  let bestMatch = null;
+  let bestScore = 0;
+  for (const m of catalogManuals) {
+    if (!m.title) continue;
+    const sim = levenshteinSimilarity(titNorm, m.title.toLowerCase().trim());
+    if (sim > 0.7 && sim > bestScore) {
+      bestScore = sim;
+      bestMatch = m;
+    }
+  }
+  
+  return bestMatch;
 }
 
 // ===================================================
