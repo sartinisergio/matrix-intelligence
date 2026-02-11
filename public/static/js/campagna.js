@@ -632,18 +632,19 @@ function renderCampaignsList() {
   container.innerHTML = allCampaigns.map(c => {
     const targetCount = (c.target_generati || []).length;
     
-    // Badge stato con 3 livelli
+    // Badge stato: determina visivamente se e pre-valutazione dal contenuto
+    const isPreVal = c.stato === 'bozza' && (c.target_generati || []).length > 0;
     let statusBadge;
     if (c.stato === 'completata') {
       statusBadge = '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"><i class="fas fa-check-circle mr-1"></i>Completa</span>';
-    } else if (c.stato === 'pre_valutazione') {
+    } else if (isPreVal) {
       statusBadge = '<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"><i class="fas fa-search mr-1"></i>Pre-valutazione</span>';
     } else {
       statusBadge = '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium"><i class="fas fa-edit mr-1"></i>Bozza</span>';
     }
     
     // Pre-valutazione? Mostra hint per completare
-    const preValHint = (c.stato === 'pre_valutazione') 
+    const preValHint = isPreVal
       ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg inline-flex items-center gap-1">
            <i class="fas fa-lightbulb"></i>
            Aggiungi l'indice del volume per motivazioni personalizzate
@@ -658,13 +659,13 @@ function renderCampaignsList() {
         </button>`;
     }
     // Se pre-valutazione -> bottone "Completa" per aggiungere indice
-    if (c.stato === 'pre_valutazione') {
+    if (isPreVal) {
       actionButtons += `
         <button onclick="showCompleteCampaign('${c.id}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors" title="Aggiungi indice e rigenera">
           <i class="fas fa-plus-circle mr-1"></i>Completa
         </button>`;
     }
-    if (targetCount === 0 && c.stato !== 'pre_valutazione') {
+    if (targetCount === 0 && !isPreVal) {
       actionButtons += `
         <button onclick="generateTargets('${c.id}')" class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-sm hover:bg-zanichelli-dark transition-colors" title="Genera target">
           <i class="fas fa-magic mr-1"></i>Genera
@@ -889,9 +890,9 @@ async function handleCreateCampaign(event) {
   const temi = temiInput ? temiInput.split(',').map(t => t.trim()).filter(Boolean) : [];
   const indice = document.getElementById('camp-indice').value || null;
   
-  // Determina la fase: se ha indice o temi -> completa, altrimenti -> pre-valutazione
-  const haDetailedData = (temi.length > 0) || (indice && indice.trim().length > 20);
-  const stato = haDetailedData ? 'bozza' : 'pre_valutazione';
+  // Stato sempre 'bozza' al momento della creazione (compatibile con constraint DB).
+  // La distinzione pre-valutazione/completa e gestita lato frontend.
+  const stato = 'bozza';
   
   const campaign = {
     user_id: session.user.id,
@@ -1111,8 +1112,9 @@ async function generateTargets(campaignId) {
     temi_comuni: t.temiComuni
   }));
   
-  // Stato finale: se fase completa e ha target -> completata; altrimenti -> pre_valutazione
-  const statoFinale = (fase === 'completa') ? 'completata' : 'pre_valutazione';
+  // Stato finale nel DB: 'completata' se fase completa, 'bozza' se pre-valutazione
+  // (il DB accetta solo 'bozza' e 'completata')
+  const statoFinale = (fase === 'completa') ? 'completata' : 'bozza';
   
   try {
     await supabaseClient.from('campagne').update({
