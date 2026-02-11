@@ -1071,16 +1071,24 @@ async function generateTargets(campaignId) {
           hasIndice: hasIndice
         };
         
+        const manualiDocente = t.programData.manuali_citati || [];
+        const princ = manualiDocente.find(m => m.ruolo === 'principale');
+        const altri = manualiDocente.filter(m => m.ruolo !== 'principale');
+        
         const targetInfo = {
           docente_nome: t.programData.docente_nome,
           ateneo: t.programData.ateneo,
           materia_inferita: t.programData.materia_inferita,
           temi_principali: t.programData.temi_principali,
-          manuale_attuale: t.manualePrincipale || 'Nessuno citato',
+          manuale_attuale: princ ? `${princ.titolo || ''} (${princ.autore || ''})` : 'Nessuno citato',
+          manuali_complementari: altri.map(m => m.titolo || '').filter(Boolean).join(', ') || 'Nessuno',
           scenario_zanichelli: t.programData.scenario_zanichelli,
           classe_laurea: t.programData.classe_laurea,
           profilo_classe: t.profiloClasse,
-          framework_score: t.frameworkScore
+          framework_score: t.frameworkScore,
+          temi_comuni_framework: t.temiComuni || [],
+          overlap_pct: t.overlapPct || 0,
+          framework_moduli_coperti: t.frameworkModuliCoperti || []
         };
         
         t.motivazione = await generateMotivation(bookData, targetInfo);
@@ -1101,10 +1109,9 @@ async function generateTargets(campaignId) {
     });
   }
   
-  // Motivazione per bassa rilevanza (consolidamento) — sempre template
+  // Motivazione per bassa rilevanza (consolidamento) — usa lo stesso template ricco
   targets.filter(t => t.rilevanza === 'bassa').forEach(t => {
-    const manuale = t.manualePrincipale || 'un testo Zanichelli';
-    t.motivazione = `Il docente utilizza gia ${manuale} come testo principale. Opportunita di consolidamento e aggiornamento con la nuova edizione.`;
+    t.motivazione = generateTemplateMotivation(campaign, t);
   });
   
   // === SALVA ===
@@ -1157,21 +1164,88 @@ function generateTemplateMotivation(campaign, target) {
   const scenario = target.scenario || target.programData?.scenario_zanichelli || '';
   const docente = target.programData?.docente_nome || 'Il docente';
   const ateneo = target.programData?.ateneo || '';
-  const manuale = target.manualePrincipale || null;
-  const materia = campaign.libro_materia || '';
   const libro = campaign.libro_titolo || 'il nuovo volume';
+  const materia = campaign.libro_materia || '';
+  const classeLaurea = target.programData?.classe_laurea || '';
   
+  // --- DATI RICCHI dal matching ---
+  const manuali = target.programData?.manuali_citati || [];
+  const manualePrinc = manuali.find(m => m.ruolo === 'principale');
+  const manualiAltri = manuali.filter(m => m.ruolo !== 'principale');
+  const temiDocente = target.programData?.temi_principali || [];
+  const temiComuni = target.temiComuni || [];
+  const overlapPct = target.overlapPct || 0;
+  const fwScore = target.frameworkScore || 0;
+  const fwModuli = target.frameworkModuliCoperti || [];
+  
+  // --- Costruzione motivazione a blocchi ---
+  const parti = [];
+  
+  // BLOCCO 1: Chi e il docente e cosa insegna
+  let intro = `${docente}`;
+  if (ateneo) intro += ` (${ateneo})`;
+  intro += ` — ${materia}`;
+  if (classeLaurea) intro += `, ${classeLaurea}`;
+  intro += '.';
+  parti.push(intro);
+  
+  // BLOCCO 2: Cosa adotta OGGI (il cuore commerciale)
+  if (manualePrinc) {
+    const titolo = manualePrinc.titolo || 'testo non identificato';
+    const autore = manualePrinc.autore || '';
+    const editore = manualePrinc.editore || '';
+    let adozione = `Testo principale: ${titolo}`;
+    if (autore) adozione += ` (${autore})`;
+    if (editore && editore.toLowerCase() !== 'zanichelli') adozione += ` — ed. ${editore}`;
+    adozione += '.';
+    
+    // Se ha anche altri testi, menzionali
+    if (manualiAltri.length > 0) {
+      const altriNomi = manualiAltri
+        .map(m => m.titolo || 'altro testo')
+        .slice(0, 2)
+        .join(', ');
+      adozione += ` Complementari: ${altriNomi}.`;
+    }
+    parti.push(adozione);
+  } else if (manuali.length > 0) {
+    const nomi = manuali.map(m => m.titolo || 'testo').slice(0, 3).join(', ');
+    parti.push(`Testi citati (nessuno come principale): ${nomi}.`);
+  } else {
+    parti.push('Nessun manuale specifico citato nel programma.');
+  }
+  
+  // BLOCCO 3: Analisi programma (temi e framework)
+  if (temiComuni.length > 0) {
+    const temiStr = temiComuni.slice(0, 4).join(', ');
+    parti.push(`Temi del programma in linea con il framework: ${temiStr} (overlap ${overlapPct}%).`);
+  } else if (temiDocente.length > 0) {
+    const temiStr = temiDocente.slice(0, 4).join(', ');
+    parti.push(`Il programma tratta: ${temiStr}.`);
+  }
+  
+  if (fwScore > 0 && fwModuli.length > 0) {
+    const moduliStr = fwModuli.slice(0, 3).join(', ');
+    parti.push(`Copertura framework MATRIX: ${fwScore}% (${moduliStr}).`);
+  }
+  
+  // BLOCCO 4: Azione commerciale (diversificata per scenario)
   if (scenario === 'zanichelli_assente') {
-    if (manuale) {
-      return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} utilizza attualmente ${manuale} come testo di ${materia}. Zanichelli e assente: proporre ${libro} come alternativa qualificata. Priorita alta per acquisizione nuovo docente.`;
+    if (manualePrinc) {
+      const concorrente = manualePrinc.titolo || 'il testo attuale';
+      parti.push(`AZIONE: Zanichelli assente. Confronto diretto ${libro} vs ${concorrente}. Target di acquisizione.`);
     } else {
-      return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} insegna ${materia} senza testi Zanichelli nel programma. Proporre ${libro} come nuovo testo di riferimento. Priorita alta.`;
+      parti.push(`AZIONE: Zanichelli assente e nessun testo dominante. Presentare ${libro} come riferimento. Terreno aperto.`);
     }
   } else if (scenario === 'zanichelli_alternativo') {
-    return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} ha gia Zanichelli tra i testi alternativi di ${materia}. Proporre ${libro} come testo principale per rafforzare la posizione. Priorita media.`;
+    parti.push(`AZIONE: Zanichelli gia presente come alternativo. Proporre ${libro} per promozione a testo principale.`);
   } else {
-    return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} utilizza gia un testo Zanichelli come riferimento per ${materia}. Opportunita di aggiornamento con ${libro}.`;
+    // zanichelli_principale
+    const manZan = manualePrinc ? manualePrinc.titolo : 'testo Zanichelli';
+    parti.push(`AZIONE: Gia Zanichelli principale (${manZan}). Valutare aggiornamento o affiancamento con ${libro}.`);
   }
+  
+  return parti.join(' ');
 }
 
 // ===================================================

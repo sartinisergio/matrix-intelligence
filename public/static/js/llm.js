@@ -103,39 +103,53 @@ Se un campo non è determinabile, usa null (per stringhe) o [] (per array).`;
 // --- Prompt Motivazione Target (FASE COMPLETA — con indice del volume) ---
 // Chiamato SOLO quando abbiamo temi/indice REALI del volume.
 function getTargetMotivationPrompt(bookData, targetData) {
+  // Contesto framework
   let frameworkContext = '';
-  if (targetData.profilo_classe) {
-    frameworkContext = `\nPROFILO CLASSE DI LAUREA (dal framework disciplinare MATRIX):\n${targetData.profilo_classe}\n`;
-  }
   if (targetData.framework_score !== undefined && targetData.framework_score > 0) {
-    frameworkContext += `\nALLINEAMENTO FRAMEWORK: ${targetData.framework_score}% dei moduli disciplinari coperti dal programma del docente.\n`;
+    frameworkContext += `\n- Copertura framework disciplinare: ${targetData.framework_score}%`;
+    if (targetData.framework_moduli_coperti && targetData.framework_moduli_coperti.length > 0) {
+      frameworkContext += ` (moduli: ${targetData.framework_moduli_coperti.slice(0, 5).join(', ')})`;
+    }
+  }
+  if (targetData.profilo_classe) {
+    frameworkContext += `\n- Profilo classe di laurea: ${targetData.profilo_classe}`;
+  }
+  if (targetData.temi_comuni_framework && targetData.temi_comuni_framework.length > 0) {
+    frameworkContext += `\n- Temi in comune con framework: ${targetData.temi_comuni_framework.slice(0, 6).join(', ')}`;
+  }
+  if (targetData.overlap_pct > 0) {
+    frameworkContext += `\n- Overlap tematico: ${targetData.overlap_pct}%`;
   }
 
-  // Informazioni sull'indice (se disponibile)
-  const hasIndice = bookData.hasIndice;
+  // Info libro
   const hasTemi = bookData.temi && bookData.temi.length > 0;
-
   let bookInfo = `NUOVO VOLUME ZANICHELLI (in fase di lancio):
 - Titolo: ${bookData.titolo}
 - Autore: ${bookData.autore || 'N/D'}
 - Materia: ${bookData.materia}`;
-
   if (hasTemi) {
     bookInfo += `\n- Argomenti trattati (dal sommario): ${bookData.temi.join(', ')}`;
   }
 
-  return `Sei un consulente commerciale per la casa editrice Zanichelli.
-Stai preparando una NOTA per un promotore editoriale che deve visitare un docente.
-Il volume "${bookData.titolo}" e in fase di lancio e il promotore deve capire PERCHE' questo docente e un target interessante.
+  // Manuali complementari
+  const manualiCompl = targetData.manuali_complementari && targetData.manuali_complementari !== 'Nessuno'
+    ? `\n- Manuali complementari: ${targetData.manuali_complementari}` : '';
 
-REGOLE FONDAMENTALI:
-- Basa le tue osservazioni ESCLUSIVAMENTE sui DATI FORNITI (programma del docente, manuale attuale, scenario)
-- NON inventare contenuti, capitoli, o caratteristiche del nuovo libro che non sono nei dati
-- NON dire "il libro colma lacune" se non sai quali lacune ci sono
-- Se il docente usa un concorrente, nomina il concorrente e suggerisci il confronto
-- Se il docente non usa Zanichelli, questo e il punto commerciale chiave
-- Se il docente usa gia Zanichelli, suggerisci consolidamento/aggiornamento
-- Scrivi 2-3 frasi dal punto di vista del promotore (tono professionale, concreto)
+  return `Sei un consulente commerciale per la casa editrice Zanichelli.
+Stai preparando una NOTA OPERATIVA per un promotore editoriale che deve visitare un docente.
+
+OBIETTIVO: Il promotore deve capire in 30 secondi:
+1. Cosa adotta oggi questo docente (concorrente? Zanichelli? niente?)
+2. Su quali argomenti del programma si puo fare leva
+3. Quale azione commerciale specifica intraprendere
+
+REGOLE:
+- Basa TUTTO sui dati forniti: programma, manuali citati, scenario, framework
+- NON inventare contenuti o caratteristiche del nuovo libro
+- Nomina SEMPRE il manuale concorrente per nome se c'e
+- Cita 2-3 temi specifici del programma del docente come aggancio
+- Chiudi con l'azione: confronto diretto, sostituzione, affiancamento, aggiornamento
+- Scrivi 3-4 frasi operative, tono da nota interna commerciale
 
 ${bookInfo}
 
@@ -145,10 +159,10 @@ DOCENTE TARGET:
 - Materia insegnata: ${targetData.materia_inferita || 'N/D'}
 - Classe di laurea: ${targetData.classe_laurea || 'N/D'}
 - Temi del programma: ${(targetData.temi_principali || []).join(', ') || 'N/D'}
-- Manuale attualmente adottato: ${targetData.manuale_attuale || 'Nessun manuale citato'}
-- Scenario Zanichelli: ${targetData.scenario_zanichelli || 'N/D'}
-${frameworkContext}
-Rispondi con 2-3 frasi concrete per il promotore. Nessun titolo, nessuna formattazione.`;
+- Manuale principale adottato: ${targetData.manuale_attuale || 'Nessun manuale citato'}${manualiCompl}
+- Scenario Zanichelli: ${targetData.scenario_zanichelli || 'N/D'}${frameworkContext}
+
+Rispondi con 3-4 frasi concrete. Nessun titolo, nessuna formattazione markdown.`; 
 }
 
 // --- Pre-classificazione di un programma ---
