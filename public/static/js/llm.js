@@ -101,11 +101,16 @@ Se un campo non è determinabile, usa null (per stringhe) o [] (per array).`;
 }
 
 // --- Prompt Motivazione Target ---
-// Due modalita:
-// PRE-VALUTAZIONE: il volume non esiste ancora. Intelligence di mercato.
-//   "Cosa serve per competere su questa cattedra?"
-// FASE COMPLETA: il volume c'e. Nota operativa per il promotore.
-//   "Perche questo docente e un target e come presentare il volume?"
+// CONTESTO: il promotore editoriale Zanichelli va dal docente con UNA novita.
+// Il docente conosce gia il catalogo Zanichelli — se non ha adottato Mankiw/Brue
+// finora, non cambiera idea. L'unica leva e il NUOVO volume.
+//
+// PRE-VALUTAZIONE: il volume non c'e ancora. Identifica le LEVE per il cambio.
+//   "Dove il manuale attuale e debole rispetto al programma?"
+//   "Su cosa deve puntare il nuovo volume per convincere il docente a cambiare?"
+//
+// FASE COMPLETA: il volume c'e. Nota operativa con leve specifiche.
+//   "Ecco i punti concreti su cui il nuovo volume e piu forte del concorrente."
 
 function getTargetMotivationPrompt(bookData, targetData) {
   const isPreValutazione = bookData.fase === 'pre_valutazione';
@@ -113,108 +118,90 @@ function getTargetMotivationPrompt(bookData, targetData) {
   // --- DATI CONCORRENTE (indice dal catalogo, se trovato) ---
   let concorrenteContext = '';
   if (targetData.indice_concorrente) {
-    concorrenteContext = `\nINDICE DEL MANUALE ADOTTATO (dal catalogo editoriale):
+    concorrenteContext = `\nINDICE COMPLETO DEL MANUALE ADOTTATO (dal catalogo):
 ${targetData.indice_concorrente}`;
   }
   
   // --- FRAMEWORK DISCIPLINARE ---
   let frameworkContext = '';
   if (targetData.framework_dettaglio && targetData.framework_dettaglio.length > 0) {
-    frameworkContext = '\nFRAMEWORK DISCIPLINARE MATRIX (struttura standard della materia):';
+    frameworkContext = '\nFRAMEWORK DISCIPLINARE (struttura standard della materia):';
     for (const mod of targetData.framework_dettaglio.slice(0, 8)) {
       frameworkContext += `\n  ${mod.nome}: ${mod.concetti.join(', ')}`;
     }
   }
-  if (targetData.framework_score > 0) {
-    frameworkContext += `\nCopertura framework: il programma del docente copre il ${targetData.framework_score}% del framework standard.`;
-    if (targetData.framework_moduli_coperti && targetData.framework_moduli_coperti.length > 0) {
-      frameworkContext += ` Moduli coperti: ${targetData.framework_moduli_coperti.join(', ')}.`;
-    }
-  }
-  
-  // --- CONTESTO VOLUME ---
-  let volumeContext = '';
-  if (isPreValutazione) {
-    volumeContext = `PROGETTO EDITORIALE: Zanichelli sta valutando un nuovo volume di ${bookData.materia}${bookData.titolo ? ` (titolo provvisorio: "${bookData.titolo}")` : ''}.
-Il volume non e ancora disponibile. Questa e un'analisi di mercato.`;
-  } else {
-    volumeContext = `NUOVO VOLUME ZANICHELLI:
-- Titolo: ${bookData.titolo}
-- Autore: ${bookData.autore || 'N/D'}
-- Materia: ${bookData.materia}`;
-    if (bookData.temi && bookData.temi.length > 0) {
-      volumeContext += `\n- Argomenti (dal sommario): ${bookData.temi.join(', ')}`;
-    }
+  if (targetData.framework_score > 0 && targetData.framework_moduli_coperti && targetData.framework_moduli_coperti.length > 0) {
+    frameworkContext += `\nIl programma del docente copre: ${targetData.framework_moduli_coperti.join(', ')}.`;
   }
   
   // --- MANUALI COMPLEMENTARI ---
   const manualiCompl = targetData.manuali_complementari && targetData.manuali_complementari !== 'Nessuno'
-    ? `\n- Testi complementari nel programma: ${targetData.manuali_complementari}` : '';
+    ? `\n- Testi complementari: ${targetData.manuali_complementari}` : '';
   
+  // --- DATI CATTEDRA (comuni a entrambe le fasi) ---
+  const cattedraBlock = `CATTEDRA:
+- Docente: ${targetData.docente_nome || 'N/D'}
+- Ateneo: ${targetData.ateneo || 'N/D'}
+- Insegnamento: ${targetData.materia_inferita || 'N/D'}, ${targetData.classe_laurea || ''}
+- Temi del programma: ${(targetData.temi_principali || []).join(', ') || 'Non disponibili'}
+- Manuale adottato: ${targetData.manuale_attuale || 'Nessuno identificato'} ${targetData.manuale_editore ? '(' + targetData.manuale_editore + ')' : ''}${manualiCompl}
+- Scenario: ${targetData.scenario_zanichelli || 'N/D'}`;
+
   // --- PROMPT ---
   if (isPreValutazione) {
-    // ============ PRE-VALUTAZIONE: INTELLIGENCE DI MERCATO ============
-    return `Sei un analista di mercato editoriale universitario per Zanichelli.
-Stai preparando una SCHEDA DI INTELLIGENCE per un promotore che deve capire il terreno competitivo su una cattedra.
+    // ============ PRE-VALUTAZIONE ============
+    return `Sei un analista di mercato editoriale universitario.
+Prepari una scheda per un promotore Zanichelli che deve capire le LEVE per un possibile cambio di adozione su questa cattedra.
 
-${volumeContext}
+CONTESTO: Zanichelli sta valutando un nuovo volume di ${bookData.materia}${bookData.titolo ? ' ("' + bookData.titolo + '")' : ''}. Il volume non esiste ancora. Il promotore deve sapere su cosa concentrare i suoi sforzi.
 
-CATTEDRA ANALIZZATA:
-- Docente: ${targetData.docente_nome || 'N/D'}
-- Ateneo: ${targetData.ateneo || 'N/D'}
-- Insegnamento: ${targetData.materia_inferita || 'N/D'}
-- Classe di laurea: ${targetData.classe_laurea || 'N/D'}
-- Temi del programma: ${(targetData.temi_principali || []).join(', ') || 'N/D'}
-- Manuale adottato: ${targetData.manuale_attuale || 'Nessuno identificato'}
-- Editore: ${targetData.manuale_editore || 'N/D'}${manualiCompl}
-- Scenario Zanichelli: ${targetData.scenario_zanichelli || 'N/D'}
+${cattedraBlock}
 ${concorrenteContext}${frameworkContext}
 
-ISTRUZIONI:
-Scrivi una nota di intelligence in 4-5 frasi per il promotore. Deve rispondere a:
+ANALIZZA e rispondi con questa struttura (usa esattamente queste etichette):
 
-1. ADOZIONE ATTUALE: Che manuale usa e come lo usa? Se hai l'indice del concorrente e i temi del programma, analizza quali capitoli del concorrente sono centrali nel programma del docente e quali sono marginali o assenti.
+MANUALE ATTUALE: Descrivi il manuale adottato. Se hai l'indice, analizza quali capitoli corrispondono ai temi del programma del docente e quali NO. Il docente usa tutto il manuale o solo una parte? Ci sono aree del programma che il manuale copre male o non copre?
 
-2. STRUTTURA DEL PROGRAMMA: Quali aree tematiche pesano di piu nel programma? Il docente ha un taglio piu micro o macro, teorico o applicato, istituzionale o avanzato?
+GAP E PUNTI DEBOLI: Identifica i punti deboli specifici del manuale rispetto a QUESTO programma. Dove il docente deve integrare con altri materiali? Quali temi del programma non trovano riscontro nell'indice del manuale? Queste sono le leve per il cambio.
 
-3. PER COMPETERE: Alla luce del programma e del manuale adottato, come dovrebbe essere strutturato un nuovo volume per essere competitivo su questa cattedra? Dove il concorrente e forte e dove e debole rispetto al programma? Cosa deve offrire in piu il nuovo volume?
+LEVE PER IL CAMBIO: Su cosa deve puntare il nuovo volume per convincere questo docente a cambiare? Non suggerimenti generici ("casi studio", "approccio applicato") ma leve SPECIFICHE legate ai gap identificati. Cosa manca concretamente al manuale attuale che il docente probabilmente compensa con dispense, articoli o altri materiali?
 
-REGOLE:
-- Basa TUTTO sui dati forniti. NON inventare.
-- Sii specifico: nomina capitoli, temi, aree concrete.
-- Tono: nota interna analitica, non promozionale.
-- NON dire "il nuovo volume offre" o "il nostro libro" — il volume non esiste ancora.`;
+REGOLE TASSATIVE:
+- Basa TUTTO sui dati forniti. NON inventare contenuti del nuovo volume.
+- Sii SPECIFICO: nomina capitoli, temi, aree concrete — niente frasi generiche.
+- Le leve devono essere azionabili: il promotore deve poterle usare in un colloquio.
+- 4-5 frasi massimo. Tono: nota interna, diretto, zero retorica.
+- NON usare formule tipo "per competere efficacemente" o "un approccio piu applicato".`;
 
   } else {
-    // ============ FASE COMPLETA: NOTA OPERATIVA PROMOTORE ============
+    // ============ FASE COMPLETA ============
+    let volumeInfo = `NUOVO VOLUME: ${bookData.titolo}`;
+    if (bookData.autore) volumeInfo += ` di ${bookData.autore}`;
+    volumeInfo += ` (${bookData.materia})`;
+    if (bookData.temi && bookData.temi.length > 0) {
+      volumeInfo += `\nArgomenti dal sommario: ${bookData.temi.join(', ')}`;
+    }
+
     return `Sei un consulente commerciale per Zanichelli.
-Stai preparando una NOTA OPERATIVA per un promotore che deve visitare un docente e presentare un nuovo volume.
+Prepari una NOTA OPERATIVA per un promotore che deve presentare un nuovo volume a un docente.
 
-${volumeContext}
+${volumeInfo}
 
-CATTEDRA TARGET:
-- Docente: ${targetData.docente_nome || 'N/D'}
-- Ateneo: ${targetData.ateneo || 'N/D'}
-- Insegnamento: ${targetData.materia_inferita || 'N/D'}
-- Classe di laurea: ${targetData.classe_laurea || 'N/D'}
-- Temi del programma: ${(targetData.temi_principali || []).join(', ') || 'N/D'}
-- Manuale adottato: ${targetData.manuale_attuale || 'Nessuno identificato'}
-- Editore: ${targetData.manuale_editore || 'N/D'}${manualiCompl}
-- Scenario Zanichelli: ${targetData.scenario_zanichelli || 'N/D'}
+${cattedraBlock}
 ${concorrenteContext}${frameworkContext}
 
-ISTRUZIONI:
-Scrivi una nota operativa in 4-5 frasi. Deve rispondere a:
+ANALIZZA e rispondi con questa struttura:
 
-1. SITUAZIONE: Cosa adotta oggi e perche e un target interessante?
-2. PUNTI DI FORZA DEL NOSTRO VOLUME: Dove il nostro volume copre meglio il programma rispetto al concorrente? Quali argomenti del sommario rispondono ai temi del docente?
-3. AZIONE: Come presentare il volume? Su quali punti insistere nel colloquio?
+SITUAZIONE: Cosa adotta oggi e perche e vulnerabile al cambio? Identifica i gap tra il manuale attuale e il programma del docente.
 
-REGOLE:
-- Basa TUTTO sui dati forniti. NON inventare caratteristiche del volume.
-- Confronta concretamente: capitoli del concorrente vs argomenti del nostro volume vs temi del programma.
-- Sii specifico e operativo. Il promotore deve sapere cosa dire.
-- Tono: nota interna commerciale, concreto.`;
+LEVE: Dove il nuovo volume risponde meglio al programma rispetto al concorrente? Confronta argomenti specifici del sommario con i temi del programma. Nomina capitoli concreti.
+
+COLLOQUIO: Cosa dire al docente? Su quali 2-3 punti specifici insistere? Quale argomento aprire per primo?
+
+REGOLE TASSATIVE:
+- Basa TUTTO sui dati. NON inventare caratteristiche del volume non presenti nel sommario.
+- Confronta concretamente: capitoli concorrente vs argomenti nuovo volume vs programma.
+- 4-5 frasi. Tono: nota interna operativa, zero retorica.`;
   }
 }
 
@@ -230,8 +217,8 @@ async function generateMotivation(bookData, targetData) {
   const prompt = getTargetMotivationPrompt(bookData, targetData);
   const isPreVal = bookData.fase === 'pre_valutazione';
   const systemPrompt = isPreVal
-    ? 'Sei un analista di mercato editoriale universitario. Produci analisi competitive precise basate esclusivamente sui dati forniti. Non inventare informazioni. Rispondi in italiano con 4-5 frasi. Nessun titolo, nessuna formattazione markdown.'
-    : 'Sei un consulente commerciale esperto del settore editoriale universitario. Produci note operative per promotori basate esclusivamente sui dati forniti. Non inventare informazioni. Rispondi in italiano con 4-5 frasi. Nessun titolo, nessuna formattazione markdown.';
+    ? 'Sei un analista di mercato editoriale universitario. Il tuo obiettivo e identificare le leve concrete per un cambio di adozione. Basa tutto sui dati forniti, non inventare. Rispondi in italiano. Usa le etichette richieste (MANUALE ATTUALE, GAP E PUNTI DEBOLI, LEVE PER IL CAMBIO). Sii specifico e diretto, niente frasi generiche.'
+    : 'Sei un consulente commerciale esperto del settore editoriale universitario. Il tuo obiettivo e preparare il promotore al colloquio con il docente. Basa tutto sui dati forniti, non inventare. Rispondi in italiano. Usa le etichette richieste (SITUAZIONE, LEVE, COLLOQUIO). Sii specifico e operativo.';
   const result = await callOpenAI(
     systemPrompt,
     prompt,
