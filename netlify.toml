@@ -5,9 +5,7 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# Edge Function Hono — gestisce tutte le route dinamiche
-# Escludi i file statici cosi Netlify li serve direttamente
-
+# Edge Functions nella cartella standard netlify/edge-functions/
 [[edge_functions]]
   function = "index"
   path = "/"
