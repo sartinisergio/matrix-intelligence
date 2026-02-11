@@ -1546,7 +1546,7 @@ function renderTargets(targets) {
   
   if (targets.length === 0) {
     tbody.innerHTML = `
-      <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">
+      <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">
         Nessun target trovato — nessun programma corrisponde alla materia della campagna
       </td></tr>`;
     return;
@@ -1579,6 +1579,13 @@ function renderTargets(targets) {
           ${fwBadge}
         </td>
         <td class="px-4 py-3 text-sm text-gray-600 max-w-md">${formatMotivazione(t.motivazione, i)}</td>
+        <td class="px-4 py-3 text-center">
+          <button onclick="generateEmail(${i})" 
+                  class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-xs hover:bg-zanichelli-dark transition-colors whitespace-nowrap"
+                  title="Genera mail personalizzata per ${t.docente_nome || 'il docente'}">
+            <i class="fas fa-envelope mr-1"></i>Genera Mail
+          </button>
+        </td>
       </tr>`;
   }).join('');
 }
@@ -1797,4 +1804,255 @@ function toggleApiKeyVisibility() {
   const icon = document.getElementById('apikey-eye-icon');
   if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash'; }
   else { input.type = 'password'; icon.className = 'fas fa-eye'; }
+}
+
+// ===================================================
+// GENERAZIONE MAIL PERSONALIZZATA
+// ===================================================
+
+async function generateEmail(targetIndex) {
+  const target = currentTargets[targetIndex];
+  if (!target) {
+    showToast('Target non trovato', 'error');
+    return;
+  }
+  
+  const campaign = allCampaigns.find(c => c.id === currentCampaignId);
+  if (!campaign) {
+    showToast('Campagna non trovata', 'error');
+    return;
+  }
+  
+  const hasApiKey = !!CONFIG.OPENAI_API_KEY;
+  if (!hasApiKey) {
+    showToast('Configura la API Key OpenAI nelle Impostazioni per generare le mail', 'error');
+    return;
+  }
+  
+  // Apri modale con stato "generazione in corso"
+  const modal = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  
+  content.innerHTML = `
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        <i class="fas fa-envelope mr-2 text-zanichelli-light"></i>
+        Mail per ${target.docente_nome || 'il docente'}
+      </h3>
+      <div class="flex items-center gap-3 py-8 justify-center">
+        <i class="fas fa-spinner fa-spin text-2xl text-zanichelli-light"></i>
+        <span class="text-gray-600">Generazione mail in corso...</span>
+      </div>
+    </div>`;
+  modal.classList.remove('hidden');
+  
+  try {
+    const emailResult = await callEmailGeneration(campaign, target);
+    showEmailModal(emailResult, target, campaign);
+  } catch (e) {
+    content.innerHTML = `
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-gray-800">
+          <i class="fas fa-exclamation-circle mr-2 text-red-500"></i>
+          Errore generazione mail
+        </h3>
+        <p class="text-sm text-red-600">${e.message}</p>
+        <button onclick="closeModal()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">Chiudi</button>
+      </div>`;
+  }
+}
+
+async function callEmailGeneration(campaign, target) {
+  // Cognome del docente (per "Gentile professor X")
+  const nomeCompleto = target.docente_nome || '';
+  const cognome = nomeCompleto.split(' ').filter(Boolean).pop() || nomeCompleto;
+  
+  // Corso di laurea
+  const corsoLaurea = target.classe_laurea || '';
+  
+  // Temi dal programma
+  const temi = target.temi_comuni && target.temi_comuni.length > 0
+    ? target.temi_comuni
+    : (target.motivazione || '').match(/stereochimica|aromatici|carbonilici|reattività|alcani|alcheni|alcoli|termodinamica|macroeconomia|microeconomia|equilibrio|mercato|PIL|inflazione|politica fiscale|domanda|offerta/gi) || [];
+  
+  // Indice del volume (capitoli specifici)
+  const indice = campaign.libro_indice || '';
+  
+  const systemPrompt = `Sei un assistente che scrive mail professionali per promotori editoriali Zanichelli.
+Scrivi mail di primo contatto a docenti universitari per proporre un nuovo volume.
+
+TONO: formale ma non burocratico. Il promotore si rivolge al docente con rispetto professionale.
+Non usare espressioni come "mi permetto di", "con la presente", "in qualità di".
+Vai diretto al punto: hai studiato il programma, hai notato degli argomenti rilevanti, proponi il volume.
+
+STRUTTURA OBBLIGATORIA (segui questo ordine esatto):
+1. APERTURA: "Gentile professor [Cognome], La contatto dopo aver attentamente studiato il Suo programma di [materia] destinato agli studenti del corso di laurea in [corso]." Poi indica 2-3 argomenti specifici del programma del docente a cui dedica attenzione. Chiudi con: "Questi argomenti sono particolarmente approfonditi nel nuovo volume che Le vorrei proporre."
+
+2. PROPOSTA: "Si tratta di [Autore], [Titolo], e a questa pagina [LINK_ANTEPRIMA] può già consultare un'anteprima con l'indice completo e un capitolo campione." Poi cita 2-3 capitoli specifici del volume particolarmente rilevanti per il programma del docente.
+
+3. CHIUSURA: Offri la copia omaggio ("Se desidera ricevere una copia omaggio per una valutazione approfondita, La prego di comunicarmelo indicando in questo caso anche il luogo preferito per la spedizione.") e l'alternativa dell'appuntamento. Chiudi con "Nella speranza di risentirLa, approfitto dell'occasione per inviarLe i miei migliori saluti."
+
+REGOLE TASSATIVE:
+- Scrivi SOLO la mail, niente note o commenti.
+- Usa [LINK_ANTEPRIMA] come placeholder per il link (il promotore lo inserirà).
+- NON inventare capitoli che non sono nell'indice fornito. Se non hai l'indice, cita solo gli argomenti.
+- NON aggiungere frasi generiche sul "digitale", "approccio innovativo" ecc. se non hai dati.
+- La mail deve essere 3 paragrafi massimo, concisa e diretta.
+- Rispondi in JSON: {"oggetto": "...", "corpo": "..."}`;
+
+  const userPrompt = `DATI PER LA MAIL:
+
+DOCENTE: ${nomeCompleto}
+ATENEO: ${target.ateneo || 'N/D'}
+MATERIA: ${target.materia || campaign.libro_materia || 'N/D'}
+CORSO DI LAUREA: ${corsoLaurea}
+MANUALE ATTUALE: ${target.manuale_principale || 'Non identificato'}
+SCENARIO: ${target.scenario || 'N/D'}
+
+TEMI DEL PROGRAMMA DEL DOCENTE: ${temi.length > 0 ? temi.join(', ') : 'Non disponibili'}
+
+VOLUME DA PROPORRE:
+- Titolo: ${campaign.libro_titolo || 'N/D'}
+- Autore: ${campaign.libro_autore || 'N/D'}
+- Materia: ${campaign.libro_materia || 'N/D'}
+${indice ? `- Indice/Sommario:\n${indice}` : '- Indice: non disponibile'}
+
+MOTIVAZIONE GIÀ GENERATA (usa come riferimento per i punti di forza):
+${target.motivazione || 'Nessuna'}
+
+Genera la mail di primo contatto.`;
+
+  const result = await callOpenAI(systemPrompt, userPrompt, true);
+  return result;
+}
+
+function showEmailModal(emailResult, target, campaign) {
+  const modal = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  
+  const oggetto = emailResult.oggetto || `${campaign.libro_titolo} — nuova pubblicazione Zanichelli`;
+  const corpo = emailResult.corpo || '';
+  
+  // Formatta il corpo per la visualizzazione (preserva a capo)
+  const corpoHtml = corpo.replace(/\n/g, '<br>');
+  
+  content.innerHTML = `
+    <div class="space-y-4 max-h-[80vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-800">
+          <i class="fas fa-envelope mr-2 text-zanichelli-light"></i>
+          Mail per ${target.docente_nome || 'il docente'}
+        </h3>
+        <span class="text-xs text-gray-400">Puoi modificare prima di copiare</span>
+      </div>
+      
+      <!-- Oggetto -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Oggetto</label>
+        <input type="text" id="email-oggetto" value="${oggetto.replace(/"/g, '&quot;')}"
+               class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none font-medium">
+      </div>
+      
+      <!-- Link anteprima -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+          <i class="fas fa-link mr-1"></i>Link anteprima opera (sostituisce [LINK_ANTEPRIMA])
+        </label>
+        <input type="url" id="email-link-anteprima" placeholder="https://www.zanichelli.it/ricerca/prodotti/..."
+               class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+               oninput="updateEmailPreview()">
+      </div>
+      
+      <!-- Corpo mail -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Corpo della mail</label>
+        <textarea id="email-corpo" rows="12"
+                  class="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none leading-relaxed"
+                  oninput="updateEmailPreview()">${corpo}</textarea>
+      </div>
+      
+      <!-- Firma -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Firma</label>
+        <textarea id="email-firma" rows="3"
+                  class="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none text-gray-500"
+                  placeholder="Nome Cognome&#10;Promotore editoriale — Zanichelli&#10;Tel. ... | email@...">${localStorage.getItem('matrix_email_firma') || ''}</textarea>
+      </div>
+      
+      <!-- Azioni -->
+      <div class="flex gap-3 pt-2 border-t">
+        <button onclick="copyEmail()" 
+                class="flex-1 py-2.5 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors">
+          <i class="fas fa-copy mr-2"></i>Copia tutto
+        </button>
+        <button onclick="openMailto()" 
+                class="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                title="Apri nel client di posta">
+          <i class="fas fa-paper-plane mr-1"></i>Apri in Mail
+        </button>
+        <button onclick="closeModal()" 
+                class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+          Chiudi
+        </button>
+      </div>
+    </div>`;
+  
+  modal.classList.remove('hidden');
+  
+  // Salva firma per riutilizzo
+  const firmaEl = document.getElementById('email-firma');
+  firmaEl.addEventListener('blur', () => {
+    localStorage.setItem('matrix_email_firma', firmaEl.value);
+  });
+  
+  // Applica link se già presente
+  updateEmailPreview();
+}
+
+function updateEmailPreview() {
+  const link = document.getElementById('email-link-anteprima')?.value?.trim();
+  if (!link) return;
+  
+  const corpoEl = document.getElementById('email-corpo');
+  if (corpoEl && corpoEl.value.includes('[LINK_ANTEPRIMA]')) {
+    corpoEl.value = corpoEl.value.replace(/\[LINK_ANTEPRIMA\]/g, link);
+  }
+}
+
+function copyEmail() {
+  const oggetto = document.getElementById('email-oggetto')?.value || '';
+  const corpo = document.getElementById('email-corpo')?.value || '';
+  const firma = document.getElementById('email-firma')?.value || '';
+  
+  const fullEmail = `Oggetto: ${oggetto}\n\n${corpo}${firma ? '\n\n' + firma : ''}`;
+  
+  navigator.clipboard.writeText(fullEmail).then(() => {
+    showToast('Mail copiata negli appunti!', 'success');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = fullEmail;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Mail copiata!', 'success');
+  });
+}
+
+function openMailto() {
+  const oggetto = document.getElementById('email-oggetto')?.value || '';
+  const corpo = document.getElementById('email-corpo')?.value || '';
+  const firma = document.getElementById('email-firma')?.value || '';
+  
+  // Cerca email del target corrente
+  const target = currentTargets.find(t => 
+    corpo.toLowerCase().includes((t.docente_nome || '').split(' ').pop()?.toLowerCase())
+  );
+  const email = target?.docente_email || '';
+  
+  const fullBody = `${corpo}${firma ? '\n\n' + firma : ''}`;
+  const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(fullBody)}`;
+  
+  window.open(mailtoUrl, '_blank');
 }

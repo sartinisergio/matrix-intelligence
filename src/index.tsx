@@ -728,6 +728,7 @@ function dashboardPage(): string {
                       </div>
                     </th>
                     <th class="px-4 py-3 font-medium">Motivazione</th>
+                    <th class="px-4 py-3 font-medium text-center">Mail</th>
                   </tr>
                 </thead>
                 <tbody id="target-table-body"></tbody>
