@@ -982,7 +982,9 @@ async function generateTargets(campaignId) {
     bookThemes = [];
     for (const mod of framework.syllabus_modules) {
       for (const kc of (mod.key_concepts || [])) {
-        bookThemes.push(kc);
+        if (typeof kc === 'string' && kc.trim()) {
+          bookThemes.push(kc);
+        }
       }
     }
     if (bookThemes.length > 0) {
@@ -1205,8 +1207,8 @@ function calculateRelevance(campaign, program, bookThemes, framework) {
   }
   
   // STEP 4: Overlap tematico
-  const progThemes = (program.temi_principali || []).map(t => t.toLowerCase());
-  const bkThemes = bookThemes.map(t => t.toLowerCase());
+  const progThemes = (program.temi_principali || []).filter(t => typeof t === 'string' && t.trim()).map(t => t.toLowerCase());
+  const bkThemes = (bookThemes || []).filter(t => typeof t === 'string' && t.trim()).map(t => t.toLowerCase());
   
   let matchCount = 0;
   const temiComuni = [];
@@ -1231,6 +1233,7 @@ function calculateRelevance(campaign, program, bookThemes, framework) {
     const fwConcepts = [];
     for (const mod of framework.syllabus_modules) {
       for (const kc of (mod.key_concepts || [])) {
+        if (typeof kc !== 'string' || !kc.trim()) continue;
         fwConcepts.push({ concept: kc.toLowerCase(), module: mod.name });
       }
     }
