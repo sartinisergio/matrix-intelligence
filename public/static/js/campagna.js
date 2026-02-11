@@ -1905,9 +1905,9 @@ REGOLE TASSATIVE:
 DOCENTE: ${nomeCompleto}
 ATENEO: ${target.ateneo || 'N/D'}
 MATERIA: ${target.materia || campaign.libro_materia || 'N/D'}
-CLASSE DI LAUREA (NON è il nome del corso): ${target.classe_laurea || 'N/D'}
 MANUALE ATTUALE: ${target.manuale_principale || 'Non identificato'}
 SCENARIO: ${target.scenario || 'N/D'}
+NOTA: NON conosci il nome del corso di laurea. Usa il placeholder [CORSO DI LAUREA] nella mail.
 
 TEMI DEL PROGRAMMA DEL DOCENTE: ${temi.length > 0 ? temi.join(', ') : 'Non disponibili'}
 
