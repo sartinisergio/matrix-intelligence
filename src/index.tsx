@@ -501,7 +501,7 @@ function dashboardPage(): string {
           <div class="bg-white rounded-xl shadow-sm border p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">
               <i class="fas fa-book mr-2 text-zanichelli-light"></i>
-              Nuova Campagna — Dettagli Libro
+              Nuova Campagna — Volume da Promuovere
             </h3>
 
             <!-- === SELETTORE CATALOGO MATRIX === -->
@@ -566,6 +566,9 @@ function dashboardPage(): string {
               </div>
             </div>
 
+            <!-- === PANNELLO SCENARIO A/B/C === -->
+            <div id="scenario-panel" class="hidden mb-6"></div>
+
             <div class="flex items-center gap-3 mb-4">
               <div class="flex-1 border-t border-gray-200"></div>
               <span class="text-xs text-gray-400 font-medium">oppure compila manualmente</span>
@@ -588,7 +591,7 @@ function dashboardPage(): string {
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Materia di riferimento *</label>
-                  <input type="text" id="camp-materia" required
+                  <input type="text" id="camp-materia" required oninput="onMateriaChange()"
                          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
                          placeholder="Es: Chimica Generale">
                 </div>

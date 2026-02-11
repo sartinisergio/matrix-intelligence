@@ -1,6 +1,8 @@
 // ==========================================
 // MATRIX Intelligence — Campagne & Target
 // ==========================================
+// Una Campagna promuove un VOLUME specifico di una materia.
+// Flusso: Seleziona/inserisci volume → Verifica risorse (Scenario A/B/C) → Genera target
 
 let allCampaigns = [];
 let currentTargets = [];
@@ -13,6 +15,23 @@ let catalogManuals = [];
 // --- Framework di valutazione ---
 let frameworkData = null;
 let allFrameworks = [];
+
+// ===================================================
+// CARICAMENTO RISORSE (Catalogo + Framework)
+// ===================================================
+
+async function loadCatalog() {
+  if (catalogData) return;
+  try {
+    const response = await fetch('/static/data/catalogo_manuali.json');
+    if (!response.ok) throw new Error('Catalogo non trovato');
+    catalogData = await response.json();
+    catalogManuals = catalogData.manuals || [];
+    console.log(`Catalogo manuali caricato: ${catalogManuals.length} manuali`);
+  } catch (e) {
+    console.error('Errore caricamento catalogo:', e);
+  }
+}
 
 async function loadFrameworks() {
   if (frameworkData) return;
@@ -31,14 +50,12 @@ function findFrameworkForSubject(materia) {
   if (!allFrameworks.length || !materia) return null;
   const materiaLower = materia.toLowerCase();
   
-  // Match esatto o parziale
   let best = null;
   for (const fw of allFrameworks) {
     const fwSubject = fw.subject.toLowerCase();
     const fwName = fw.name.toLowerCase();
     
     if (fwSubject === materiaLower || fwName === materiaLower) {
-      // Preferisci il framework più completo (più moduli)
       if (!best || fw.syllabus_modules.length > best.syllabus_modules.length) {
         best = fw;
       }
@@ -49,39 +66,37 @@ function findFrameworkForSubject(materia) {
   return best;
 }
 
-async function loadCatalog() {
-  if (catalogData) return; // Già caricato
+function findManualsForSubject(materia) {
+  if (!catalogManuals.length || !materia) return [];
+  return catalogManuals.filter(m => checkSubjectMatch(m.subject, materia));
+}
+
+// ===================================================
+// POPOLA CATALOGO NEL SELETTORE
+// ===================================================
+
+function populateCatalogSelector() {
+  if (!catalogManuals.length) return;
   
-  try {
-    const response = await fetch('/static/data/catalogo_manuali.json');
-    if (!response.ok) throw new Error('Catalogo non trovato');
-    catalogData = await response.json();
-    catalogManuals = catalogData.manuals || [];
+  const subjectFilter = document.getElementById('catalog-subject-filter');
+  if (subjectFilter && catalogData?.subjects) {
+    // Svuota prima le opzioni esistenti (tranne la prima)
+    while (subjectFilter.options.length > 1) subjectFilter.remove(1);
     
-    // Popola filtro materie
-    const subjectFilter = document.getElementById('catalog-subject-filter');
-    if (subjectFilter && catalogData.subjects) {
-      const subjects = Object.keys(catalogData.subjects).sort();
-      subjects.forEach(subj => {
-        const counts = catalogData.subjects[subj];
-        const opt = document.createElement('option');
-        opt.value = subj;
-        opt.textContent = `${subj} (${counts.total})`;
-        subjectFilter.appendChild(opt);
-      });
-    }
-    
-    // Aggiorna conteggio
-    const countEl = document.getElementById('catalog-count');
-    if (countEl) countEl.textContent = `${catalogManuals.length} manuali`;
-    
-    // Popola dropdown iniziale
-    filterCatalogManuals();
-    
-    console.log(`Catalogo MATRIX caricato: ${catalogManuals.length} manuali`);
-  } catch (e) {
-    console.error('Errore caricamento catalogo:', e);
+    const subjects = Object.keys(catalogData.subjects).sort();
+    subjects.forEach(subj => {
+      const counts = catalogData.subjects[subj];
+      const opt = document.createElement('option');
+      opt.value = subj;
+      opt.textContent = `${subj} (${counts.total})`;
+      subjectFilter.appendChild(opt);
+    });
   }
+  
+  const countEl = document.getElementById('catalog-count');
+  if (countEl) countEl.textContent = `${catalogManuals.length} manuali`;
+  
+  filterCatalogManuals();
 }
 
 function filterCatalogManuals() {
@@ -93,33 +108,26 @@ function filterCatalogManuals() {
   
   let filtered = [...catalogManuals];
   
-  // Filtro materia
   if (subjectFilter) {
     filtered = filtered.filter(m => m.subject === subjectFilter);
   }
-  
-  // Filtro editore
   if (publisherFilter === 'zanichelli') {
     filtered = filtered.filter(m => m.is_zanichelli);
   } else if (publisherFilter === 'competitor') {
     filtered = filtered.filter(m => !m.is_zanichelli);
   }
-  
-  // Filtro ricerca
   if (searchText) {
-    filtered = filtered.filter(m => 
-      m.title.toLowerCase().includes(searchText) || 
+    filtered = filtered.filter(m =>
+      m.title.toLowerCase().includes(searchText) ||
       m.author.toLowerCase().includes(searchText) ||
       m.id.toLowerCase().includes(searchText)
     );
   }
   
-  // Popola dropdown manuali
   const select = document.getElementById('catalog-manual-select');
   if (!select) return;
   
   select.innerHTML = `<option value="">— Seleziona (${filtered.length} risultati) —</option>`;
-  
   filtered.forEach(m => {
     const opt = document.createElement('option');
     opt.value = m.id;
@@ -147,15 +155,12 @@ function selectManualFromCatalog() {
   document.getElementById('camp-editore').value = manual.publisher;
   document.getElementById('camp-materia').value = manual.subject;
   
-  // Genera l'indice dal sommario dei capitoli
   if (manual.chapters_summary) {
     document.getElementById('camp-indice').value = manual.chapters_summary;
-    // Mostra badge "da catalogo"
     const badge = document.getElementById('indice-source-badge');
     if (badge) badge.classList.remove('hidden');
   }
   
-  // I temi verranno generati automaticamente dall'LLM al momento della creazione
   document.getElementById('camp-temi').value = '';
   
   // Mostra info manuale selezionato
@@ -163,13 +168,16 @@ function selectManualFromCatalog() {
   if (infoBox) {
     infoBox.classList.remove('hidden');
     document.getElementById('catalog-selected-title').textContent = manual.title;
-    document.getElementById('catalog-selected-meta').textContent = 
+    document.getElementById('catalog-selected-meta').textContent =
       `${manual.author} — ${manual.publisher} — ${manual.subject}`;
-    document.getElementById('catalog-selected-chapters').textContent = 
+    document.getElementById('catalog-selected-chapters').textContent =
       `${manual.chapters_count} capitoli caricati dal catalogo MATRIX`;
   }
   
   showToast(`Manuale "${manual.title}" selezionato dal catalogo!`, 'success');
+  
+  // Aggiorna scenario A/B/C con la materia del manuale selezionato
+  onMateriaChange();
 }
 
 function clearCatalogSelection() {
@@ -182,29 +190,413 @@ function clearCatalogSelection() {
   const badge = document.getElementById('indice-source-badge');
   if (badge) badge.classList.add('hidden');
   
-  // Reset form
   document.getElementById('camp-titolo').value = '';
   document.getElementById('camp-autore').value = '';
   document.getElementById('camp-editore').value = 'Zanichelli';
   document.getElementById('camp-materia').value = '';
   document.getElementById('camp-indice').value = '';
   document.getElementById('camp-temi').value = '';
+  
+  // Nascondi pannello scenario
+  const panel = document.getElementById('scenario-panel');
+  if (panel) panel.classList.add('hidden');
 }
 
-// --- Carica campagne ---
+// ===================================================
+// RILEVAMENTO SCENARIO A/B/C
+// ===================================================
+
+async function detectScenario(materia) {
+  await loadCatalog();
+  await loadFrameworks();
+  
+  const framework = findFrameworkForSubject(materia);
+  const manuali = findManualsForSubject(materia);
+  
+  let scenario, scenarioLabel, scenarioColor;
+  
+  if (framework && manuali.length > 0) {
+    scenario = 'A';
+    scenarioLabel = 'Completo';
+    scenarioColor = 'green';
+  } else if (framework && manuali.length === 0) {
+    scenario = 'B';
+    scenarioLabel = 'Parziale';
+    scenarioColor = 'yellow';
+  } else if (!framework && manuali.length > 0) {
+    // Ha manuali ma non il framework
+    scenario = 'B';
+    scenarioLabel = 'Parziale';
+    scenarioColor = 'yellow';
+  } else {
+    scenario = 'C';
+    scenarioLabel = 'Base';
+    scenarioColor = 'orange';
+  }
+  
+  return {
+    scenario,
+    scenarioLabel,
+    scenarioColor,
+    framework,
+    frameworkModules: framework ? framework.syllabus_modules.length : 0,
+    frameworkProfiles: framework ? framework.program_profiles.length : 0,
+    frameworkConcepts: framework ? framework.syllabus_modules.reduce((sum, m) => sum + (m.key_concepts || []).length, 0) : 0,
+    manuali,
+    manualiCount: manuali.length,
+    manualiZanichelli: manuali.filter(m => m.is_zanichelli).length,
+    manualiCompetitor: manuali.filter(m => !m.is_zanichelli).length,
+    hasFramework: !!framework,
+    hasManuali: manuali.length > 0
+  };
+}
+
+function renderScenarioPanel(scenarioInfo) {
+  const panel = document.getElementById('scenario-panel');
+  if (!panel) return;
+  
+  const { scenario, framework, frameworkModules, frameworkProfiles, frameworkConcepts,
+          manualiCount, manualiZanichelli, manualiCompetitor, hasFramework, hasManuali } = scenarioInfo;
+  
+  // Framework status
+  const fwStatus = hasFramework
+    ? `<div class="flex items-center gap-2 flex-wrap">
+         <i class="fas fa-check-circle text-green-500"></i>
+         <span class="text-green-700 font-medium">Presente</span>
+         <span class="text-xs text-gray-500">(${frameworkModules} moduli, ${frameworkConcepts} concetti, ${frameworkProfiles} profili classe)</span>
+       </div>`
+    : `<div class="flex items-center gap-2 flex-wrap">
+         <i class="fas fa-times-circle text-red-400"></i>
+         <span class="text-red-600 font-medium">Non presente</span>
+         <button onclick="showUploadFramework()" class="ml-2 text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+           <i class="fas fa-upload mr-1"></i>Carica framework JSON
+         </button>
+       </div>`;
+  
+  // Manuali status
+  const manStatus = hasManuali
+    ? `<div class="flex items-center gap-2 flex-wrap">
+         <i class="fas fa-check-circle text-green-500"></i>
+         <span class="text-green-700 font-medium">Presente</span>
+         <span class="text-xs text-gray-500">(${manualiCount} manuali: ${manualiZanichelli} Zanichelli, ${manualiCompetitor} competitor)</span>
+       </div>`
+    : `<div class="flex items-center gap-2 flex-wrap">
+         <i class="fas fa-times-circle text-red-400"></i>
+         <span class="text-red-600 font-medium">Non presente</span>
+         <button onclick="showUploadManuals()" class="ml-2 text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+           <i class="fas fa-upload mr-1"></i>Carica manuali JSON
+         </button>
+       </div>`;
+  
+  // Colori scenario
+  const scenarioColors = {
+    A: { bg: 'bg-green-50', border: 'border-green-200', badge: 'bg-green-100 text-green-700', icon: 'fa-check-double' },
+    B: { bg: 'bg-yellow-50', border: 'border-yellow-200', badge: 'bg-yellow-100 text-yellow-700', icon: 'fa-exclamation-triangle' },
+    C: { bg: 'bg-orange-50', border: 'border-orange-200', badge: 'bg-orange-100 text-orange-700', icon: 'fa-exclamation-circle' }
+  };
+  const colors = scenarioColors[scenario];
+  
+  // Capacita di analisi per scenario
+  const analysisCapabilities = {
+    A: [
+      { icon: 'fa-check', color: 'text-green-500', text: 'Analisi qualitativa programma (moduli forti/deboli/assenti)' },
+      { icon: 'fa-check', color: 'text-green-500', text: 'Gap analysis manuale adottato vs framework' },
+      { icon: 'fa-check', color: 'text-green-500', text: 'Matching completo con priorita e motivazioni personalizzate' }
+    ],
+    B: [
+      { icon: 'fa-check', color: 'text-green-500', text: hasFramework ? 'Analisi qualitativa programma con framework' : 'Confronto con manuali del catalogo' },
+      { icon: 'fa-minus', color: 'text-yellow-500', text: hasFramework ? 'Identificazione manuali citati (senza gap analysis dettagliata)' : 'Analisi base senza framework disciplinare' },
+      { icon: 'fa-check', color: 'text-green-500', text: 'Matching con priorita basata su scenario Zanichelli' }
+    ],
+    C: [
+      { icon: 'fa-minus', color: 'text-orange-500', text: 'Estrazione base dati (docente, ateneo, temi, manuali citati)' },
+      { icon: 'fa-times', color: 'text-red-400', text: 'Nessuna analisi qualitativa approfondita disponibile' },
+      { icon: 'fa-minus', color: 'text-orange-500', text: 'Matching basico (solo materia + scenario Zanichelli)' }
+    ]
+  };
+  
+  const capabilitiesHtml = analysisCapabilities[scenario].map(c =>
+    `<li class="flex items-start gap-2 text-sm">
+       <i class="fas ${c.icon} ${c.color} w-4 text-center mt-0.5"></i>
+       <span class="text-gray-700">${c.text}</span>
+     </li>`
+  ).join('');
+  
+  // Note informative
+  let noteHtml = '';
+  if (scenario === 'B' || scenario === 'C') {
+    noteHtml = `
+      <div class="mt-3 p-3 bg-white/60 rounded-lg border ${colors.border}">
+        <p class="text-xs text-gray-600">
+          <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
+          <strong>Puoi procedere comunque:</strong> l'analisi funziona anche senza tutte le risorse, 
+          ma sara meno dettagliata. Puoi caricare le risorse mancanti in qualsiasi momento per migliorare i risultati.
+        </p>
+      </div>`;
+  }
+  
+  panel.innerHTML = `
+    <div class="${colors.bg} ${colors.border} border rounded-xl p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="font-semibold text-gray-800">
+          <i class="fas fa-clipboard-check mr-2"></i>Stato Risorse per questa Materia
+        </h4>
+        <span class="px-3 py-1 ${colors.badge} rounded-full text-sm font-medium">
+          <i class="fas ${colors.icon} mr-1"></i>Scenario ${scenario} — ${scenarioInfo.scenarioLabel}
+        </span>
+      </div>
+      
+      <div class="space-y-3 mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span class="text-sm text-gray-600 font-medium sm:w-52 shrink-0">Framework di valutazione:</span>
+          ${fwStatus}
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span class="text-sm text-gray-600 font-medium sm:w-52 shrink-0">Database manuali:</span>
+          ${manStatus}
+        </div>
+      </div>
+      
+      <div class="border-t ${colors.border} pt-3">
+        <p class="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Capacita di analisi:</p>
+        <ul class="space-y-1.5">${capabilitiesHtml}</ul>
+      </div>
+      ${noteHtml}
+    </div>`;
+  
+  panel.classList.remove('hidden');
+}
+
+// ===================================================
+// UPLOAD FRAMEWORK / MANUALI (colmare gap)
+// ===================================================
+
+function showUploadFramework() {
+  const modal = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  
+  content.innerHTML = `
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        <i class="fas fa-upload mr-2 text-zanichelli-light"></i>
+        Carica Framework di Valutazione
+      </h3>
+      <p class="text-sm text-gray-600">
+        Carica un file JSON con il framework di valutazione dalla cartella <code class="bg-gray-100 px-1 rounded">frameworks/</code> del repository MATRIX.
+        Il framework deve contenere <code class="bg-gray-100 px-1 rounded">syllabus_modules</code> con <code class="bg-gray-100 px-1 rounded">key_concepts</code>.
+      </p>
+      <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-zanichelli-light hover:bg-zanichelli-accent/20 transition-all"
+           onclick="document.getElementById('fw-file-input').click()">
+        <i class="fas fa-file-code text-4xl text-gray-300 mb-3"></i>
+        <p class="text-gray-600 font-medium">Clicca per selezionare il file JSON</p>
+        <p class="text-xs text-gray-400 mt-1">Formato: JSON del framework MATRIX</p>
+        <input type="file" id="fw-file-input" accept=".json" class="hidden" onchange="handleFrameworkUpload(event)">
+      </div>
+      <div id="fw-upload-status"></div>
+    </div>`;
+  
+  modal.classList.remove('hidden');
+}
+
+async function handleFrameworkUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const statusEl = document.getElementById('fw-upload-status');
+  statusEl.innerHTML = '<div class="text-sm text-blue-600"><i class="fas fa-spinner fa-spin mr-1"></i>Caricamento in corso...</div>';
+  
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const content = data.content || data;
+    
+    if (!content.syllabus_modules || !Array.isArray(content.syllabus_modules)) {
+      throw new Error('Il file non contiene syllabus_modules validi. Verifica che sia un framework MATRIX.');
+    }
+    
+    const fwName = file.name.replace('.json', '');
+    const materia = document.getElementById('camp-materia')?.value || fwName;
+    
+    const newFw = {
+      id: fwName.toLowerCase().replace(/\s+/g, '_'),
+      name: fwName,
+      subject: materia,
+      program_profiles: content.program_profiles || [],
+      syllabus_modules: content.syllabus_modules.map(m => ({
+        name: m.name || '',
+        core_contents: m.core_contents || '',
+        key_concepts: m.key_concepts || []
+      }))
+    };
+    
+    // Evita duplicati
+    const existingIdx = allFrameworks.findIndex(f => f.id === newFw.id);
+    if (existingIdx >= 0) {
+      allFrameworks[existingIdx] = newFw;
+    } else {
+      allFrameworks.push(newFw);
+    }
+    
+    const concepts = newFw.syllabus_modules.reduce((sum, m) => sum + (m.key_concepts || []).length, 0);
+    statusEl.innerHTML = `
+      <div class="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+        <i class="fas fa-check-circle mr-1"></i>
+        Framework "<strong>${fwName}</strong>" caricato con successo!<br>
+        <span class="text-xs text-gray-500">${newFw.syllabus_modules.length} moduli, ${concepts} concetti, ${newFw.program_profiles.length} profili classe</span>
+      </div>`;
+    
+    // Riaggiorna il pannello scenario
+    await refreshScenarioPanel();
+    
+    showToast('Framework caricato! Lo scenario e stato aggiornato.', 'success');
+    setTimeout(() => closeModal(), 2000);
+    
+  } catch (e) {
+    statusEl.innerHTML = `<div class="text-sm text-red-600 bg-red-50 p-3 rounded-lg"><i class="fas fa-exclamation-circle mr-1"></i>${e.message}</div>`;
+  }
+}
+
+function showUploadManuals() {
+  const modal = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  
+  content.innerHTML = `
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        <i class="fas fa-upload mr-2 text-zanichelli-light"></i>
+        Carica Database Manuali
+      </h3>
+      <p class="text-sm text-gray-600">
+        Carica uno o piu file JSON dalla cartella <code class="bg-gray-100 px-1 rounded">manuali/</code> del repository MATRIX.
+        Ogni file deve contenere <code class="bg-gray-100 px-1 rounded">title</code>, <code class="bg-gray-100 px-1 rounded">author</code>, <code class="bg-gray-100 px-1 rounded">publisher</code> e <code class="bg-gray-100 px-1 rounded">chapters</code>.
+      </p>
+      <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-zanichelli-light hover:bg-zanichelli-accent/20 transition-all"
+           onclick="document.getElementById('man-file-input').click()">
+        <i class="fas fa-book text-4xl text-gray-300 mb-3"></i>
+        <p class="text-gray-600 font-medium">Clicca per selezionare i file JSON</p>
+        <p class="text-xs text-gray-400 mt-1">Selezione multipla supportata</p>
+        <input type="file" id="man-file-input" accept=".json" multiple class="hidden" onchange="handleManualsUpload(event)">
+      </div>
+      <div id="man-upload-status"></div>
+    </div>`;
+  
+  modal.classList.remove('hidden');
+}
+
+async function handleManualsUpload(event) {
+  const files = event.target.files;
+  if (!files.length) return;
+  
+  const statusEl = document.getElementById('man-upload-status');
+  statusEl.innerHTML = `<div class="text-sm text-blue-600"><i class="fas fa-spinner fa-spin mr-1"></i>Caricamento ${files.length} file...</div>`;
+  
+  let loaded = 0;
+  let errors = 0;
+  let duplicates = 0;
+  
+  for (const file of files) {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      if (!data.title || !data.chapters) {
+        errors++;
+        continue;
+      }
+      
+      const manual = {
+        id: data.id || file.name.replace('.json', ''),
+        title: data.title,
+        author: data.author || '',
+        publisher: data.publisher || '',
+        subject: data.subject || '',
+        is_zanichelli: (data.publisher === 'Zanichelli') || (data.type === 'zanichelli'),
+        chapters_count: data.chapters.length,
+        chapters_summary: data.chapters.map(ch => `${ch.number || ''}: ${ch.title || ''}`).join('\n'),
+        temi_chiave: data.chapters.map(ch => `${ch.number || ''}: ${ch.title || ''}`)
+      };
+      
+      // Evita duplicati
+      if (catalogManuals.find(m => m.id === manual.id)) {
+        duplicates++;
+        continue;
+      }
+      
+      catalogManuals.push(manual);
+      loaded++;
+    } catch (e) {
+      errors++;
+    }
+  }
+  
+  let statusMsg = `${loaded} manuali caricati`;
+  if (duplicates > 0) statusMsg += `, ${duplicates} gia presenti`;
+  if (errors > 0) statusMsg += `, ${errors} errori`;
+  
+  statusEl.innerHTML = `
+    <div class="text-sm ${loaded > 0 ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} p-3 rounded-lg">
+      <i class="fas ${loaded > 0 ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-1"></i>
+      ${statusMsg}<br>
+      <span class="text-xs text-gray-500">Totale catalogo: ${catalogManuals.length} manuali</span>
+    </div>`;
+  
+  // Riaggiorna scenario
+  await refreshScenarioPanel();
+  
+  showToast(`${loaded} manuali caricati!`, 'success');
+  setTimeout(() => closeModal(), 2000);
+}
+
+// Aggiorna il pannello scenario con la materia corrente
+async function refreshScenarioPanel() {
+  const materia = document.getElementById('camp-materia')?.value?.trim();
+  if (materia) {
+    const scenarioInfo = await detectScenario(materia);
+    renderScenarioPanel(scenarioInfo);
+  }
+}
+
+// ===================================================
+// MATERIA CHANGE → Aggiorna Scenario
+// ===================================================
+
+let _materiaDebounce = null;
+function onMateriaChange() {
+  clearTimeout(_materiaDebounce);
+  _materiaDebounce = setTimeout(async () => {
+    const materia = document.getElementById('camp-materia')?.value?.trim();
+    if (!materia || materia.length < 3) {
+      const panel = document.getElementById('scenario-panel');
+      if (panel) panel.classList.add('hidden');
+      return;
+    }
+    
+    const scenarioInfo = await detectScenario(materia);
+    renderScenarioPanel(scenarioInfo);
+  }, 500);
+}
+
+// ===================================================
+// GESTIONE CAMPAGNE (CRUD)
+// ===================================================
+
 async function loadCampaigns() {
   if (!supabaseClient) return;
-
+  
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
-
+  
+  // Carica risorse in parallelo
+  loadCatalog();
+  loadFrameworks();
+  
   try {
     const { data, error } = await supabaseClient
       .from('campagne')
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
-
+    
     if (error) throw error;
     allCampaigns = data || [];
     renderCampaignsList();
@@ -213,32 +605,31 @@ async function loadCampaigns() {
   }
 }
 
-// --- Render lista campagne ---
 function renderCampaignsList() {
   const container = document.getElementById('campaigns-list');
-
+  
   if (allCampaigns.length === 0) {
     container.innerHTML = `
       <div class="text-center py-12 text-gray-400">
         <i class="fas fa-bullseye text-4xl mb-3 block"></i>
         <p>Nessuna campagna creata</p>
-        <p class="text-sm mt-1">Crea la tua prima campagna per generare liste target</p>
+        <p class="text-sm mt-1">Crea la tua prima campagna promozionale per generare liste target</p>
       </div>`;
     return;
   }
-
+  
   container.innerHTML = allCampaigns.map(c => {
     const targetCount = (c.target_generati || []).length;
-    const statusBadge = c.stato === 'completata' 
-      ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Completata</span>'
-      : '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">Bozza</span>';
-
+    const statusBadge = c.stato === 'completata'
+      ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Completata</span>'
+      : '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Bozza</span>';
+    
     return `
       <div class="bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition-shadow">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-1">
-              <h3 class="font-semibold text-gray-800">${c.libro_titolo}</h3>
+              <h3 class="font-semibold text-gray-800">${c.libro_titolo || 'Campagna senza titolo'}</h3>
               ${statusBadge}
             </div>
             <p class="text-sm text-gray-500">${c.libro_autore || ''} ${c.libro_editore ? '— ' + c.libro_editore : ''}</p>
@@ -271,10 +662,16 @@ function showNewCampaignForm() {
   document.getElementById('btn-new-campaign').classList.add('hidden');
   document.getElementById('campaign-form').reset();
   document.getElementById('camp-editore').value = 'Zanichelli';
+  
+  // Nascondi scenario panel
+  const panel = document.getElementById('scenario-panel');
+  if (panel) panel.classList.add('hidden');
+  
   clearCatalogSelection();
   
-  // Carica il catalogo MATRIX (solo la prima volta)
-  loadCatalog();
+  // Carica catalogo e popola selettore
+  loadCatalog().then(() => populateCatalogSelector());
+  loadFrameworks();
 }
 
 function hideCampaignForm() {
@@ -285,38 +682,50 @@ function hideCampaignForm() {
 // --- Crea nuova campagna ---
 async function handleCreateCampaign(event) {
   event.preventDefault();
-
+  
   if (!supabaseClient) {
     showToast('Configura Supabase nelle Impostazioni', 'error');
     return;
   }
-
+  
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
-
+  
+  const titolo = document.getElementById('camp-titolo').value.trim();
+  const materia = document.getElementById('camp-materia').value.trim();
+  
+  if (!titolo) {
+    showToast('Inserisci il titolo del volume', 'warning');
+    return;
+  }
+  if (!materia) {
+    showToast('Inserisci la materia di riferimento', 'warning');
+    return;
+  }
+  
   const temiInput = document.getElementById('camp-temi').value;
   const temi = temiInput ? temiInput.split(',').map(t => t.trim()).filter(Boolean) : [];
-
+  
   const campaign = {
     user_id: session.user.id,
-    libro_titolo: document.getElementById('camp-titolo').value,
+    libro_titolo: titolo,
     libro_autore: document.getElementById('camp-autore').value || null,
     libro_editore: document.getElementById('camp-editore').value || 'Zanichelli',
-    libro_materia: document.getElementById('camp-materia').value,
+    libro_materia: materia,
     libro_indice: document.getElementById('camp-indice').value || null,
     libro_temi: temi,
     stato: 'bozza'
   };
-
+  
   try {
     const { data, error } = await supabaseClient.from('campagne').insert(campaign).select().single();
     if (error) throw error;
-
-    showToast('Campagna creata! Ora genera la lista target.', 'success');
+    
+    showToast('Campagna creata! Generazione target in corso...', 'success');
     hideCampaignForm();
-    loadCampaigns();
-
-    // Se ci sono temi, genera subito i target
+    await loadCampaigns();
+    
+    // Genera subito i target
     if (temi.length > 0 || campaign.libro_indice) {
       await generateTargets(data.id);
     }
@@ -325,33 +734,46 @@ async function handleCreateCampaign(event) {
   }
 }
 
-// --- Genera target per una campagna ---
-async function generateTargets(campaignId) {
-  const campaign = allCampaigns.find(c => c.id === campaignId);
-  if (!campaign) {
-    // Ricarica
-    await loadCampaigns();
-    return generateTargets(campaignId);
-  }
+// ===================================================
+// GENERAZIONE TARGET (ALGORITMO COMMERCIALE)
+// ===================================================
 
+async function generateTargets(campaignId) {
+  let campaign = allCampaigns.find(c => c.id === campaignId);
+  if (!campaign) {
+    await loadCampaigns();
+    campaign = allCampaigns.find(c => c.id === campaignId);
+    if (!campaign) {
+      showToast('Campagna non trovata', 'error');
+      return;
+    }
+  }
+  
   if (!CONFIG.OPENAI_API_KEY) {
     showToast('Configura la API Key OpenAI nelle Impostazioni', 'error');
     return;
   }
-
-  // Carica tutti i programmi dell'utente
+  
+  // Carica risorse
+  await loadCatalog();
+  await loadFrameworks();
+  
+  const materia = campaign.libro_materia;
+  const framework = findFrameworkForSubject(materia);
+  
+  // Carica programmi
   const { data: { session } } = await supabaseClient.auth.getSession();
   const { data: programs, error } = await supabaseClient
     .from('programmi')
     .select('*')
     .eq('user_id', session.user.id);
-
+  
   if (error || !programs || programs.length === 0) {
-    showToast('Nessun programma nel database. Carica prima dei PDF.', 'warning');
+    showToast('Nessun programma nel database. Carica prima dei PDF dalla sezione Upload.', 'warning');
     return;
   }
-
-  // Step 1: Se non ci sono temi, generali dall'indice
+  
+  // Genera temi dal libro (se non presenti)
   let bookThemes = campaign.libro_temi || [];
   if (bookThemes.length === 0 && campaign.libro_indice) {
     showToast('Generazione temi dal sommario...', 'info');
@@ -362,80 +784,80 @@ async function generateTargets(campaignId) {
         true
       );
       bookThemes = themeResult.temi || [];
-      
-      // Aggiorna la campagna con i temi generati
       await supabaseClient.from('campagne').update({ libro_temi: bookThemes }).eq('id', campaignId);
       campaign.libro_temi = bookThemes;
     } catch (e) {
-      showToast('Errore generazione temi: ' + e.message, 'error');
-      return;
+      console.error('Errore generazione temi:', e);
+      showToast('Errore generazione temi: ' + e.message, 'warning');
     }
   }
-
-  if (bookThemes.length === 0) {
-    showToast('Inserisci almeno dei temi chiave o un indice per la campagna', 'warning');
-    return;
+  
+  // Se non ci sono temi dal libro E c'e un framework, usa i concetti del framework come riferimento
+  if (bookThemes.length === 0 && framework) {
+    bookThemes = [];
+    for (const mod of framework.syllabus_modules) {
+      for (const kc of (mod.key_concepts || [])) {
+        bookThemes.push(kc);
+      }
+    }
+    showToast(`Usando ${bookThemes.length} concetti dal framework come riferimento`, 'info');
   }
-
-  // Step 2: Carica framework disciplinare (se disponibile)
-  await loadFrameworks();
-  const framework = findFrameworkForSubject(campaign.libro_materia);
+  
+  // Info sulle risorse disponibili
   if (framework) {
     showToast(`Framework "${framework.name}" trovato (${framework.syllabus_modules.length} moduli)`, 'info');
+  } else {
+    showToast('Nessun framework disponibile — analisi basata su scenario e overlap', 'warning');
   }
-
-  // Step 3: Matching con nuovo algoritmo
-  showToast('Calcolo rilevanza in corso...', 'info');
+  
+  // === MATCHING ===
+  showToast(`Calcolo rilevanza su ${programs.length} programmi...`, 'info');
   const targets = [];
-
+  
   for (const prog of programs) {
     const result = calculateRelevance(campaign, prog, bookThemes, framework);
     if (result) {
       targets.push(result);
     }
   }
-
+  
   // Ordina: Alta prima, poi Media, poi Bassa
-  // All'interno di ogni livello, zanichelli_alternativo > zanichelli_assente > zanichelli_principale
   const relevanceOrder = { 'alta': 0, 'media': 1, 'bassa': 2 };
-  const scenarioOrder = { 'zanichelli_alternativo': 0, 'zanichelli_assente': 1, 'zanichelli_principale': 2 };
-
+  const scenarioOrder = { 'zanichelli_assente': 0, 'zanichelli_alternativo': 1, 'zanichelli_principale': 2 };
+  
   targets.sort((a, b) => {
     const relDiff = (relevanceOrder[a.rilevanza] || 3) - (relevanceOrder[b.rilevanza] || 3);
     if (relDiff !== 0) return relDiff;
     return (scenarioOrder[a.scenario] || 3) - (scenarioOrder[b.scenario] || 3);
   });
-
-  // Step 3: Genera motivazioni LLM per target Alta e Media
+  
+  // === GENERA MOTIVAZIONI LLM ===
+  document.getElementById('target-results-container').classList.remove('hidden');
+  document.getElementById('target-campaign-title').textContent = campaign.libro_titolo;
+  
+  const highMedTargets = targets.filter(t => t.rilevanza === 'alta' || t.rilevanza === 'media');
   const targetProgress = document.getElementById('target-progress');
   const targetProgressBar = document.getElementById('target-progress-bar');
   const targetProgressText = document.getElementById('target-progress-text');
-
-  // Mostra risultati
-  document.getElementById('target-results-container').classList.remove('hidden');
-  document.getElementById('target-campaign-title').textContent = campaign.libro_titolo;
-
-  const highMedTargets = targets.filter(t => t.rilevanza === 'alta' || t.rilevanza === 'media');
   
   if (highMedTargets.length > 0) {
     targetProgress.classList.remove('hidden');
-
+    
     for (let i = 0; i < highMedTargets.length; i++) {
       const t = highMedTargets[i];
       const pct = Math.round(((i + 1) / highMedTargets.length) * 100);
       targetProgressBar.style.width = pct + '%';
       targetProgressText.textContent = `${i + 1}/${highMedTargets.length}`;
-
+      
       try {
         const bookData = {
           titolo: campaign.libro_titolo,
           autore: campaign.libro_autore,
           materia: campaign.libro_materia,
-          temi: bookThemes
+          temi: bookThemes.slice(0, 15)
         };
-
-        const mainManual = (t.programData.manuali_citati || []).find(m => m.ruolo === 'principale');
-        const targetData = {
+        
+        const targetInfo = {
           docente_nome: t.programData.docente_nome,
           ateneo: t.programData.ateneo,
           materia_inferita: t.programData.materia_inferita,
@@ -446,27 +868,27 @@ async function generateTargets(campaignId) {
           profilo_classe: t.profiloClasse,
           framework_score: t.frameworkScore
         };
-
-        t.motivazione = await generateMotivation(bookData, targetData);
+        
+        t.motivazione = await generateMotivation(bookData, targetInfo);
       } catch (e) {
         t.motivazione = 'Errore nella generazione della motivazione.';
       }
-
+      
       if (i < highMedTargets.length - 1) {
         await sleep(CONFIG.BATCH_DELAY_MS);
       }
     }
-
+    
     targetProgress.classList.add('hidden');
   }
-
-  // Motivazione generica per bassa rilevanza (consolidamento Zanichelli)
+  
+  // Motivazione per bassa rilevanza (consolidamento)
   targets.filter(t => t.rilevanza === 'bassa').forEach(t => {
     const manuale = t.manualePrincipale || 'un testo Zanichelli';
-    t.motivazione = `Il docente utilizza già ${manuale} come testo principale. Opportunità di consolidamento e aggiornamento con la nuova edizione o proposta complementare.`;
+    t.motivazione = `Il docente utilizza gia ${manuale} come testo principale. Opportunita di consolidamento e aggiornamento con la nuova edizione.`;
   });
-
-  // Salva target nella campagna
+  
+  // === SALVA ===
   const targetData = targets.map(t => ({
     programma_id: t.programData.id,
     docente_nome: t.programData.docente_nome,
@@ -482,7 +904,7 @@ async function generateTargets(campaignId) {
     motivazione: t.motivazione,
     temi_comuni: t.temiComuni
   }));
-
+  
   try {
     await supabaseClient.from('campagne').update({
       target_generati: targetData,
@@ -492,75 +914,62 @@ async function generateTargets(campaignId) {
   } catch (e) {
     console.error('Errore salvataggio target:', e);
   }
-
-  // Render results
+  
   currentTargets = targetData;
   currentCampaignId = campaignId;
   renderTargets(targetData);
-  loadCampaigns(); // Aggiorna lista campagne
+  loadCampaigns();
+  
+  showToast(`Campagna completata: ${targets.length} target trovati!`, 'success');
 }
 
 // ===================================================
-// NUOVO ALGORITMO DI MATCHING — Logica Commerciale
+// ALGORITMO DI MATCHING — Logica Commerciale
 // ===================================================
 //
-// PRINCIPIO: Una campagna è per un libro specifico di una materia specifica.
-// La domanda non è "quanti temi in comune?" ma:
+// PRINCIPIO: Una campagna promuove un volume specifico di una materia.
+// La domanda non e "quanti temi in comune?" ma:
 //   1. Il docente insegna la materia giusta?
-//   2. Quanto è "conquistabile" (scenario Zanichelli)?
+//   2. Quanto e "conquistabile" (scenario Zanichelli)?
 //   3. Quali manuali usa attualmente? (concorrente diretto?)
-//   4. Il framework disciplinare conferma l'affinità?
+//   4. Il framework disciplinare conferma l'affinita?
 //
 // CLASSIFICAZIONE:
-//   ALTA   = materia OK + zanichelli_assente (oppure materia OK + concorrente diretto)
-//   MEDIA  = materia OK + zanichelli_alternativo (oppure materia OK + zanichelli_assente con basso overlap)
+//   ALTA   = materia OK + zanichelli_assente
+//   MEDIA  = materia OK + zanichelli_alternativo
 //   BASSA  = materia OK + zanichelli_principale (consolidamento)
 //   ESCLUSO = materia non coincidente
+//
+// AGGIUSTAMENTO: overlap tematico o framework score possono alzare di livello
 
 function calculateRelevance(campaign, program, bookThemes, framework) {
-  // ====== STEP 1: Filtro Materia ======
-  const subjectMatch = checkSubjectMatch(
-    campaign.libro_materia, 
-    program.materia_inferita
-  );
+  // STEP 1: Filtro Materia
+  const subjectMatch = checkSubjectMatch(campaign.libro_materia, program.materia_inferita);
+  if (!subjectMatch) return null;
   
-  if (!subjectMatch) return null; // ESCLUSO — materia diversa
-  
-  // ====== STEP 2: Analisi Scenario Zanichelli ======
+  // STEP 2: Scenario Zanichelli → Priorita base
   const scenario = program.scenario_zanichelli || 'zanichelli_assente';
-  
-  // Priorità base dallo scenario
   let basePriority;
   switch (scenario) {
-    case 'zanichelli_assente':
-      basePriority = 'alta';   // Opportunità massima
-      break;
-    case 'zanichelli_alternativo':
-      basePriority = 'media';  // Conosce già Zanichelli, non come principale
-      break;
-    case 'zanichelli_principale':
-      basePriority = 'bassa';  // Già cliente — consolidamento
-      break;
-    default:
-      basePriority = 'media';
+    case 'zanichelli_assente': basePriority = 'alta'; break;
+    case 'zanichelli_alternativo': basePriority = 'media'; break;
+    case 'zanichelli_principale': basePriority = 'bassa'; break;
+    default: basePriority = 'media';
   }
   
-  // ====== STEP 3: Analisi Manuali Citati ======
+  // STEP 3: Manuali citati
   const manuali = program.manuali_citati || [];
   const manualePrincipale = manuali.find(m => m.ruolo === 'principale');
-  const manualiAlternativi = manuali.filter(m => m.ruolo === 'alternativo');
   
-  // Verifica se il docente usa un concorrente diretto del nostro libro
-  const usaConcorrenteDiretto = manualePrincipale && 
-    !isZanichelliAuthor(manualePrincipale.autore) &&
-    checkSubjectMatch(campaign.libro_materia, program.materia_inferita);
+  // Se usa un concorrente diretto e Zanichelli e assente → conferma alta
+  const usaConcorrenteDiretto = manualePrincipale &&
+    !isZanichelliAuthor(manualePrincipale.autore);
   
-  // Se usa un concorrente diretto E Zanichelli è assente → massima opportunità
   if (usaConcorrenteDiretto && scenario === 'zanichelli_assente') {
     basePriority = 'alta';
   }
   
-  // ====== STEP 4: Overlap Tematico (affinamento) ======
+  // STEP 4: Overlap tematico
   const progThemes = (program.temi_principali || []).map(t => t.toLowerCase());
   const bkThemes = bookThemes.map(t => t.toLowerCase());
   
@@ -569,11 +978,7 @@ function calculateRelevance(campaign, program, bookThemes, framework) {
   
   for (const bt of bkThemes) {
     for (const pt of progThemes) {
-      if (
-        bt === pt ||
-        bt.includes(pt) || pt.includes(bt) ||
-        levenshteinSimilarity(bt, pt) > 0.65
-      ) {
+      if (bt === pt || bt.includes(pt) || pt.includes(bt) || levenshteinSimilarity(bt, pt) > 0.65) {
         matchCount++;
         temiComuni.push(pt);
         break;
@@ -583,7 +988,7 @@ function calculateRelevance(campaign, program, bookThemes, framework) {
   
   const overlapPct = bkThemes.length > 0 ? matchCount / bkThemes.length : 0;
   
-  // ====== STEP 5: Framework Matching (se disponibile) ======
+  // STEP 5: Framework matching
   let frameworkScore = 0;
   let frameworkModuliCoperti = [];
   
@@ -595,39 +1000,32 @@ function calculateRelevance(campaign, program, bookThemes, framework) {
       }
     }
     
-    // Confronta temi del programma con concetti del framework
     const moduliSet = new Set();
     for (const pt of progThemes) {
       for (const fc of fwConcepts) {
-        if (
-          pt.includes(fc.concept) || fc.concept.includes(pt) ||
-          levenshteinSimilarity(pt, fc.concept) > 0.65
-        ) {
+        if (pt.includes(fc.concept) || fc.concept.includes(pt) || levenshteinSimilarity(pt, fc.concept) > 0.65) {
           moduliSet.add(fc.module);
         }
       }
     }
     
     frameworkModuliCoperti = [...moduliSet];
-    frameworkScore = framework.syllabus_modules.length > 0 
-      ? moduliSet.size / framework.syllabus_modules.length 
-      : 0;
+    frameworkScore = framework.syllabus_modules.length > 0
+      ? moduliSet.size / framework.syllabus_modules.length : 0;
   }
   
-  // ====== STEP 6: Aggiustamento Finale ======
+  // STEP 6: Aggiustamento — overlap alto o FW score alto → alza di livello
   let rilevanza = basePriority;
-  
-  // Alza di un livello se overlap alto O framework score alto
   if (overlapPct >= 0.4 || frameworkScore >= 0.3) {
     if (rilevanza === 'bassa') rilevanza = 'media';
     else if (rilevanza === 'media') rilevanza = 'alta';
   }
   
-  // ====== STEP 7: Profilo Classe di Laurea (se disponibile) ======
+  // STEP 7: Profilo Classe di Laurea
   let profiloClasse = null;
   if (framework && framework.program_profiles && program.classe_laurea) {
     const classeLaurea = program.classe_laurea.toUpperCase();
-    profiloClasse = framework.program_profiles.find(p => 
+    profiloClasse = framework.program_profiles.find(p =>
       p.name.toUpperCase().includes(classeLaurea)
     );
   }
@@ -640,8 +1038,8 @@ function calculateRelevance(campaign, program, bookThemes, framework) {
     frameworkModuliCoperti,
     temiComuni: [...new Set(temiComuni)],
     scenario,
-    manualePrincipale: manualePrincipale 
-      ? `${manualePrincipale.titolo || ''} (${manualePrincipale.autore || ''})` 
+    manualePrincipale: manualePrincipale
+      ? `${manualePrincipale.titolo || ''} (${manualePrincipale.autore || ''})`
       : null,
     profiloClasse: profiloClasse?.priority_modules || null,
     motivazione: ''
@@ -651,20 +1049,13 @@ function calculateRelevance(campaign, program, bookThemes, framework) {
 // --- Check Subject Match (flessibile) ---
 function checkSubjectMatch(materia1, materia2) {
   if (!materia1 || !materia2) return false;
-  
   const m1 = materia1.toLowerCase().trim();
   const m2 = materia2.toLowerCase().trim();
   
-  // Match esatto
   if (m1 === m2) return true;
-  
-  // Inclusione parziale
   if (m1.includes(m2) || m2.includes(m1)) return true;
-  
-  // Similarità alta
   if (levenshteinSimilarity(m1, m2) > 0.75) return true;
   
-  // Sinonimi noti
   const synonyms = [
     ['chimica generale', 'chimica generale e inorganica', 'chimica di base'],
     ['chimica organica', 'chimica organica e bioorganica'],
@@ -672,6 +1063,7 @@ function checkSubjectMatch(materia1, materia2) {
     ['economia', 'economia politica', 'economia di base'],
     ['istologia', 'istologia e embriologia'],
     ['biologia', 'biologia cellulare', 'biologia generale'],
+    ['psicologia', 'psicologia generale'],
   ];
   
   for (const group of synonyms) {
@@ -683,80 +1075,69 @@ function checkSubjectMatch(materia1, materia2) {
   return false;
 }
 
-// --- Verifica autore Zanichelli ---
 function isZanichelliAuthor(authorStr) {
   if (!authorStr) return false;
   const lower = authorStr.toLowerCase();
   return CONFIG.ZANICHELLI_AUTHORS.some(a => lower.includes(a));
 }
 
-// --- Similarità Levenshtein (semplificata) ---
+// --- Levenshtein Similarity ---
 function levenshteinSimilarity(a, b) {
   if (a.length === 0) return 0;
   if (b.length === 0) return 0;
-
   const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
     Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
   );
-
   for (let i = 1; i <= a.length; i++) {
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
+      matrix[i][j] = Math.min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j - 1] + cost);
     }
   }
-
-  const maxLen = Math.max(a.length, b.length);
-  return 1 - matrix[a.length][b.length] / maxLen;
+  return 1 - matrix[a.length][b.length] / Math.max(a.length, b.length);
 }
 
-// --- Vedi target di una campagna ---
+// ===================================================
+// VISUALIZZAZIONE TARGET
+// ===================================================
+
 function viewTargets(campaignId) {
   const campaign = allCampaigns.find(c => c.id === campaignId);
   if (!campaign) return;
-
+  
   currentTargets = campaign.target_generati || [];
   currentCampaignId = campaignId;
-
+  
   document.getElementById('target-results-container').classList.remove('hidden');
   document.getElementById('target-campaign-title').textContent = campaign.libro_titolo;
-
+  
   renderTargets(currentTargets);
 }
 
-// --- Render target table ---
 function renderTargets(targets) {
   const tbody = document.getElementById('target-table-body');
   const alta = targets.filter(t => t.rilevanza === 'alta').length;
   const media = targets.filter(t => t.rilevanza === 'media').length;
   const bassa = targets.filter(t => t.rilevanza === 'bassa').length;
-
+  
   document.getElementById('target-alta').textContent = `Alta: ${alta}`;
   document.getElementById('target-media').textContent = `Media: ${media}`;
   document.getElementById('target-bassa').textContent = `Bassa: ${bassa}`;
-
+  
   if (targets.length === 0) {
     tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
-          Nessun target trovato — nessun programma corrisponde alla materia della campagna
-        </td>
-      </tr>`;
+      <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">
+        Nessun target trovato — nessun programma corrisponde alla materia della campagna
+      </td></tr>`;
     return;
   }
-
+  
   tbody.innerHTML = targets.map((t, i) => {
     const rowBg = t.rilevanza === 'alta' ? 'bg-green-50/50' : t.rilevanza === 'media' ? 'bg-yellow-50/30' : '';
-    const manualeStr = t.manuale_principale 
-      ? `<div class="text-xs text-gray-400 mt-1" title="${t.manuale_principale}"><i class="fas fa-book text-[10px] mr-1"></i>${truncate(t.manuale_principale, 30)}</div>` 
-      : '';
-    const fwBadge = t.framework_score > 0 
-      ? `<div class="text-xs text-blue-500 mt-1" title="Copertura framework disciplinare"><i class="fas fa-chart-bar text-[10px] mr-1"></i>FW ${t.framework_score}%</div>` 
-      : '';
+    const manualeStr = t.manuale_principale
+      ? `<div class="text-xs text-gray-400 mt-1" title="${t.manuale_principale}"><i class="fas fa-book text-[10px] mr-1"></i>${truncate(t.manuale_principale, 30)}</div>` : '';
+    const fwBadge = t.framework_score > 0
+      ? `<div class="text-xs text-blue-500 mt-1" title="Copertura framework disciplinare"><i class="fas fa-chart-bar text-[10px] mr-1"></i>FW ${t.framework_score}%</div>` : '';
     
     return `
       <tr class="border-t ${rowBg}">
@@ -788,23 +1169,27 @@ function exportTargetCSV() {
     showToast('Nessun target da esportare', 'warning');
     return;
   }
-
+  
   const campaign = allCampaigns.find(c => c.id === currentCampaignId);
-  const headers = ['#', 'Docente', 'Email', 'Ateneo', 'Materia', 'Scenario', 'Rilevanza', 'Overlap %', 'Motivazione'];
+  const headers = ['#', 'Docente', 'Email', 'Ateneo', 'Classe', 'Materia', 'Scenario', 'Rilevanza', 'Overlap %', 'FW Score %', 'Manuale Attuale', 'Motivazione'];
   const rows = currentTargets.map((t, i) => [
     i + 1,
     `"${(t.docente_nome || '').replace(/"/g, '""')}"`,
     `"${(t.docente_email || '').replace(/"/g, '""')}"`,
     `"${(t.ateneo || '').replace(/"/g, '""')}"`,
+    `"${(t.classe_laurea || '').replace(/"/g, '""')}"`,
     `"${(t.materia || '').replace(/"/g, '""')}"`,
     t.scenario || '',
     t.rilevanza || '',
     t.overlap_pct || 0,
+    t.framework_score || 0,
+    `"${(t.manuale_principale || '').replace(/"/g, '""')}"`,
     `"${(t.motivazione || '').replace(/"/g, '""')}"`
   ]);
-
+  
   const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
-  const filename = `target_${(campaign?.libro_titolo || 'campagna').replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`;
+  const materia = campaign?.libro_materia || 'campagna';
+  const filename = `target_${(campaign?.libro_titolo || materia).replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`;
   downloadCSV(csv, filename);
   showToast('CSV esportato!', 'success');
 }
@@ -812,11 +1197,11 @@ function exportTargetCSV() {
 // --- Elimina campagna ---
 async function deleteCampaign(id) {
   if (!confirm('Eliminare questa campagna e tutti i target generati?')) return;
-
+  
   try {
     const { error } = await supabaseClient.from('campagne').delete().eq('id', id);
     if (error) throw error;
-
+    
     showToast('Campagna eliminata', 'success');
     document.getElementById('target-results-container').classList.add('hidden');
     loadCampaigns();
@@ -825,27 +1210,28 @@ async function deleteCampaign(id) {
   }
 }
 
-// --- Impostazioni: Funzioni ---
+// ===================================================
+// IMPOSTAZIONI
+// ===================================================
+
 function loadSettings() {
   const apikey = CONFIG.OPENAI_API_KEY;
   const model = CONFIG.LLM_MODEL;
   const supaUrl = localStorage.getItem('matrix_supabase_url') || '';
   const supaKey = localStorage.getItem('matrix_supabase_key') || '';
-
+  
   document.getElementById('settings-apikey').value = apikey;
   document.getElementById('settings-model').value = model;
   document.getElementById('settings-supabase-url').value = supaUrl;
   document.getElementById('settings-supabase-key').value = supaKey;
-
-  // Status API key
+  
   const status = document.getElementById('apikey-status');
   if (apikey) {
     status.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i><span class="text-green-600">API Key configurata</span>';
   } else {
     status.innerHTML = '<i class="fas fa-exclamation-circle text-yellow-500 mr-1"></i><span class="text-yellow-600">Nessuna API Key configurata</span>';
   }
-
-  // Status Supabase
+  
   const supaStatus = document.getElementById('supabase-status');
   if (supaUrl && supaKey) {
     supaStatus.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i><span class="text-green-600">Supabase configurato</span>';
@@ -874,16 +1260,12 @@ function saveModel() {
 function saveSupabaseConfig() {
   const url = document.getElementById('settings-supabase-url').value.trim();
   const key = document.getElementById('settings-supabase-key').value.trim();
-
   if (!url || !key) {
     showToast('Inserisci sia URL che Anon Key', 'warning');
     return;
   }
-
   localStorage.setItem('matrix_supabase_url', url);
   localStorage.setItem('matrix_supabase_key', key);
-
-  // Re-inizializza Supabase
   if (initSupabase()) {
     showToast('Supabase configurato con successo!', 'success');
     loadSettings();
@@ -895,11 +1277,6 @@ function saveSupabaseConfig() {
 function toggleApiKeyVisibility() {
   const input = document.getElementById('settings-apikey');
   const icon = document.getElementById('apikey-eye-icon');
-  if (input.type === 'password') {
-    input.type = 'text';
-    icon.className = 'fas fa-eye-slash';
-  } else {
-    input.type = 'password';
-    icon.className = 'fas fa-eye';
-  }
+  if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+  else { input.type = 'password'; icon.className = 'fas fa-eye'; }
 }
