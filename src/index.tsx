@@ -672,10 +672,16 @@ function dashboardPage(): string {
                 <i class="fas fa-list-ol mr-2 text-zanichelli-light"></i>
                 Lista Target — <span id="target-campaign-title"></span>
               </h3>
-              <button onclick="exportTargetCSV()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
-                <i class="fas fa-file-csv"></i>
-                Esporta CSV
-              </button>
+              <div class="flex items-center gap-2">
+                <button onclick="exportTargetCSV()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+                  <i class="fas fa-file-csv"></i>
+                  Esporta CSV
+                </button>
+                <button onclick="document.getElementById('target-results-container').classList.add('hidden')" class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors flex items-center gap-2">
+                  <i class="fas fa-times"></i>
+                  Chiudi
+                </button>
+              </div>
             </div>
 
             <!-- Progress generazione target -->
@@ -711,7 +717,14 @@ function dashboardPage(): string {
                     <th class="px-4 py-3 font-medium">Ateneo</th>
                     <th class="px-4 py-3 font-medium">Materia</th>
                     <th class="px-4 py-3 font-medium">Scenario</th>
-                    <th class="px-4 py-3 font-medium">Rilevanza</th>
+                    <th class="px-4 py-3 font-medium">
+                      Rilevanza
+                      <div class="text-[10px] font-normal text-gray-400 mt-0.5">
+                        <span title="Overlap tematico: % di temi in comune tra il programma del docente e i contenuti di riferimento (volume o framework). Piu e alto, piu il programma e allineato.">📊 Overlap = allineamento temi</span>
+                        &middot;
+                        <span title="Framework Score: % dei moduli del framework disciplinare MATRIX coperti dal programma del docente. Indica quanto il corso e completo rispetto allo standard della materia.">📐 FW = copertura framework</span>
+                      </div>
+                    </th>
                     <th class="px-4 py-3 font-medium">Motivazione</th>
                   </tr>
                 </thead>

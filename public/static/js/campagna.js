@@ -1575,7 +1575,7 @@ function renderTargets(targets) {
         <td class="px-4 py-3">${scenarioBadge(t.scenario)}</td>
         <td class="px-4 py-3">
           ${relevanceBadge(t.rilevanza)}
-          <div class="text-xs text-gray-400 mt-1">${t.overlap_pct || 0}% overlap</div>
+          <div class="text-xs text-gray-400 mt-1" title="Overlap tematico: quanto i temi del programma corrispondono ai contenuti di riferimento"><i class="fas fa-chart-pie text-[10px] mr-1"></i>${t.overlap_pct || 0}% overlap</div>
           ${fwBadge}
         </td>
         <td class="px-4 py-3 text-sm text-gray-600 max-w-xs">${t.motivazione || '—'}</td>
