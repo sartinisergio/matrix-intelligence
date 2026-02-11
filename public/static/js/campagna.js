@@ -955,14 +955,19 @@ async function generateTargets(campaignId) {
   }
   
   // === DETERMINA FASE (Pre-valutazione o Completa) ===
+  // REGOLA: la fase e 'completa' SOLO se l'utente ha fornito INDICE o TEMI del volume.
+  // I concetti del framework servono per lo scoring, NON per la fase.
+  // Senza indice/temi -> Pre-valutazione: matching base + motivazioni template.
+  
   let bookThemes = campaign.libro_temi || [];
   const hasIndice = campaign.libro_indice && campaign.libro_indice.trim().length > 20;
   const hasApiKey = !!CONFIG.OPENAI_API_KEY;
-  let fase = 'pre_valutazione'; // default: solo materia + scenario
+  const hadUserThemes = bookThemes.length > 0; // temi inseriti dall'utente
+  let fase = 'pre_valutazione'; // default
   
-  // Fase 1: Prova a generare temi dall'indice (se disponibile)
+  // Se l'utente ha fornito l'indice ma non i temi, estraili con LLM
   if (bookThemes.length === 0 && hasIndice && hasApiKey) {
-    showToast('Generazione temi dal sommario...', 'info');
+    showToast('Generazione temi dal sommario del volume...', 'info');
     try {
       const themeResult = await callOpenAI(
         'Estrai 10-15 temi/argomenti chiave dal seguente indice di un libro accademico. Rispondi con JSON: {"temi": ["tema1", "tema2", ...]}',
@@ -978,33 +983,36 @@ async function generateTargets(campaignId) {
     }
   }
   
-  // Se non ci sono temi dal libro, usa i concetti del framework come riferimento
-  if (bookThemes.length === 0 && framework) {
-    bookThemes = [];
-    for (const mod of framework.syllabus_modules) {
-      for (const kc of (mod.key_concepts || [])) {
-        if (typeof kc === 'string' && kc.trim()) {
-          bookThemes.push(kc);
-        }
-      }
-    }
-    if (bookThemes.length > 0) {
-      showToast(`Usando ${bookThemes.length} concetti dal framework come riferimento`, 'info');
-    }
-  }
-  
-  // Determina fase finale
+  // La fase e COMPLETA solo se abbiamo temi reali del volume (da utente o da indice)
   if (bookThemes.length > 0 || hasIndice) {
     fase = 'completa';
   }
   
+  // Per lo SCORING (overlap + framework): se non abbiamo temi del libro,
+  // usiamo i concetti del framework come riferimento di matching.
+  // MA questo NON cambia la fase — resta pre-valutazione.
+  let matchingThemes = [...bookThemes]; // temi per il calcolo overlap
+  if (matchingThemes.length === 0 && framework) {
+    for (const mod of framework.syllabus_modules) {
+      for (const kc of (mod.key_concepts || [])) {
+        if (typeof kc === 'string' && kc.trim()) {
+          matchingThemes.push(kc);
+        }
+      }
+    }
+    if (matchingThemes.length > 0) {
+      showToast(`Scoring con ${matchingThemes.length} concetti dal framework (non sono temi del libro)`, 'info');
+    }
+  }
+  
   // Log informativo
   if (fase === 'pre_valutazione') {
-    showToast('Pre-valutazione: analisi basata su materia e scenario Zanichelli', 'info');
-  } else {
+    showToast('Pre-valutazione: solo materia + scenario. Aggiungi l\'indice per motivazioni personalizzate.', 'info');
     if (framework) {
-      showToast(`Framework "${framework.name}" disponibile (${framework.syllabus_modules.length} moduli)`, 'info');
+      showToast(`Framework "${framework.name}" usato per lo scoring (${framework.syllabus_modules.length} moduli)`, 'info');
     }
+  } else {
+    showToast(`Analisi completa: ${bookThemes.length} temi del volume disponibili`, 'info');
   }
   
   // === MATCHING ===
@@ -1012,7 +1020,9 @@ async function generateTargets(campaignId) {
   const targets = [];
   
   for (const prog of programs) {
-    const result = calculateRelevance(campaign, prog, bookThemes, framework);
+    // Per il matching usa matchingThemes (possono includere concetti framework)
+    // ma la FASE resta determinata solo da dati reali del volume
+    const result = calculateRelevance(campaign, prog, matchingThemes, framework);
     if (result) {
       targets.push(result);
     }
@@ -1052,11 +1062,13 @@ async function generateTargets(campaignId) {
       targetProgressText.textContent = `${i + 1}/${highMedTargets.length}`;
       
       try {
+        // Per le motivazioni LLM usa solo i temi REALI del libro, non quelli del framework
         const bookData = {
           titolo: campaign.libro_titolo,
           autore: campaign.libro_autore,
           materia: campaign.libro_materia,
-          temi: bookThemes.slice(0, 15)
+          temi: bookThemes.slice(0, 15),
+          hasIndice: hasIndice
         };
         
         const targetInfo = {
@@ -1112,9 +1124,9 @@ async function generateTargets(campaignId) {
     temi_comuni: t.temiComuni
   }));
   
-  // Stato finale nel DB: 'completata' se fase completa, 'bozza' se pre-valutazione
+  // Stato finale nel DB: 'completata' se fase completa con temi reali, 'bozza' se pre-valutazione
   // (il DB accetta solo 'bozza' e 'completata')
-  const statoFinale = (fase === 'completa') ? 'completata' : 'bozza';
+  const statoFinale = (fase === 'completa' && bookThemes.length > 0) ? 'completata' : 'bozza';
   
   try {
     await supabaseClient.from('campagne').update({
