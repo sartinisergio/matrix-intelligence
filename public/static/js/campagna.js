@@ -1578,8 +1578,106 @@ function renderTargets(targets) {
           <div class="text-xs text-gray-400 mt-1" title="Overlap tematico: quanto i temi del programma corrispondono ai contenuti di riferimento"><i class="fas fa-chart-pie text-[10px] mr-1"></i>${t.overlap_pct || 0}% overlap</div>
           ${fwBadge}
         </td>
-        <td class="px-4 py-3 text-sm text-gray-600 max-w-xs">${t.motivazione || '—'}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 max-w-md">${formatMotivazione(t.motivazione, i)}</td>
       </tr>`;
+  }).join('');
+}
+
+// --- Formatta motivazione con sezioni collapsibili ---
+function formatMotivazione(testo, rowIndex) {
+  if (!testo || testo === '—') return '—';
+  
+  // Sezioni note (LLM fase completa, pre-valutazione, template)
+  const sectionDefs = [
+    { label: 'SITUAZIONE', icon: 'fa-crosshairs', color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'LEVE', icon: 'fa-bullseye', color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'COLLOQUIO', icon: 'fa-comments', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'MANUALE ATTUALE', icon: 'fa-book', color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'GAP E PUNTI DEBOLI', icon: 'fa-exclamation-triangle', color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'LEVE PER IL CAMBIO', icon: 'fa-bullseye', color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'ADOZIONE ATTUALE', icon: 'fa-book', color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'PROGRAMMA', icon: 'fa-list', color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'PER COMPETERE', icon: 'fa-bullseye', color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'PER IL RINNOVO', icon: 'fa-sync-alt', color: 'text-blue-600', bg: 'bg-blue-50' },
+  ];
+  
+  // Cerca le sezioni nel testo (con ** o senza)
+  const sections = [];
+  let remainingText = testo;
+  
+  // Normalizza: rimuovi ** markdown
+  remainingText = remainingText.replace(/\*\*/g, '');
+  
+  // Trova tutte le sezioni
+  const sortedDefs = [...sectionDefs].sort((a, b) => b.label.length - a.label.length);
+  const sectionPositions = [];
+  
+  for (const def of sortedDefs) {
+    // Match: "LABEL:" o "LABEL :" 
+    const regex = new RegExp(`(${def.label}\\s*:\\s*)`, 'gi');
+    let match;
+    while ((match = regex.exec(remainingText)) !== null) {
+      sectionPositions.push({
+        index: match.index,
+        matchLength: match[1].length,
+        def: def
+      });
+    }
+  }
+  
+  if (sectionPositions.length < 2) {
+    // Nessuna struttura riconosciuta — mostra testo semplice troncato
+    const preview = remainingText.slice(0, 120);
+    const hasMore = remainingText.length > 120;
+    if (!hasMore) return `<p class="text-gray-600 text-xs leading-relaxed">${remainingText}</p>`;
+    return `
+      <div>
+        <p class="text-gray-600 text-xs leading-relaxed">${preview}...</p>
+        <button onclick="this.parentElement.querySelector('.mot-full').classList.toggle('hidden');this.classList.toggle('hidden')" 
+                class="text-xs text-zanichelli-light hover:underline mt-1">
+          <i class="fas fa-chevron-down mr-1"></i>Leggi tutto
+        </button>
+        <div class="mot-full hidden mt-2">
+          <p class="text-gray-600 text-xs leading-relaxed">${remainingText}</p>
+        </div>
+      </div>`;
+  }
+  
+  // Ordina per posizione
+  sectionPositions.sort((a, b) => a.index - b.index);
+  
+  // Estrai contenuto di ogni sezione
+  for (let s = 0; s < sectionPositions.length; s++) {
+    const pos = sectionPositions[s];
+    const contentStart = pos.index + pos.matchLength;
+    const contentEnd = s < sectionPositions.length - 1 ? sectionPositions[s + 1].index : remainingText.length;
+    const content = remainingText.slice(contentStart, contentEnd).trim();
+    
+    if (content) {
+      sections.push({ ...pos.def, content });
+    }
+  }
+  
+  if (sections.length === 0) {
+    return `<p class="text-gray-600 text-xs leading-relaxed">${remainingText.slice(0, 150)}...</p>`;
+  }
+  
+  // Render: prima sezione aperta, altre chiuse
+  return sections.map((sec, si) => {
+    const uid = `mot-${rowIndex}-${si}`;
+    const isFirst = si === 0;
+    return `
+      <div class="mb-1.5">
+        <button onclick="document.getElementById('${uid}').classList.toggle('hidden');this.querySelector('.chev').classList.toggle('fa-chevron-right');this.querySelector('.chev').classList.toggle('fa-chevron-down')" 
+                class="flex items-center gap-1.5 w-full text-left group">
+          <i class="fas fa-chevron-${isFirst ? 'down' : 'right'} chev text-[9px] text-gray-400 w-3 transition-transform"></i>
+          <i class="fas ${sec.icon} ${sec.color} text-[10px]"></i>
+          <span class="text-xs font-semibold ${sec.color} uppercase tracking-wide">${sec.label}</span>
+        </button>
+        <div id="${uid}" class="${isFirst ? '' : 'hidden'} mt-1 ml-5 pl-2 border-l-2 ${sec.bg} rounded-r">
+          <p class="text-xs text-gray-600 leading-relaxed py-1.5 px-2">${sec.content}</p>
+        </div>
+      </div>`;
   }).join('');
 }
 
