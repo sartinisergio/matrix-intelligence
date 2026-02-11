@@ -28,6 +28,9 @@ const dashboardHTML = extractTemplate(source, 'dashboardPage')
 mkdirSync('dist', { recursive: true })
 cpSync('public/static', 'dist/static', { recursive: true })
 
+// Copia favicon
+try { cpSync('public/favicon.svg', 'dist/favicon.svg') } catch(e) {}
+
 // Scrivi pagine HTML
 writeFileSync('dist/index.html', loginHTML)
 writeFileSync('dist/login.html', loginHTML)  
