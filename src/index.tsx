@@ -499,136 +499,167 @@ function dashboardPage(): string {
         <!-- Form nuova campagna (nascosto) -->
         <div id="campaign-form-container" class="hidden mt-6">
           <div class="bg-white rounded-xl shadow-sm border p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">
-              <i class="fas fa-book mr-2 text-zanichelli-light"></i>
-              Nuova Campagna — Volume da Promuovere
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">
+              <i class="fas fa-bullhorn mr-2 text-zanichelli-light"></i>
+              Nuova Campagna Promozionale
             </h3>
+            <p class="text-sm text-gray-500 mb-5">Inserisci i dati del volume che vuoi promuovere presso i docenti</p>
 
-            <!-- === SELETTORE CATALOGO MATRIX === -->
-            <div class="mb-6 bg-zanichelli-accent rounded-xl p-5 border border-blue-200">
-              <div class="flex items-center gap-2 mb-3">
-                <i class="fas fa-book-open text-zanichelli-blue"></i>
-                <h4 class="font-semibold text-zanichelli-blue">Seleziona dal Catalogo MATRIX</h4>
-                <span id="catalog-count" class="text-xs bg-zanichelli-blue text-white px-2 py-0.5 rounded-full ml-2">0 manuali</span>
-              </div>
-              <p class="text-xs text-zanichelli-blue/70 mb-3">Scegli un manuale dal catalogo e tutti i campi si compilano automaticamente</p>
-              
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <!-- Filtro Materia -->
-                <div>
-                  <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Materia</label>
-                  <select id="catalog-subject-filter" onchange="filterCatalogManuals()"
-                          class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
-                    <option value="">Tutte le materie</option>
-                  </select>
-                </div>
-                <!-- Filtro Editore -->
-                <div>
-                  <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Editore</label>
-                  <select id="catalog-publisher-filter" onchange="filterCatalogManuals()"
-                          class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
-                    <option value="">Tutti gli editori</option>
-                    <option value="zanichelli">Solo Zanichelli</option>
-                    <option value="competitor">Solo concorrenti</option>
-                  </select>
-                </div>
-                <!-- Selettore Manuale -->
-                <div>
-                  <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Manuale</label>
-                  <select id="catalog-manual-select" onchange="selectManualFromCatalog()"
-                          class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
-                    <option value="">— Seleziona un manuale —</option>
-                  </select>
-                </div>
-              </div>
+            <form id="campaign-form" onsubmit="handleCreateCampaign(event)" class="space-y-5">
 
-              <!-- Ricerca rapida -->
-              <div class="mt-3">
-                <div class="relative">
-                  <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm"></i>
-                  <input type="text" id="catalog-search" placeholder="Cerca per titolo o autore..." oninput="filterCatalogManuals()"
-                         class="w-full pl-9 pr-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+              <!-- ====== SEZIONE 1: VOLUME DA PROMUOVERE ====== -->
+              <div class="space-y-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="flex items-center justify-center w-6 h-6 bg-zanichelli-blue text-white rounded-full text-xs font-bold">1</span>
+                  <h4 class="font-semibold text-gray-800">Volume da promuovere</h4>
                 </div>
-              </div>
 
-              <!-- Info manuale selezionato -->
-              <div id="catalog-selected-info" class="hidden mt-3 bg-white rounded-lg p-3 border border-blue-200">
-                <div class="flex items-center justify-between">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span id="catalog-selected-title" class="font-medium text-gray-800"></span>
-                    <span id="catalog-selected-meta" class="text-xs text-gray-500 ml-2"></span>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Titolo del volume *</label>
+                    <input type="text" id="camp-titolo" required
+                           class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
+                           placeholder="Es: Chimica Generale e Inorganica">
                   </div>
-                  <button onclick="clearCatalogSelection()" class="text-xs text-red-500 hover:text-red-700">
-                    <i class="fas fa-times mr-1"></i>Rimuovi
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Autore/i</label>
+                    <input type="text" id="camp-autore"
+                           class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
+                           placeholder="Es: Petrucci, Harwood, Herring">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Materia di riferimento *</label>
+                    <input type="text" id="camp-materia" required oninput="onMateriaChange()"
+                           class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
+                           placeholder="Es: Chimica Generale">
+                    <p class="text-xs text-gray-400 mt-1">Usata per cercare i docenti target nel database programmi</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Editore</label>
+                    <input type="text" id="camp-editore" value="Zanichelli"
+                           class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none">
+                  </div>
+                </div>
+
+                <!-- Pannello Scenario A/B/C (appare automaticamente quando si inserisce la materia) -->
+                <div id="scenario-panel" class="hidden"></div>
+
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Indice / Sommario del volume
+                      <span id="indice-source-badge" class="hidden ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                        <i class="fas fa-magic mr-1"></i>importato dal catalogo
+                      </span>
+                    </label>
+                    <button type="button" onclick="toggleCatalogImport()" id="btn-import-catalog"
+                            class="text-xs text-zanichelli-light hover:text-zanichelli-blue font-medium transition-colors">
+                      <i class="fas fa-book-open mr-1"></i>Importa dal catalogo MATRIX
+                    </button>
+                  </div>
+                  <textarea id="camp-indice" rows="5"
+                            class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none text-sm"
+                            placeholder="Incolla qui l'indice del libro (capitoli principali). L'indice migliora la qualita delle motivazioni generate per ogni docente target."></textarea>
+                </div>
+
+                <!-- === CATALOGO MATRIX (collassabile, nascosto di default) === -->
+                <div id="catalog-import-panel" class="hidden">
+                  <div class="bg-zanichelli-accent rounded-xl p-4 border border-blue-200">
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-book-open text-zanichelli-blue"></i>
+                        <h5 class="font-semibold text-zanichelli-blue text-sm">Importa indice dal Catalogo MATRIX</h5>
+                        <span id="catalog-count" class="text-xs bg-zanichelli-blue text-white px-2 py-0.5 rounded-full">0 manuali</span>
+                      </div>
+                      <button type="button" onclick="toggleCatalogImport()" class="text-xs text-zanichelli-blue/60 hover:text-zanichelli-blue">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <p class="text-xs text-zanichelli-blue/70 mb-3">
+                      Se il volume e gia nel catalogo, selezionalo per importare automaticamente l'indice dei capitoli.
+                      I campi titolo, autore, materia ed editore si compileranno automaticamente.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Materia</label>
+                        <select id="catalog-subject-filter" onchange="filterCatalogManuals()"
+                                class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                          <option value="">Tutte le materie</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Editore</label>
+                        <select id="catalog-publisher-filter" onchange="filterCatalogManuals()"
+                                class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                          <option value="">Tutti gli editori</option>
+                          <option value="zanichelli">Solo Zanichelli</option>
+                          <option value="competitor">Solo concorrenti</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium text-zanichelli-blue/80 mb-1">Manuale</label>
+                        <select id="catalog-manual-select" onchange="selectManualFromCatalog()"
+                                class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                          <option value="">— Seleziona un manuale —</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="mt-3">
+                      <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm"></i>
+                        <input type="text" id="catalog-search" placeholder="Cerca per titolo o autore..." oninput="filterCatalogManuals()"
+                               class="w-full pl-9 pr-3 py-2 border border-blue-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-zanichelli-light outline-none">
+                      </div>
+                    </div>
+
+                    <div id="catalog-selected-info" class="hidden mt-3 bg-white rounded-lg p-3 border border-blue-200">
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <span id="catalog-selected-title" class="font-medium text-gray-800"></span>
+                          <span id="catalog-selected-meta" class="text-xs text-gray-500 ml-2"></span>
+                        </div>
+                        <button type="button" onclick="clearCatalogSelection()" class="text-xs text-red-500 hover:text-red-700">
+                          <i class="fas fa-times mr-1"></i>Rimuovi
+                        </button>
+                      </div>
+                      <div id="catalog-selected-chapters" class="text-xs text-gray-500 mt-1"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Temi chiave (opzionale)</label>
+                  <input type="text" id="camp-temi"
+                         class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none text-sm"
+                         placeholder="Generati automaticamente dall'indice, oppure inseriscili a mano separati da virgola">
+                </div>
+              </div>
+
+              <!-- ====== SEZIONE 2: AZIONI ====== -->
+              <div class="border-t pt-5">
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="flex items-center justify-center w-6 h-6 bg-zanichelli-blue text-white rounded-full text-xs font-bold">2</span>
+                  <h4 class="font-semibold text-gray-800">Genera lista target</h4>
+                  <span class="text-xs text-gray-400 ml-1">I docenti target verranno estratti dal database programmi</span>
+                </div>
+                <div class="flex gap-3">
+                  <button type="submit"
+                          class="flex-1 py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-rocket"></i>
+                    Crea Campagna e Genera Target
+                  </button>
+                  <button type="button" onclick="hideCampaignForm()"
+                          class="px-6 py-3 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                    Annulla
                   </button>
                 </div>
-                <div id="catalog-selected-chapters" class="text-xs text-gray-500 mt-1"></div>
               </div>
-            </div>
 
-            <!-- === PANNELLO SCENARIO A/B/C === -->
-            <div id="scenario-panel" class="hidden mb-6"></div>
-
-            <div class="flex items-center gap-3 mb-4">
-              <div class="flex-1 border-t border-gray-200"></div>
-              <span class="text-xs text-gray-400 font-medium">oppure compila manualmente</span>
-              <div class="flex-1 border-t border-gray-200"></div>
-            </div>
-
-            <form id="campaign-form" onsubmit="handleCreateCampaign(event)" class="space-y-4">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Titolo del libro *</label>
-                  <input type="text" id="camp-titolo" required
-                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
-                         placeholder="Es: Chimica Generale e Inorganica">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Autore</label>
-                  <input type="text" id="camp-autore"
-                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
-                         placeholder="Es: Petrucci, Harwood">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Materia di riferimento *</label>
-                  <input type="text" id="camp-materia" required oninput="onMateriaChange()"
-                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
-                         placeholder="Es: Chimica Generale">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Editore</label>
-                  <input type="text" id="camp-editore" value="Zanichelli"
-                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none">
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Indice / Sommario del libro
-                  <span id="indice-source-badge" class="hidden ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                    <i class="fas fa-magic mr-1"></i>da catalogo MATRIX
-                  </span>
-                </label>
-                <textarea id="camp-indice" rows="5"
-                          class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none text-sm"
-                          placeholder="Incolla qui l'indice del libro (capitoli principali)..."></textarea>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Temi chiave (separati da virgola)</label>
-                <input type="text" id="camp-temi"
-                       class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
-                       placeholder="Verranno generati automaticamente dall'indice, oppure inseriscili manualmente">
-              </div>
-              <div class="flex gap-3 pt-2">
-                <button type="submit"
-                        class="flex-1 py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
-                  <i class="fas fa-save"></i>
-                  Salva e Genera Target
-                </button>
-                <button type="button" onclick="hideCampaignForm()"
-                        class="px-6 py-3 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  Annulla
-                </button>
-              </div>
             </form>
           </div>
         </div>

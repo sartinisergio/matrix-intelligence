@@ -72,6 +72,25 @@ function findManualsForSubject(materia) {
 }
 
 // ===================================================
+// TOGGLE CATALOGO MATRIX (pannello importazione)
+// ===================================================
+
+function toggleCatalogImport() {
+  const panel = document.getElementById('catalog-import-panel');
+  if (!panel) return;
+  
+  const isHidden = panel.classList.contains('hidden');
+  
+  if (isHidden) {
+    panel.classList.remove('hidden');
+    // Carica catalogo e popola selettore
+    loadCatalog().then(() => populateCatalogSelector());
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
+// ===================================================
 // POPOLA CATALOGO NEL SELETTORE
 // ===================================================
 
@@ -190,16 +209,8 @@ function clearCatalogSelection() {
   const badge = document.getElementById('indice-source-badge');
   if (badge) badge.classList.add('hidden');
   
-  document.getElementById('camp-titolo').value = '';
-  document.getElementById('camp-autore').value = '';
-  document.getElementById('camp-editore').value = 'Zanichelli';
-  document.getElementById('camp-materia').value = '';
-  document.getElementById('camp-indice').value = '';
-  document.getElementById('camp-temi').value = '';
-  
-  // Nascondi pannello scenario
-  const panel = document.getElementById('scenario-panel');
-  if (panel) panel.classList.add('hidden');
+  // NON resettare i campi del form — l'utente potrebbe aver digitato a mano
+  // Resetta solo se chiamato esplicitamente dal pulsante "Rimuovi"
 }
 
 // ===================================================
@@ -663,14 +674,17 @@ function showNewCampaignForm() {
   document.getElementById('campaign-form').reset();
   document.getElementById('camp-editore').value = 'Zanichelli';
   
-  // Nascondi scenario panel
+  // Nascondi pannelli secondari
   const panel = document.getElementById('scenario-panel');
   if (panel) panel.classList.add('hidden');
   
+  const catalogPanel = document.getElementById('catalog-import-panel');
+  if (catalogPanel) catalogPanel.classList.add('hidden');
+  
   clearCatalogSelection();
   
-  // Carica catalogo e popola selettore
-  loadCatalog().then(() => populateCatalogSelector());
+  // Pre-carica risorse in background (senza aprire il pannello catalogo)
+  loadCatalog();
   loadFrameworks();
 }
 
