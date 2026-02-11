@@ -631,9 +631,52 @@ function renderCampaignsList() {
   
   container.innerHTML = allCampaigns.map(c => {
     const targetCount = (c.target_generati || []).length;
-    const statusBadge = c.stato === 'completata'
-      ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Completata</span>'
-      : '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Bozza</span>';
+    
+    // Badge stato con 3 livelli
+    let statusBadge;
+    if (c.stato === 'completata') {
+      statusBadge = '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"><i class="fas fa-check-circle mr-1"></i>Completa</span>';
+    } else if (c.stato === 'pre_valutazione') {
+      statusBadge = '<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"><i class="fas fa-search mr-1"></i>Pre-valutazione</span>';
+    } else {
+      statusBadge = '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium"><i class="fas fa-edit mr-1"></i>Bozza</span>';
+    }
+    
+    // Pre-valutazione? Mostra hint per completare
+    const preValHint = (c.stato === 'pre_valutazione') 
+      ? `<div class="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg inline-flex items-center gap-1">
+           <i class="fas fa-lightbulb"></i>
+           Aggiungi l'indice del volume per motivazioni personalizzate
+         </div>` : '';
+    
+    // Bottoni azioni
+    let actionButtons = '';
+    if (targetCount > 0) {
+      actionButtons += `
+        <button onclick="viewTargets('${c.id}')" class="px-3 py-1.5 bg-zanichelli-accent text-zanichelli-blue rounded-lg text-sm hover:bg-blue-100 transition-colors" title="Vedi target">
+          <i class="fas fa-list mr-1"></i>Target
+        </button>`;
+    }
+    // Se pre-valutazione -> bottone "Completa" per aggiungere indice
+    if (c.stato === 'pre_valutazione') {
+      actionButtons += `
+        <button onclick="showCompleteCampaign('${c.id}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors" title="Aggiungi indice e rigenera">
+          <i class="fas fa-plus-circle mr-1"></i>Completa
+        </button>`;
+    }
+    if (targetCount === 0 && c.stato !== 'pre_valutazione') {
+      actionButtons += `
+        <button onclick="generateTargets('${c.id}')" class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-sm hover:bg-zanichelli-dark transition-colors" title="Genera target">
+          <i class="fas fa-magic mr-1"></i>Genera
+        </button>`;
+    }
+    // Rigenera per campagne completate
+    if (c.stato === 'completata' && targetCount > 0) {
+      actionButtons += `
+        <button onclick="generateTargets('${c.id}')" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="Rigenera target">
+          <i class="fas fa-sync-alt mr-1"></i>
+        </button>`;
+    }
     
     return `
       <div class="bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition-shadow">
@@ -649,15 +692,10 @@ function renderCampaignsList() {
               <span><i class="fas fa-users mr-1"></i>${targetCount} target</span>
               <span><i class="fas fa-calendar mr-1"></i>${formatDate(c.created_at)}</span>
             </div>
+            ${preValHint}
           </div>
           <div class="flex items-center gap-2 ml-4">
-            ${targetCount > 0 ? `
-              <button onclick="viewTargets('${c.id}')" class="px-3 py-1.5 bg-zanichelli-accent text-zanichelli-blue rounded-lg text-sm hover:bg-blue-100 transition-colors" title="Vedi target">
-                <i class="fas fa-list mr-1"></i>Target
-              </button>` : `
-              <button onclick="generateTargets('${c.id}')" class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-sm hover:bg-zanichelli-dark transition-colors" title="Genera target">
-                <i class="fas fa-magic mr-1"></i>Genera
-              </button>`}
+            ${actionButtons}
             <button onclick="deleteCampaign('${c.id}')" class="text-gray-400 hover:text-red-500 p-1" title="Elimina">
               <i class="fas fa-trash-alt"></i>
             </button>
@@ -665,6 +703,136 @@ function renderCampaignsList() {
         </div>
       </div>`;
   }).join('');
+}
+
+// === COMPLETA CAMPAGNA (Aggiungi indice a pre-valutazione) ===
+function showCompleteCampaign(campaignId) {
+  const campaign = allCampaigns.find(c => c.id === campaignId);
+  if (!campaign) return;
+  
+  const modal = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  
+  content.innerHTML = `
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        <i class="fas fa-plus-circle mr-2 text-blue-600"></i>
+        Completa Campagna: ${campaign.libro_titolo}
+      </h3>
+      <p class="text-sm text-gray-600">
+        La campagna e in modalita <strong>Pre-valutazione</strong> (target basati solo su materia e scenario).
+        Aggiungi l'indice del volume per ottenere motivazioni personalizzate con IA.
+      </p>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Indice / Sommario del volume</label>
+        <textarea id="complete-indice" rows="8"
+                  class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm"
+                  placeholder="Incolla qui l'indice del libro (capitoli principali)...">${campaign.libro_indice || ''}</textarea>
+      </div>
+      
+      <div>
+        <button type="button" onclick="toggleCatalogImportForComplete('${campaignId}')" 
+                class="text-xs text-zanichelli-light hover:text-zanichelli-blue font-medium transition-colors">
+          <i class="fas fa-book-open mr-1"></i>Importa dal catalogo MATRIX
+        </button>
+        <div id="complete-catalog-panel" class="hidden mt-3 bg-zanichelli-accent rounded-xl p-4 border border-blue-200">
+          <select id="complete-catalog-select" onchange="selectManualForComplete()" 
+                  class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white">
+            <option value="">— Seleziona manuale dal catalogo —</option>
+          </select>
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Temi chiave (opzionale, separati da virgola)</label>
+        <input type="text" id="complete-temi" value="${(campaign.libro_temi || []).join(', ')}"
+               class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm"
+               placeholder="Generati automaticamente dall'indice">
+      </div>
+      
+      <div class="flex gap-3 pt-2">
+        <button onclick="handleCompleteCampaign('${campaignId}')" 
+                class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+          <i class="fas fa-rocket mr-1"></i>Salva e Rigenera Target
+        </button>
+        <button onclick="closeModal()" class="px-6 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+          Annulla
+        </button>
+      </div>
+    </div>`;
+  
+  modal.classList.remove('hidden');
+}
+
+async function toggleCatalogImportForComplete(campaignId) {
+  const panel = document.getElementById('complete-catalog-panel');
+  if (!panel) return;
+  
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden');
+    await loadCatalog();
+    const select = document.getElementById('complete-catalog-select');
+    select.innerHTML = '<option value="">— Seleziona manuale dal catalogo —</option>';
+    catalogManuals.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      const badge = m.is_zanichelli ? ' [Z]' : '';
+      opt.textContent = `${m.title} — ${m.author}${badge}`;
+      select.appendChild(opt);
+    });
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
+function selectManualForComplete() {
+  const select = document.getElementById('complete-catalog-select');
+  const manualId = select?.value;
+  if (!manualId) return;
+  
+  const manual = catalogManuals.find(m => m.id === manualId);
+  if (!manual) return;
+  
+  const indiceEl = document.getElementById('complete-indice');
+  if (indiceEl && manual.chapters_summary) {
+    indiceEl.value = manual.chapters_summary;
+  }
+}
+
+async function handleCompleteCampaign(campaignId) {
+  const indice = document.getElementById('complete-indice')?.value?.trim() || null;
+  const temiInput = document.getElementById('complete-temi')?.value || '';
+  const temi = temiInput ? temiInput.split(',').map(t => t.trim()).filter(Boolean) : [];
+  
+  if (!indice && temi.length === 0) {
+    showToast('Aggiungi almeno l\'indice o dei temi chiave', 'warning');
+    return;
+  }
+  
+  try {
+    await supabaseClient.from('campagne').update({
+      libro_indice: indice,
+      libro_temi: temi.length > 0 ? temi : null, // reset temi per rigenerarli dall'indice
+      stato: 'bozza',
+      updated_at: new Date().toISOString()
+    }).eq('id', campaignId);
+    
+    // Aggiorna in memoria
+    const campaign = allCampaigns.find(c => c.id === campaignId);
+    if (campaign) {
+      campaign.libro_indice = indice;
+      campaign.libro_temi = temi.length > 0 ? temi : [];
+      campaign.stato = 'bozza';
+    }
+    
+    closeModal();
+    showToast('Dati aggiornati! Rigenerazione target...', 'success');
+    
+    await generateTargets(campaignId);
+  } catch (e) {
+    showToast('Errore aggiornamento: ' + e.message, 'error');
+  }
 }
 
 // --- Mostra / Nascondi form nuova campagna ---
@@ -719,6 +887,11 @@ async function handleCreateCampaign(event) {
   
   const temiInput = document.getElementById('camp-temi').value;
   const temi = temiInput ? temiInput.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const indice = document.getElementById('camp-indice').value || null;
+  
+  // Determina la fase: se ha indice o temi -> completa, altrimenti -> pre-valutazione
+  const haDetailedData = (temi.length > 0) || (indice && indice.trim().length > 20);
+  const stato = haDetailedData ? 'bozza' : 'pre_valutazione';
   
   const campaign = {
     user_id: session.user.id,
@@ -726,9 +899,9 @@ async function handleCreateCampaign(event) {
     libro_autore: document.getElementById('camp-autore').value || null,
     libro_editore: document.getElementById('camp-editore').value || 'Zanichelli',
     libro_materia: materia,
-    libro_indice: document.getElementById('camp-indice').value || null,
+    libro_indice: indice,
     libro_temi: temi,
-    stato: 'bozza'
+    stato: stato
   };
   
   try {
@@ -739,10 +912,8 @@ async function handleCreateCampaign(event) {
     hideCampaignForm();
     await loadCampaigns();
     
-    // Genera subito i target
-    if (temi.length > 0 || campaign.libro_indice) {
-      await generateTargets(data.id);
-    }
+    // Genera SEMPRE i target — l'algoritmo funziona anche solo con la materia
+    await generateTargets(data.id);
   } catch (e) {
     showToast('Errore creazione campagna: ' + e.message, 'error');
   }
@@ -761,11 +932,6 @@ async function generateTargets(campaignId) {
       showToast('Campagna non trovata', 'error');
       return;
     }
-  }
-  
-  if (!CONFIG.OPENAI_API_KEY) {
-    showToast('Configura la API Key OpenAI nelle Impostazioni', 'error');
-    return;
   }
   
   // Carica risorse
@@ -787,9 +953,14 @@ async function generateTargets(campaignId) {
     return;
   }
   
-  // Genera temi dal libro (se non presenti)
+  // === DETERMINA FASE (Pre-valutazione o Completa) ===
   let bookThemes = campaign.libro_temi || [];
-  if (bookThemes.length === 0 && campaign.libro_indice) {
+  const hasIndice = campaign.libro_indice && campaign.libro_indice.trim().length > 20;
+  const hasApiKey = !!CONFIG.OPENAI_API_KEY;
+  let fase = 'pre_valutazione'; // default: solo materia + scenario
+  
+  // Fase 1: Prova a generare temi dall'indice (se disponibile)
+  if (bookThemes.length === 0 && hasIndice && hasApiKey) {
     showToast('Generazione temi dal sommario...', 'info');
     try {
       const themeResult = await callOpenAI(
@@ -806,7 +977,7 @@ async function generateTargets(campaignId) {
     }
   }
   
-  // Se non ci sono temi dal libro E c'e un framework, usa i concetti del framework come riferimento
+  // Se non ci sono temi dal libro, usa i concetti del framework come riferimento
   if (bookThemes.length === 0 && framework) {
     bookThemes = [];
     for (const mod of framework.syllabus_modules) {
@@ -814,14 +985,23 @@ async function generateTargets(campaignId) {
         bookThemes.push(kc);
       }
     }
-    showToast(`Usando ${bookThemes.length} concetti dal framework come riferimento`, 'info');
+    if (bookThemes.length > 0) {
+      showToast(`Usando ${bookThemes.length} concetti dal framework come riferimento`, 'info');
+    }
   }
   
-  // Info sulle risorse disponibili
-  if (framework) {
-    showToast(`Framework "${framework.name}" trovato (${framework.syllabus_modules.length} moduli)`, 'info');
+  // Determina fase finale
+  if (bookThemes.length > 0 || hasIndice) {
+    fase = 'completa';
+  }
+  
+  // Log informativo
+  if (fase === 'pre_valutazione') {
+    showToast('Pre-valutazione: analisi basata su materia e scenario Zanichelli', 'info');
   } else {
-    showToast('Nessun framework disponibile — analisi basata su scenario e overlap', 'warning');
+    if (framework) {
+      showToast(`Framework "${framework.name}" disponibile (${framework.syllabus_modules.length} moduli)`, 'info');
+    }
   }
   
   // === MATCHING ===
@@ -835,6 +1015,10 @@ async function generateTargets(campaignId) {
     }
   }
   
+  if (targets.length === 0) {
+    showToast('Nessun programma corrisponde alla materia "' + materia + '". Verifica che i programmi caricati contengano questa materia.', 'warning');
+  }
+  
   // Ordina: Alta prima, poi Media, poi Bassa
   const relevanceOrder = { 'alta': 0, 'media': 1, 'bassa': 2 };
   const scenarioOrder = { 'zanichelli_assente': 0, 'zanichelli_alternativo': 1, 'zanichelli_principale': 2 };
@@ -845,7 +1029,7 @@ async function generateTargets(campaignId) {
     return (scenarioOrder[a.scenario] || 3) - (scenarioOrder[b.scenario] || 3);
   });
   
-  // === GENERA MOTIVAZIONI LLM ===
+  // === GENERA MOTIVAZIONI ===
   document.getElementById('target-results-container').classList.remove('hidden');
   document.getElementById('target-campaign-title').textContent = campaign.libro_titolo;
   
@@ -854,7 +1038,8 @@ async function generateTargets(campaignId) {
   const targetProgressBar = document.getElementById('target-progress-bar');
   const targetProgressText = document.getElementById('target-progress-text');
   
-  if (highMedTargets.length > 0) {
+  if (highMedTargets.length > 0 && hasApiKey && fase === 'completa') {
+    // === FASE COMPLETA: Motivazioni LLM personalizzate ===
     targetProgress.classList.remove('hidden');
     
     for (let i = 0; i < highMedTargets.length; i++) {
@@ -885,7 +1070,7 @@ async function generateTargets(campaignId) {
         
         t.motivazione = await generateMotivation(bookData, targetInfo);
       } catch (e) {
-        t.motivazione = 'Errore nella generazione della motivazione.';
+        t.motivazione = generateTemplateMotivation(campaign, t);
       }
       
       if (i < highMedTargets.length - 1) {
@@ -894,9 +1079,14 @@ async function generateTargets(campaignId) {
     }
     
     targetProgress.classList.add('hidden');
+  } else {
+    // === PRE-VALUTAZIONE: Motivazioni template (senza LLM) ===
+    highMedTargets.forEach(t => {
+      t.motivazione = generateTemplateMotivation(campaign, t);
+    });
   }
   
-  // Motivazione per bassa rilevanza (consolidamento)
+  // Motivazione per bassa rilevanza (consolidamento) — sempre template
   targets.filter(t => t.rilevanza === 'bassa').forEach(t => {
     const manuale = t.manualePrincipale || 'un testo Zanichelli';
     t.motivazione = `Il docente utilizza gia ${manuale} come testo principale. Opportunita di consolidamento e aggiornamento con la nuova edizione.`;
@@ -919,22 +1109,53 @@ async function generateTargets(campaignId) {
     temi_comuni: t.temiComuni
   }));
   
+  // Stato finale: se fase completa e ha target -> completata; altrimenti -> pre_valutazione
+  const statoFinale = (fase === 'completa') ? 'completata' : 'pre_valutazione';
+  
   try {
     await supabaseClient.from('campagne').update({
       target_generati: targetData,
-      stato: 'completata',
+      stato: statoFinale,
       updated_at: new Date().toISOString()
     }).eq('id', campaignId);
   } catch (e) {
     console.error('Errore salvataggio target:', e);
   }
   
+  // Aggiorna in memoria
+  campaign.stato = statoFinale;
+  campaign.target_generati = targetData;
+  
   currentTargets = targetData;
   currentCampaignId = campaignId;
   renderTargets(targetData);
   loadCampaigns();
   
-  showToast(`Campagna completata: ${targets.length} target trovati!`, 'success');
+  const faseLabel = fase === 'completa' ? 'Analisi completa' : 'Pre-valutazione';
+  showToast(`${faseLabel}: ${targets.length} target trovati!`, 'success');
+}
+
+// === MOTIVAZIONI TEMPLATE (senza LLM) ===
+// Usate in pre-valutazione o quando OpenAI non e disponibile
+function generateTemplateMotivation(campaign, target) {
+  const scenario = target.scenario || target.programData?.scenario_zanichelli || '';
+  const docente = target.programData?.docente_nome || 'Il docente';
+  const ateneo = target.programData?.ateneo || '';
+  const manuale = target.manualePrincipale || null;
+  const materia = campaign.libro_materia || '';
+  const libro = campaign.libro_titolo || 'il nuovo volume';
+  
+  if (scenario === 'zanichelli_assente') {
+    if (manuale) {
+      return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} utilizza attualmente ${manuale} come testo di ${materia}. Zanichelli e assente: proporre ${libro} come alternativa qualificata. Priorita alta per acquisizione nuovo docente.`;
+    } else {
+      return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} insegna ${materia} senza testi Zanichelli nel programma. Proporre ${libro} come nuovo testo di riferimento. Priorita alta.`;
+    }
+  } else if (scenario === 'zanichelli_alternativo') {
+    return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} ha gia Zanichelli tra i testi alternativi di ${materia}. Proporre ${libro} come testo principale per rafforzare la posizione. Priorita media.`;
+  } else {
+    return `${docente}${ateneo ? ' (' + ateneo + ')' : ''} utilizza gia un testo Zanichelli come riferimento per ${materia}. Opportunita di aggiornamento con ${libro}.`;
+  }
 }
 
 // ===================================================
