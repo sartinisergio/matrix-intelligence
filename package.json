@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:netlify": "vite build --config vite.config.netlify.ts && mkdir -p .netlify/edge-functions && cp dist/index.js .netlify/edge-functions/index.js",
+    "build:netlify": "rm -rf dist .netlify/edge-functions && mkdir -p dist && cp -r public/* dist/ && vite build --config vite.config.netlify.ts",
     "preview": "wrangler pages dev",
     "deploy": "npm run build && wrangler pages deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"

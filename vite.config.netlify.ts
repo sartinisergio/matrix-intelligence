@@ -1,19 +1,19 @@
 import netlifyBuild from '@hono/vite-build/netlify-functions'
 import { defineConfig } from 'vite'
 
-// Build per Netlify: Edge Function + file statici nella stessa dir
-// Netlify serve i file statici dalla publish dir (dist/)
-// e la Edge Function da dist/index.js (con config.preferStatic=true)
+// Build per Netlify Edge Functions
+// Output: .netlify/edge-functions/index.js
+// I file statici vengono copiati separatamente dallo script build:netlify
 export default defineConfig({
   plugins: [
     netlifyBuild({
       entry: 'src/index.tsx',
-      output: 'index.js'
+      output: 'index.js',
+      outputDir: '.netlify/edge-functions'
     })
   ],
   build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    copyPublicDir: true
+    emptyOutDir: false,
+    copyPublicDir: false
   }
 })
