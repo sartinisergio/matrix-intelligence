@@ -1158,19 +1158,25 @@ async function generateTargets(campaignId) {
   showToast(`${faseLabel}: ${targets.length} target trovati!`, 'success');
 }
 
-// === MOTIVAZIONI TEMPLATE (senza LLM) ===
-// Scritte come NOTE OPERATIVE per il promotore editoriale.
-// Il promotore deve capire in 20 secondi: situazione, aggancio, cosa fare.
+// === MOTIVAZIONI TEMPLATE — PRE-VALUTAZIONE ===
+// Il volume NON esiste ancora. Non promuoviamo niente.
+// Queste note servono come INTELLIGENCE DI MERCATO:
+//   - Cosa usa oggi il docente?
+//   - Come e strutturato il suo programma?
+//   - Cosa dovrebbe avere il nuovo volume per essere competitivo QUI?
+// Quando il volume sara disponibile (fase Completa), le motivazioni
+// diventeranno note promozionali con confronto diretto.
+
 function generateTemplateMotivation(campaign, target) {
   const scenario = target.scenario || target.programData?.scenario_zanichelli || '';
   const docente = target.programData?.docente_nome || 'Il docente';
   const ateneo = target.programData?.ateneo || '';
-  const libro = campaign.libro_titolo || 'il nuovo volume';
   const materia = campaign.libro_materia || '';
   
   // --- DATI dal matching ---
   const manuali = target.programData?.manuali_citati || [];
   const manualePrinc = manuali.find(m => m.ruolo === 'principale');
+  const manualiAltri = manuali.filter(m => m.ruolo !== 'principale');
   const temiDocente = (target.programData?.temi_principali || []).filter(t => typeof t === 'string' && t.trim());
   const temiComuni = (target.temiComuni || []).filter(t => typeof t === 'string' && t.trim());
   const fwScore = target.frameworkScore || 0;
@@ -1183,60 +1189,78 @@ function generateTemplateMotivation(campaign, target) {
   let concorrenteLabel = null;
   if (concorrenteTitolo) {
     concorrenteLabel = concorrenteTitolo;
-    if (concorrenteAutore) concorrenteLabel += ` di ${concorrenteAutore}`;
+    if (concorrenteAutore) concorrenteLabel += ` (${concorrenteAutore})`;
+    if (concorrenteEditore && concorrenteEditore.toLowerCase() !== 'zanichelli') {
+      concorrenteLabel += `, ${concorrenteEditore}`;
+    }
   }
   
-  // Temi chiave del programma (max 3, leggibili)
+  // Temi chiave del programma (leggibili)
   const temiRilevanti = temiComuni.length > 0 ? temiComuni : temiDocente;
-  const temiStr = temiRilevanti.slice(0, 3).join(', ');
+  const temiStr = temiRilevanti.slice(0, 4).join(', ');
   
-  // --- COSTRUZIONE NOTA PROMOTORE ---
+  // --- COSTRUZIONE NOTA DI INTELLIGENCE ---
   const righe = [];
   
-  // RIGA 1: SITUAZIONE — cosa usa oggi
+  // === SITUAZIONE: cosa usa oggi ===
   if (scenario === 'zanichelli_assente') {
     if (concorrenteLabel) {
-      const edLabel = concorrenteEditore && concorrenteEditore.toLowerCase() !== 'zanichelli' 
-        ? ` (${concorrenteEditore})` : '';
-      righe.push(`SITUAZIONE: Usa ${concorrenteLabel}${edLabel}. Zanichelli assente.`);
+      righe.push(`ADOZIONE ATTUALE: ${concorrenteLabel}.`);
+      // Aggiungi complementari se ci sono
+      if (manualiAltri.length > 0) {
+        const altri = manualiAltri.map(m => m.titolo).filter(Boolean).slice(0, 2).join(', ');
+        if (altri) righe[righe.length - 1] = `ADOZIONE ATTUALE: ${concorrenteLabel}. Integra con: ${altri}.`;
+      }
+    } else if (manuali.length > 0) {
+      const nomi = manuali.map(m => m.titolo).filter(Boolean).slice(0, 2).join(', ');
+      righe.push(`ADOZIONE ATTUALE: Nessun testo principale identificato. Citati: ${nomi}.`);
     } else {
-      righe.push(`SITUAZIONE: Nessun manuale dominante nel programma. Zanichelli assente.`);
+      righe.push(`ADOZIONE ATTUALE: Nessun manuale specifico nel programma.`);
     }
   } else if (scenario === 'zanichelli_alternativo') {
     if (concorrenteLabel) {
-      righe.push(`SITUAZIONE: Testo principale ${concorrenteLabel}. Zanichelli gia presente come alternativo.`);
+      righe.push(`ADOZIONE ATTUALE: ${concorrenteLabel} come principale. Zanichelli gia tra gli alternativi.`);
     } else {
-      righe.push(`SITUAZIONE: Zanichelli presente come alternativo, non come testo principale.`);
+      righe.push(`ADOZIONE ATTUALE: Zanichelli presente come testo alternativo.`);
     }
   } else {
     // zanichelli_principale
     if (concorrenteLabel) {
-      righe.push(`SITUAZIONE: Gia adotta ${concorrenteLabel} (Zanichelli). Fidelizzato.`);
+      righe.push(`ADOZIONE ATTUALE: ${concorrenteLabel} (Zanichelli, testo principale). Docente fidelizzato.`);
     } else {
-      righe.push(`SITUAZIONE: Adotta gia Zanichelli come testo principale.`);
+      righe.push(`ADOZIONE ATTUALE: Zanichelli come testo principale.`);
     }
   }
   
-  // RIGA 2: PROGRAMMA — cosa insegna (temi concreti)
+  // === PROGRAMMA: struttura del corso ===
   if (temiStr) {
-    righe.push(`PROGRAMMA: Il corso tratta ${temiStr}.`);
+    righe.push(`PROGRAMMA: ${temiStr}.`);
   }
   if (fwScore > 0 && fwModuli.length > 0) {
-    const aree = fwModuli.slice(0, 2).join(' e ');
-    righe.push(`Il programma copre le aree: ${aree} (${fwScore}% del framework disciplinare).`);
+    const aree = fwModuli.slice(0, 3).join(', ');
+    righe.push(`Aree disciplinari coperte: ${aree}.`);
   }
   
-  // RIGA 3: AZIONE — cosa fare concretamente
+  // === REQUISITI: cosa deve avere il nuovo volume per essere competitivo ===
   if (scenario === 'zanichelli_assente') {
-    if (concorrenteTitolo) {
-      righe.push(`AZIONE: Portare copia saggio di ${libro}. Preparare confronto con ${concorrenteTitolo}: struttura, prezzo, digitale. Obiettivo: sostituzione.`);
+    if (concorrenteTitolo && temiStr) {
+      righe.push(`PER COMPETERE: Il nuovo volume deve coprire ${temiStr} e offrire vantaggi concreti rispetto a ${concorrenteTitolo} (struttura, aggiornamento, digitale, prezzo).`);
+    } else if (concorrenteTitolo) {
+      righe.push(`PER COMPETERE: Analizzare i punti di forza e debolezza di ${concorrenteTitolo} per posizionare il nuovo volume come alternativa credibile.`);
+    } else if (temiStr) {
+      righe.push(`PER COMPETERE: Il nuovo volume deve coprire almeno: ${temiStr}. Terreno libero, nessun concorrente dominante.`);
     } else {
-      righe.push(`AZIONE: Terreno libero. Presentare ${libro} come testo di riferimento per il corso. Portare copia saggio.`);
+      righe.push(`PER COMPETERE: Terreno libero. Verificare i contenuti del programma per calibrare l'offerta.`);
     }
   } else if (scenario === 'zanichelli_alternativo') {
-    righe.push(`AZIONE: Zanichelli e gia nel programma. Proporre ${libro} per promozione a testo principale. Far leva sulla continuita con l'editore.`);
+    if (temiStr) {
+      righe.push(`PER COMPETERE: Zanichelli e gia nel programma. Il nuovo volume deve coprire ${temiStr} meglio del testo principale per guadagnare la prima posizione.`);
+    } else {
+      righe.push(`PER COMPETERE: Zanichelli e gia nel programma. Capire perche non e primo: completezza? aggiornamento? materiali digitali?`);
+    }
   } else {
-    righe.push(`AZIONE: Docente gia fidelizzato. Presentare ${libro} come aggiornamento o affiancamento. Verificare se il testo attuale e ancora aggiornato.`);
+    // zanichelli_principale — consolidamento
+    righe.push(`PER IL RINNOVO: Docente gia Zanichelli. Verificare se il testo attuale e aggiornato. Eventuale affiancamento o sostituzione con edizione piu recente.`);
   }
   
   return righe.join(' ');
