@@ -1,27 +1,23 @@
 [build]
-  command = "npm run build:netlify"
+  command = "node build-netlify.mjs"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
 
-# Edge Functions nella cartella standard netlify/edge-functions/
-[[edge_functions]]
-  function = "index"
-  path = "/"
+# Redirect per URL pulite (senza .html)
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
 
-[[edge_functions]]
-  function = "index"
-  path = "/login"
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
+  status = 200
 
-[[edge_functions]]
-  function = "index"
-  path = "/dashboard"
-
-[[edge_functions]]
-  function = "index"
-  path = "/api/*"
-
-[dev]
-  command = "npm run dev"
-  port = 3000
+# API health (risposta statica inline)
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
+  status = 200
