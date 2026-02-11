@@ -1159,93 +1159,87 @@ async function generateTargets(campaignId) {
 }
 
 // === MOTIVAZIONI TEMPLATE (senza LLM) ===
-// Usate in pre-valutazione o quando OpenAI non e disponibile
+// Scritte come NOTE OPERATIVE per il promotore editoriale.
+// Il promotore deve capire in 20 secondi: situazione, aggancio, cosa fare.
 function generateTemplateMotivation(campaign, target) {
   const scenario = target.scenario || target.programData?.scenario_zanichelli || '';
   const docente = target.programData?.docente_nome || 'Il docente';
   const ateneo = target.programData?.ateneo || '';
   const libro = campaign.libro_titolo || 'il nuovo volume';
   const materia = campaign.libro_materia || '';
-  const classeLaurea = target.programData?.classe_laurea || '';
   
-  // --- DATI RICCHI dal matching ---
+  // --- DATI dal matching ---
   const manuali = target.programData?.manuali_citati || [];
   const manualePrinc = manuali.find(m => m.ruolo === 'principale');
-  const manualiAltri = manuali.filter(m => m.ruolo !== 'principale');
-  const temiDocente = target.programData?.temi_principali || [];
-  const temiComuni = target.temiComuni || [];
-  const overlapPct = target.overlapPct || 0;
+  const temiDocente = (target.programData?.temi_principali || []).filter(t => typeof t === 'string' && t.trim());
+  const temiComuni = (target.temiComuni || []).filter(t => typeof t === 'string' && t.trim());
   const fwScore = target.frameworkScore || 0;
   const fwModuli = target.frameworkModuliCoperti || [];
   
-  // --- Costruzione motivazione a blocchi ---
-  const parti = [];
-  
-  // BLOCCO 1: Chi e il docente e cosa insegna
-  let intro = `${docente}`;
-  if (ateneo) intro += ` (${ateneo})`;
-  intro += ` — ${materia}`;
-  if (classeLaurea) intro += `, ${classeLaurea}`;
-  intro += '.';
-  parti.push(intro);
-  
-  // BLOCCO 2: Cosa adotta OGGI (il cuore commerciale)
-  if (manualePrinc) {
-    const titolo = manualePrinc.titolo || 'testo non identificato';
-    const autore = manualePrinc.autore || '';
-    const editore = manualePrinc.editore || '';
-    let adozione = `Testo principale: ${titolo}`;
-    if (autore) adozione += ` (${autore})`;
-    if (editore && editore.toLowerCase() !== 'zanichelli') adozione += ` — ed. ${editore}`;
-    adozione += '.';
-    
-    // Se ha anche altri testi, menzionali
-    if (manualiAltri.length > 0) {
-      const altriNomi = manualiAltri
-        .map(m => m.titolo || 'altro testo')
-        .slice(0, 2)
-        .join(', ');
-      adozione += ` Complementari: ${altriNomi}.`;
-    }
-    parti.push(adozione);
-  } else if (manuali.length > 0) {
-    const nomi = manuali.map(m => m.titolo || 'testo').slice(0, 3).join(', ');
-    parti.push(`Testi citati (nessuno come principale): ${nomi}.`);
-  } else {
-    parti.push('Nessun manuale specifico citato nel programma.');
+  // Nome concorrente pulito
+  const concorrenteTitolo = manualePrinc?.titolo || null;
+  const concorrenteAutore = manualePrinc?.autore || null;
+  const concorrenteEditore = manualePrinc?.editore || null;
+  let concorrenteLabel = null;
+  if (concorrenteTitolo) {
+    concorrenteLabel = concorrenteTitolo;
+    if (concorrenteAutore) concorrenteLabel += ` di ${concorrenteAutore}`;
   }
   
-  // BLOCCO 3: Analisi programma (temi e framework)
-  if (temiComuni.length > 0) {
-    const temiStr = temiComuni.slice(0, 4).join(', ');
-    parti.push(`Temi del programma in linea con il framework: ${temiStr} (overlap ${overlapPct}%).`);
-  } else if (temiDocente.length > 0) {
-    const temiStr = temiDocente.slice(0, 4).join(', ');
-    parti.push(`Il programma tratta: ${temiStr}.`);
-  }
+  // Temi chiave del programma (max 3, leggibili)
+  const temiRilevanti = temiComuni.length > 0 ? temiComuni : temiDocente;
+  const temiStr = temiRilevanti.slice(0, 3).join(', ');
   
-  if (fwScore > 0 && fwModuli.length > 0) {
-    const moduliStr = fwModuli.slice(0, 3).join(', ');
-    parti.push(`Copertura framework MATRIX: ${fwScore}% (${moduliStr}).`);
-  }
+  // --- COSTRUZIONE NOTA PROMOTORE ---
+  const righe = [];
   
-  // BLOCCO 4: Azione commerciale (diversificata per scenario)
+  // RIGA 1: SITUAZIONE — cosa usa oggi
   if (scenario === 'zanichelli_assente') {
-    if (manualePrinc) {
-      const concorrente = manualePrinc.titolo || 'il testo attuale';
-      parti.push(`AZIONE: Zanichelli assente. Confronto diretto ${libro} vs ${concorrente}. Target di acquisizione.`);
+    if (concorrenteLabel) {
+      const edLabel = concorrenteEditore && concorrenteEditore.toLowerCase() !== 'zanichelli' 
+        ? ` (${concorrenteEditore})` : '';
+      righe.push(`SITUAZIONE: Usa ${concorrenteLabel}${edLabel}. Zanichelli assente.`);
     } else {
-      parti.push(`AZIONE: Zanichelli assente e nessun testo dominante. Presentare ${libro} come riferimento. Terreno aperto.`);
+      righe.push(`SITUAZIONE: Nessun manuale dominante nel programma. Zanichelli assente.`);
     }
   } else if (scenario === 'zanichelli_alternativo') {
-    parti.push(`AZIONE: Zanichelli gia presente come alternativo. Proporre ${libro} per promozione a testo principale.`);
+    if (concorrenteLabel) {
+      righe.push(`SITUAZIONE: Testo principale ${concorrenteLabel}. Zanichelli gia presente come alternativo.`);
+    } else {
+      righe.push(`SITUAZIONE: Zanichelli presente come alternativo, non come testo principale.`);
+    }
   } else {
     // zanichelli_principale
-    const manZan = manualePrinc ? manualePrinc.titolo : 'testo Zanichelli';
-    parti.push(`AZIONE: Gia Zanichelli principale (${manZan}). Valutare aggiornamento o affiancamento con ${libro}.`);
+    if (concorrenteLabel) {
+      righe.push(`SITUAZIONE: Gia adotta ${concorrenteLabel} (Zanichelli). Fidelizzato.`);
+    } else {
+      righe.push(`SITUAZIONE: Adotta gia Zanichelli come testo principale.`);
+    }
   }
   
-  return parti.join(' ');
+  // RIGA 2: PROGRAMMA — cosa insegna (temi concreti)
+  if (temiStr) {
+    righe.push(`PROGRAMMA: Il corso tratta ${temiStr}.`);
+  }
+  if (fwScore > 0 && fwModuli.length > 0) {
+    const aree = fwModuli.slice(0, 2).join(' e ');
+    righe.push(`Il programma copre le aree: ${aree} (${fwScore}% del framework disciplinare).`);
+  }
+  
+  // RIGA 3: AZIONE — cosa fare concretamente
+  if (scenario === 'zanichelli_assente') {
+    if (concorrenteTitolo) {
+      righe.push(`AZIONE: Portare copia saggio di ${libro}. Preparare confronto con ${concorrenteTitolo}: struttura, prezzo, digitale. Obiettivo: sostituzione.`);
+    } else {
+      righe.push(`AZIONE: Terreno libero. Presentare ${libro} come testo di riferimento per il corso. Portare copia saggio.`);
+    }
+  } else if (scenario === 'zanichelli_alternativo') {
+    righe.push(`AZIONE: Zanichelli e gia nel programma. Proporre ${libro} per promozione a testo principale. Far leva sulla continuita con l'editore.`);
+  } else {
+    righe.push(`AZIONE: Docente gia fidelizzato. Presentare ${libro} come aggiornamento o affiancamento. Verificare se il testo attuale e ancora aggiornato.`);
+  }
+  
+  return righe.join(' ');
 }
 
 // ===================================================
