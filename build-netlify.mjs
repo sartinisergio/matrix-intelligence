@@ -31,6 +31,14 @@ cpSync('public/static', 'dist/static', { recursive: true })
 // Copia favicon
 try { cpSync('public/favicon.svg', 'dist/favicon.svg') } catch(e) {}
 
+// Crea _redirects (più affidabile di netlify.toml per i proxy a Functions)
+const redirects = [
+  '/login  /login.html  200',
+  '/dashboard  /dashboard.html  200',
+  '/api/*  /.netlify/functions/:splat  200!',
+].join('\n')
+writeFileSync('dist/_redirects', redirects)
+
 // Scrivi pagine HTML
 writeFileSync('dist/index.html', loginHTML)
 writeFileSync('dist/login.html', loginHTML)  

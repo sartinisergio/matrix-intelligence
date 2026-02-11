@@ -5,27 +5,9 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# Redirect per URL pulite (senza .html)
-[[redirects]]
-  from = "/login"
-  to = "/login.html"
-  status = 200
+# I redirect sono in dist/_redirects (generato da build-netlify.mjs)
+# Più affidabili del netlify.toml per proxy a Functions
 
-[[redirects]]
-  from = "/dashboard"
-  to = "/dashboard.html"
-  status = 200
-
-# API health → Netlify Function
-[[redirects]]
-  from = "/api/health"
-  to = "/.netlify/functions/health"
-  status = 200
-  force = true
-
-# Catch-all API (future-proof)
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-  force = true
+[dev]
+  command = "npm run dev"
+  port = 3000
