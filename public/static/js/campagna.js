@@ -1867,8 +1867,8 @@ async function callEmailGeneration(campaign, target) {
   const nomeCompleto = target.docente_nome || '';
   const cognome = nomeCompleto.split(' ').filter(Boolean).pop() || nomeCompleto;
   
-  // Corso di laurea
-  const corsoLaurea = target.classe_laurea || '';
+  // Corso di laurea: abbiamo solo la classe (es. L-13), non il nome
+  // Lasciamo un placeholder che il promotore compilerà
   
   // Temi dal programma
   const temi = target.temi_comuni && target.temi_comuni.length > 0
@@ -1886,7 +1886,7 @@ Non usare espressioni come "mi permetto di", "con la presente", "in qualità di"
 Vai diretto al punto: hai studiato il programma, hai notato degli argomenti rilevanti, proponi il volume.
 
 STRUTTURA OBBLIGATORIA (segui questo ordine esatto):
-1. APERTURA: "Gentile professor [Cognome], La contatto dopo aver attentamente studiato il Suo programma di [materia] destinato agli studenti del corso di laurea in [corso]." Poi indica 2-3 argomenti specifici del programma del docente a cui dedica attenzione. Chiudi con: "Questi argomenti sono particolarmente approfonditi nel nuovo volume che Le vorrei proporre."
+1. APERTURA: "Gentile professor [Cognome], La contatto dopo aver attentamente studiato il Suo programma di [materia] destinato agli studenti del corso di laurea in [CORSO DI LAUREA]." Usa ESATTAMENTE il placeholder [CORSO DI LAUREA] — il promotore lo sostituirà col nome reale. Poi indica 2-3 argomenti specifici del programma del docente a cui dedica attenzione. Chiudi con: "Questi argomenti sono particolarmente approfonditi nel nuovo volume che Le vorrei proporre."
 
 2. PROPOSTA: "Si tratta di [Autore], [Titolo], e a questa pagina [LINK_ANTEPRIMA] può già consultare un'anteprima con l'indice completo e un capitolo campione." Poi cita 2-3 capitoli specifici del volume particolarmente rilevanti per il programma del docente.
 
@@ -1905,7 +1905,7 @@ REGOLE TASSATIVE:
 DOCENTE: ${nomeCompleto}
 ATENEO: ${target.ateneo || 'N/D'}
 MATERIA: ${target.materia || campaign.libro_materia || 'N/D'}
-CORSO DI LAUREA: ${corsoLaurea}
+CLASSE DI LAUREA (NON è il nome del corso): ${target.classe_laurea || 'N/D'}
 MANUALE ATTUALE: ${target.manuale_principale || 'Non identificato'}
 SCENARIO: ${target.scenario || 'N/D'}
 
