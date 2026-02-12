@@ -818,6 +818,34 @@ function dashboardPage(): string {
             </div>
           </div>
 
+          <!-- Sincronizzazione Matrix -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h3 class="font-semibold text-gray-800 mb-1">
+              <i class="fas fa-sync mr-2 text-zanichelli-light"></i>
+              Sincronizzazione dati Matrix
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">Importa framework di valutazione e catalogo manuali da Matrix (GitHub). La prima sincronizzazione scarica tutti i dati; le successive scaricano solo le modifiche.</p>
+            
+            <div id="sync-last-info" class="text-xs text-gray-400 mb-3"></div>
+            
+            <button onclick="syncFromMatrix()" id="sync-btn"
+                    class="px-6 py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors">
+              <i class="fas fa-sync mr-2"></i>
+              Sincronizza da Matrix
+            </button>
+            
+            <div id="sync-status" class="mt-4 text-sm"></div>
+            
+            <div id="sync-progress" class="mt-3 hidden">
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="sync-progress-bar" class="bg-zanichelli-blue h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="sync-progress-text" class="text-xs text-gray-500 mt-1"></p>
+            </div>
+            
+            <div id="sync-detail" class="mt-2"></div>
+          </div>
+
           <!-- Info -->
           <div class="bg-zanichelli-accent rounded-xl p-6">
             <h3 class="font-semibold text-zanichelli-blue mb-2">
@@ -864,6 +892,7 @@ function dashboardPage(): string {
   <script src="/static/js/upload.js"></script>
   <script src="/static/js/database.js"></script>
   <script src="/static/js/campagna.js"></script>
+  <script src="/static/js/sync.js"></script>
 </body>
 </html>`
 }
