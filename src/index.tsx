@@ -833,6 +833,12 @@ function dashboardPage(): string {
               <i class="fas fa-sync mr-2"></i>
               Sincronizza da Matrix
             </button>
+            <button onclick="forceSyncFromMatrix()" 
+                    class="ml-3 px-4 py-3 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Cancella i dati locali e riscarica tutto da Matrix">
+              <i class="fas fa-redo mr-1"></i>
+              Forza completa
+            </button>
             
             <div id="sync-status" class="mt-4 text-sm"></div>
             

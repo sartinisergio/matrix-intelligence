@@ -47,20 +47,36 @@ async function syncFromMatrix() {
     updateProgress(5, `Cataloghi scaricati: ${remoteManuals.length} manuali, ${remoteFrameworks.length} framework`);
 
     // --- STEP 2: Carica dati locali correnti per confronto incrementale ---
+    // Prima controlla localStorage (dati dalla sync precedente), poi fallback al file statico
     let localManuals = [];
     let localFrameworks = [];
     try {
-      const [localManRes, localFwRes] = await Promise.all([
-        fetch('/static/data/catalogo_manuali.json'),
-        fetch('/static/data/catalogo_framework.json')
-      ]);
-      if (localManRes.ok) {
-        const ld = await localManRes.json();
-        localManuals = ld.manuals || [];
+      const syncedManuals = localStorage.getItem('matrix_sync_manuals');
+      const syncedFrameworks = localStorage.getItem('matrix_sync_frameworks');
+      
+      if (syncedManuals) {
+        localManuals = JSON.parse(syncedManuals).manuals || [];
+        console.log(`Dati locali da sync precedente: ${localManuals.length} manuali`);
       }
-      if (localFwRes.ok) {
-        const fd = await localFwRes.json();
-        localFrameworks = fd.frameworks || [];
+      if (syncedFrameworks) {
+        localFrameworks = JSON.parse(syncedFrameworks).frameworks || [];
+        console.log(`Dati locali da sync precedente: ${localFrameworks.length} framework`);
+      }
+      
+      // Fallback: file statico (se non c'è mai stata una sync)
+      if (!localManuals.length || !localFrameworks.length) {
+        const [localManRes, localFwRes] = await Promise.all([
+          !localManuals.length ? fetch('/static/data/catalogo_manuali.json') : Promise.resolve(null),
+          !localFrameworks.length ? fetch('/static/data/catalogo_framework.json') : Promise.resolve(null)
+        ]);
+        if (localManRes?.ok) {
+          const ld = await localManRes.json();
+          localManuals = ld.manuals || [];
+        }
+        if (localFwRes?.ok) {
+          const fd = await localFwRes.json();
+          localFrameworks = fd.frameworks || [];
+        }
       }
     } catch (e) {
       console.log('Nessun dato locale trovato, sync completa');
@@ -280,6 +296,27 @@ async function syncFromMatrix() {
     statusEl.innerHTML = `<i class="fas fa-exclamation-circle text-red-500 mr-2"></i>Errore: ${e.message}`;
     showToast(`Errore sincronizzazione: ${e.message}`, 'error');
   }
+}
+
+// ===================================================
+// FORZA SINCRONIZZAZIONE COMPLETA (resetta localStorage)
+// ===================================================
+
+async function forceSyncFromMatrix() {
+  if (!confirm('Vuoi forzare una sincronizzazione completa? Tutti i dati verranno riscaricati da Matrix.')) return;
+  
+  localStorage.removeItem('matrix_sync_manuals');
+  localStorage.removeItem('matrix_sync_frameworks');
+  localStorage.removeItem('matrix_sync_timestamp');
+  
+  // Resetta anche i dati in memoria per forzare il confronto con il file statico
+  catalogData = null;
+  catalogManuals = [];
+  frameworkData = null;
+  allFrameworks = [];
+  
+  showToast('Dati locali cancellati, avvio sincronizzazione completa...', 'info');
+  await syncFromMatrix();
 }
 
 // ===================================================
