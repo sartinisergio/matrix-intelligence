@@ -23,11 +23,21 @@ let allFrameworks = [];
 async function loadCatalog() {
   if (catalogData) return;
   try {
+    // Prima controlla localStorage (dati sincronizzati da Matrix)
+    const synced = localStorage.getItem('matrix_sync_manuals');
+    if (synced) {
+      catalogData = JSON.parse(synced);
+      catalogManuals = catalogData.manuals || [];
+      const syncTime = localStorage.getItem('matrix_sync_timestamp');
+      console.log(`Catalogo manuali caricato da sync: ${catalogManuals.length} manuali (sync: ${syncTime})`);
+      return;
+    }
+    // Fallback: file statico
     const response = await fetch('/static/data/catalogo_manuali.json');
     if (!response.ok) throw new Error('Catalogo non trovato');
     catalogData = await response.json();
     catalogManuals = catalogData.manuals || [];
-    console.log(`Catalogo manuali caricato: ${catalogManuals.length} manuali`);
+    console.log(`Catalogo manuali caricato da file statico: ${catalogManuals.length} manuali`);
   } catch (e) {
     console.error('Errore caricamento catalogo:', e);
   }
@@ -36,11 +46,21 @@ async function loadCatalog() {
 async function loadFrameworks() {
   if (frameworkData) return;
   try {
+    // Prima controlla localStorage (dati sincronizzati da Matrix)
+    const synced = localStorage.getItem('matrix_sync_frameworks');
+    if (synced) {
+      frameworkData = JSON.parse(synced);
+      allFrameworks = frameworkData.frameworks || [];
+      const syncTime = localStorage.getItem('matrix_sync_timestamp');
+      console.log(`Framework caricati da sync: ${allFrameworks.length} (sync: ${syncTime})`);
+      return;
+    }
+    // Fallback: file statico
     const response = await fetch('/static/data/catalogo_framework.json');
     if (!response.ok) throw new Error('Framework non trovati');
     frameworkData = await response.json();
     allFrameworks = frameworkData.frameworks || [];
-    console.log(`Framework caricati: ${allFrameworks.length}`);
+    console.log(`Framework caricati da file statico: ${allFrameworks.length}`);
   } catch (e) {
     console.error('Errore caricamento framework:', e);
   }
@@ -1763,6 +1783,27 @@ function loadSettings() {
   } else {
     supaStatus.innerHTML = '<i class="fas fa-exclamation-circle text-yellow-500 mr-1"></i><span class="text-yellow-600">Supabase non configurato</span>';
   }
+  
+  // Info ultima sincronizzazione Matrix
+  const syncInfoEl = document.getElementById('sync-last-info');
+  if (syncInfoEl) {
+    const syncTimestamp = localStorage.getItem('matrix_sync_timestamp');
+    if (syncTimestamp) {
+      const date = new Date(syncTimestamp);
+      const formatted = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const syncManuals = localStorage.getItem('matrix_sync_manuals');
+      const syncFrameworks = localStorage.getItem('matrix_sync_frameworks');
+      let counts = '';
+      try {
+        const mc = syncManuals ? JSON.parse(syncManuals).total_manuals : 0;
+        const fc = syncFrameworks ? JSON.parse(syncFrameworks).total_frameworks : 0;
+        counts = ` — ${mc} manuali, ${fc} framework`;
+      } catch (e) {}
+      syncInfoEl.innerHTML = `<i class="fas fa-clock mr-1"></i>Ultima sincronizzazione: ${formatted}${counts}`;
+    } else {
+      syncInfoEl.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i>Mai sincronizzato — i dati provengono dal file statico incluso nell\'app';
+    }
+  }
 }
 
 function saveApiKey() {
@@ -1878,23 +1919,68 @@ async function callEmailGeneration(campaign, target) {
   // Indice del volume (capitoli specifici)
   const indice = campaign.libro_indice || '';
   
+  // Scenario Zanichelli per differenziare il template
+  const scenario = target.scenario || target.programData?.scenario_zanichelli || 'zanichelli_assente';
+  const manualeAttuale = target.manuale_principale || 'Non identificato';
+  
+  // --- PROMPT DIFFERENZIATO PER SCENARIO ---
+  let scenarioInstructions = '';
+  
+  if (scenario === 'zanichelli_principale') {
+    // FIDELIZZAZIONE/AGGIORNAMENTO — il docente usa GIÀ un titolo Zanichelli
+    scenarioInstructions = `
+TIPO DI MAIL: AGGIORNAMENTO/FIDELIZZAZIONE
+Il docente adotta già un titolo Zanichelli (${manualeAttuale}). NON stai proponendo un cambio di editore.
+Stai presentando un NUOVO VOLUME o una NUOVA EDIZIONE dello stesso ambito.
+
+APERTURA: "Gentile professor [Cognome], La contatto perché dal Suo programma di [materia] destinato agli studenti del corso di laurea in [CORSO DI LAUREA] risulta in adozione [titolo attuale]. La informo che è disponibile un nuovo titolo del nostro catalogo che potrebbe interessarLe..."
+Poi indica 2-3 argomenti del programma e perché il nuovo volume li tratta in modo aggiornato o diverso.
+
+PROPOSTA: Presenta il nuovo volume evidenziando cosa lo differenzia da quello attualmente adottato (nuovi contenuti, approccio diverso, aggiornamenti). NON parlare male del titolo attuale. Cita 2-3 capitoli del nuovo volume rilevanti.
+
+CHIUSURA: Offri copia omaggio per confronto con il titolo attuale e disponibilità per un incontro.`;
+
+  } else if (scenario === 'zanichelli_alternativo') {
+    // UPGRADE — Zanichelli c'è ma come testo complementare
+    scenarioInstructions = `
+TIPO DI MAIL: PROPOSTA DI UPGRADE
+Il docente usa già un titolo Zanichelli (${manualeAttuale}) ma come testo complementare, non principale.
+L'obiettivo è proporre il NUOVO VOLUME come possibile adozione principale o rafforzare la presenza Zanichelli.
+
+APERTURA: "Gentile professor [Cognome], La contatto dopo aver attentamente studiato il Suo programma di [materia] destinato agli studenti del corso di laurea in [CORSO DI LAUREA]."
+Menziona che tra i testi indicati figura già un titolo Zanichelli. Indica 2-3 argomenti specifici del programma.
+
+PROPOSTA: Presenta il nuovo volume come un testo che copre in modo completo gli argomenti del programma, evidenziando la continuità con il titolo Zanichelli già in uso. Cita 2-3 capitoli specifici del nuovo volume.
+
+CHIUSURA: Offri copia omaggio e disponibilità per un incontro.`;
+
+  } else {
+    // CONQUISTA — il docente NON usa Zanichelli (default)
+    scenarioInstructions = `
+TIPO DI MAIL: PRIMO CONTATTO / CONQUISTA
+Il docente attualmente NON adotta titoli Zanichelli. L'obiettivo è presentare il nuovo volume come alternativa valida.
+
+APERTURA: "Gentile professor [Cognome], La contatto dopo aver attentamente studiato il Suo programma di [materia] destinato agli studenti del corso di laurea in [CORSO DI LAUREA]."
+Indica 2-3 argomenti specifici del programma a cui il docente dedica attenzione. Chiudi con: "Questi argomenti sono particolarmente approfonditi nel nuovo volume che Le vorrei proporre."
+
+PROPOSTA: "Si tratta di [Autore], [Titolo], e a questa pagina [LINK_ANTEPRIMA] può già consultare un'anteprima con l'indice completo e un capitolo campione." Cita 2-3 capitoli specifici del volume particolarmente rilevanti per il programma del docente.
+
+CHIUSURA: Offri copia omaggio ("Se desidera ricevere una copia omaggio per una valutazione approfondita, La prego di comunicarmelo indicando in questo caso anche il luogo preferito per la spedizione.") e l'alternativa dell'appuntamento. Chiudi con "Nella speranza di risentirLa, approfitto dell'occasione per inviarLe i miei migliori saluti."`;
+  }
+
   const systemPrompt = `Sei un assistente che scrive mail professionali per promotori editoriali Zanichelli.
-Scrivi mail di primo contatto a docenti universitari per proporre un nuovo volume.
+Scrivi mail di primo contatto a docenti universitari.
 
 TONO: formale ma non burocratico. Il promotore si rivolge al docente con rispetto professionale.
 Non usare espressioni come "mi permetto di", "con la presente", "in qualità di".
 Vai diretto al punto: hai studiato il programma, hai notato degli argomenti rilevanti, proponi il volume.
 
-STRUTTURA OBBLIGATORIA (segui questo ordine esatto):
-1. APERTURA: "Gentile professor [Cognome], La contatto dopo aver attentamente studiato il Suo programma di [materia] destinato agli studenti del corso di laurea in [CORSO DI LAUREA]." Usa ESATTAMENTE il placeholder [CORSO DI LAUREA] — il promotore lo sostituirà col nome reale. Poi indica 2-3 argomenti specifici del programma del docente a cui dedica attenzione. Chiudi con: "Questi argomenti sono particolarmente approfonditi nel nuovo volume che Le vorrei proporre."
-
-2. PROPOSTA: "Si tratta di [Autore], [Titolo], e a questa pagina [LINK_ANTEPRIMA] può già consultare un'anteprima con l'indice completo e un capitolo campione." Poi cita 2-3 capitoli specifici del volume particolarmente rilevanti per il programma del docente.
-
-3. CHIUSURA: Offri la copia omaggio ("Se desidera ricevere una copia omaggio per una valutazione approfondita, La prego di comunicarmelo indicando in questo caso anche il luogo preferito per la spedizione.") e l'alternativa dell'appuntamento. Chiudi con "Nella speranza di risentirLa, approfitto dell'occasione per inviarLe i miei migliori saluti."
+${scenarioInstructions}
 
 REGOLE TASSATIVE:
 - Scrivi SOLO la mail, niente note o commenti.
 - Usa [LINK_ANTEPRIMA] come placeholder per il link (il promotore lo inserirà).
+- Usa [CORSO DI LAUREA] come placeholder per il nome del corso (il promotore lo inserirà).
 - NON inventare capitoli che non sono nell'indice fornito. Se non hai l'indice, cita solo gli argomenti.
 - NON aggiungere frasi generiche sul "digitale", "approccio innovativo" ecc. se non hai dati.
 - La mail deve essere 3 paragrafi massimo, concisa e diretta.
@@ -1905,8 +1991,8 @@ REGOLE TASSATIVE:
 DOCENTE: ${nomeCompleto}
 ATENEO: ${target.ateneo || 'N/D'}
 MATERIA: ${target.materia || campaign.libro_materia || 'N/D'}
-MANUALE ATTUALE: ${target.manuale_principale || 'Non identificato'}
-SCENARIO: ${target.scenario || 'N/D'}
+MANUALE ATTUALE: ${manualeAttuale}
+SCENARIO: ${scenario}
 NOTA: NON conosci il nome del corso di laurea. Usa il placeholder [CORSO DI LAUREA] nella mail.
 
 TEMI DEL PROGRAMMA DEL DOCENTE: ${temi.length > 0 ? temi.join(', ') : 'Non disponibili'}
@@ -1933,6 +2019,17 @@ function showEmailModal(emailResult, target, campaign) {
   const oggetto = emailResult.oggetto || `${campaign.libro_titolo} — nuova pubblicazione Zanichelli`;
   const corpo = emailResult.corpo || '';
   
+  // Badge scenario
+  const scenario = target.scenario || target.programData?.scenario_zanichelli || 'zanichelli_assente';
+  let scenarioBadge = '';
+  if (scenario === 'zanichelli_principale') {
+    scenarioBadge = '<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium"><i class="fas fa-sync-alt mr-1"></i>Aggiornamento</span>';
+  } else if (scenario === 'zanichelli_alternativo') {
+    scenarioBadge = '<span class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700 font-medium"><i class="fas fa-arrow-up mr-1"></i>Upgrade</span>';
+  } else {
+    scenarioBadge = '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium"><i class="fas fa-flag mr-1"></i>Conquista</span>';
+  }
+  
   // Formatta il corpo per la visualizzazione (preserva a capo)
   const corpoHtml = corpo.replace(/\n/g, '<br>');
   
@@ -1943,7 +2040,10 @@ function showEmailModal(emailResult, target, campaign) {
           <i class="fas fa-envelope mr-2 text-zanichelli-light"></i>
           Mail per ${target.docente_nome || 'il docente'}
         </h3>
-        <span class="text-xs text-gray-400">Puoi modificare prima di copiare</span>
+        <div class="flex items-center gap-2">
+          ${scenarioBadge}
+          <span class="text-xs text-gray-400">Puoi modificare prima di copiare</span>
+        </div>
       </div>
       
       <!-- Oggetto -->
