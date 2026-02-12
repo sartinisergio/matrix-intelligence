@@ -87,15 +87,17 @@ async function syncFromMatrix() {
     }
 
     // Manuali: confronta ID e chapters_count
+    // Se il manuale locale non ha chapters_summary (dato arricchito), lo riscarica
     const manToDownload = [];
     const manUnchanged = [];
     for (const remoteMan of remoteManuals) {
       const localMan = localManualIds.get(remoteMan.id);
-      if (localMan && localMan.chapters_count === (remoteMan.chapters_count || 0)) {
-        // Stesso ID, stesso numero di capitoli → invariato
+      if (localMan && localMan.chapters_count === (remoteMan.chapters_count || 0)
+          && localMan.chapters_summary) {
+        // Stesso ID, stesso numero di capitoli, ha già il sommario → invariato
         manUnchanged.push(localMan);
       } else {
-        // Nuovo o modificato → da scaricare
+        // Nuovo, modificato, o manca il sommario dettagliato → da scaricare
         manToDownload.push(remoteMan);
       }
     }
@@ -352,8 +354,10 @@ function formatSyncSummary(newFw, newMan, unchangedFw, unchangedMan, removedFw, 
   if (newMan > 0) html += `<div class="text-green-600"><i class="fas fa-plus-circle mr-1"></i>${newMan} manuali nuovi/aggiornati</div>`;
   if (unchangedFw > 0) html += `<div class="text-gray-500"><i class="fas fa-check mr-1"></i>${unchangedFw} framework invariati</div>`;
   if (unchangedMan > 0) html += `<div class="text-gray-500"><i class="fas fa-check mr-1"></i>${unchangedMan} manuali invariati</div>`;
-  if (removedFw > 0) html += `<div class="text-orange-500"><i class="fas fa-minus-circle mr-1"></i>${removedFw} framework rimossi da Matrix</div>`;
-  if (removedMan > 0) html += `<div class="text-orange-500"><i class="fas fa-minus-circle mr-1"></i>${removedMan} manuali rimossi da Matrix</div>`;
+  // Mostra "rimossi" solo se NON è una prima sincronizzazione completa
+  // (cioè se c'erano anche elementi invariati — altrimenti è solo un cambio di ID)
+  if (removedFw > 0 && unchangedFw > 0) html += `<div class="text-orange-500"><i class="fas fa-minus-circle mr-1"></i>${removedFw} framework non più presenti in Matrix</div>`;
+  if (removedMan > 0 && unchangedMan > 0) html += `<div class="text-orange-500"><i class="fas fa-minus-circle mr-1"></i>${removedMan} manuali non più presenti in Matrix</div>`;
 
   html += '</div>';
   return html;
