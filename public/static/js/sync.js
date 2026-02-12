@@ -387,12 +387,28 @@ function sleep(ms) {
 function formatSyncSummary(newFw, newMan, unchangedFw, unchangedMan, removedFw, removedMan) {
   let html = '<div class="mt-3 text-sm space-y-1">';
 
-  if (newFw > 0) html += `<div class="text-green-600"><i class="fas fa-plus-circle mr-1"></i>${newFw} framework nuovi/aggiornati</div>`;
-  if (newMan > 0) html += `<div class="text-green-600"><i class="fas fa-plus-circle mr-1"></i>${newMan} manuali nuovi/aggiornati</div>`;
-  if (unchangedFw > 0) html += `<div class="text-gray-500"><i class="fas fa-check mr-1"></i>${unchangedFw} framework invariati</div>`;
-  if (unchangedMan > 0) html += `<div class="text-gray-500"><i class="fas fa-check mr-1"></i>${unchangedMan} manuali invariati</div>`;
-  // Mostra "rimossi" solo se NON è una prima sincronizzazione completa
-  // (cioè se c'erano anche elementi invariati — altrimenti è solo un cambio di ID)
+  const totalFw = newFw + unchangedFw;
+  const totalMan = newMan + unchangedMan;
+
+  // Framework
+  if (newFw > 0 && unchangedFw > 0) {
+    html += `<div class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${totalFw} framework sincronizzati (${newFw} aggiornati, ${unchangedFw} già allineati)</div>`;
+  } else if (newFw > 0) {
+    html += `<div class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${newFw} framework sincronizzati</div>`;
+  } else if (unchangedFw > 0) {
+    html += `<div class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${unchangedFw} framework sincronizzati (tutti aggiornati)</div>`;
+  }
+
+  // Manuali
+  if (newMan > 0 && unchangedMan > 0) {
+    html += `<div class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${totalMan} manuali sincronizzati (${newMan} aggiornati, ${unchangedMan} già allineati)</div>`;
+  } else if (newMan > 0) {
+    html += `<div class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${newMan} manuali sincronizzati</div>`;
+  } else if (unchangedMan > 0) {
+    html += `<div class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${unchangedMan} manuali sincronizzati (tutti aggiornati)</div>`;
+  }
+
+  // Rimossi (solo nelle sync successive, non alla prima)
   if (removedFw > 0 && unchangedFw > 0) html += `<div class="text-orange-500"><i class="fas fa-minus-circle mr-1"></i>${removedFw} framework non più presenti in Matrix</div>`;
   if (removedMan > 0 && unchangedMan > 0) html += `<div class="text-orange-500"><i class="fas fa-minus-circle mr-1"></i>${removedMan} manuali non più presenti in Matrix</div>`;
 
