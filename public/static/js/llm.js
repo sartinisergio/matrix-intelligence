@@ -76,24 +76,40 @@ async function callOpenAI(systemPrompt, userPrompt, jsonMode = true) {
 
 // --- Prompt Pre-classificazione ---
 function getPreClassificationPrompt() {
-  const authorsListStr = CONFIG.ZANICHELLI_AUTHORS.join(', ');
+  // Lista precisa dei manuali Zanichelli con autore + titolo + materia
+  const zanichelli_catalog = CONFIG.ZANICHELLI_CATALOG || [];
+  const catalogStr = zanichelli_catalog.map(m => `  - ${m.author} — "${m.title}" (${m.subject})`).join('\n');
   
-  return `Sei un esperto analista di programmi universitari italiani.
+  return `Sei un esperto analista di programmi universitari italiani, specializzato nel settore editoriale.
 Analizza il seguente programma di un insegnamento universitario ed estrai le informazioni richieste in formato JSON.
 
 REGOLE IMPORTANTI:
 1. Estrai SOLO informazioni esplicitamente presenti o chiaramente inferibili dal testo
-2. Per i manuali citati, riporta esattamente come appaiono: titolo, autore, editore
-3. Assegna il ruolo "principale" al primo manuale o quello indicato come testo di riferimento
-4. Assegna "alternativo" agli altri manuali
+2. Per i manuali citati, riporta esattamente come appaiono nel programma: titolo, autore, editore
+3. Assegna il ruolo "principale" al primo manuale o quello indicato come "testo di riferimento" / "testo consigliato" / "testo adottato"
+4. Assegna "alternativo" a tutti gli altri manuali (letture consigliate, testi complementari, approfondimenti)
 5. Inferisci la disciplina accademica dal contesto (nome corso, argomenti, facoltà)
 6. Estrai 5-10 parole chiave che rappresentano i temi principali del corso
-7. Per scenario_zanichelli, determina:
-   - "zanichelli_principale" se il manuale principale è di un autore Zanichelli noto
-   - "zanichelli_alternativo" se Zanichelli appare tra i manuali alternativi
-   - "zanichelli_assente" se nessun manuale Zanichelli è citato
 
-AUTORI ZANICHELLI NOTI: ${authorsListStr}
+REGOLE CRITICHE PER SCENARIO ZANICHELLI:
+Lo scenario_zanichelli dipende ESCLUSIVAMENTE dall'EDITORE del manuale, NON dal cognome dell'autore.
+
+Un manuale è Zanichelli SOLO SE:
+- Nel programma è esplicitamente indicato "Zanichelli" come editore, OPPURE
+- Il manuale corrisponde (autore + titolo simile) a uno del CATALOGO ZANICHELLI qui sotto
+
+CATALOGO ZANICHELLI (riferimento ufficiale):
+${catalogStr}
+
+ATTENZIONE ai falsi positivi:
+- Un autore può pubblicare con editori diversi (es. Brown pubblica con Zanichelli MA ANCHE con Pearson/EdiSES)
+- Se l'editore indicato nel programma NON è Zanichelli (es. Pearson, EdiSES, McGraw-Hill, UTET, CEA, Piccin, Elsevier, Springer, Edra, Casa Editrice Ambrosiana), allora NON è un manuale Zanichelli
+- Se l'editore non è specificato, confronta autore+titolo con il catalogo sopra. Se non c'è corrispondenza, NON classificare come Zanichelli
+
+Determina scenario_zanichelli così:
+- "zanichelli_principale": il manuale con ruolo "principale" è pubblicato da Zanichelli
+- "zanichelli_alternativo": nessun manuale principale è Zanichelli, ma almeno un manuale "alternativo" è pubblicato da Zanichelli
+- "zanichelli_assente": nessun manuale citato è pubblicato da Zanichelli
 
 RISPONDI ESCLUSIVAMENTE con un oggetto JSON con questa struttura:
 {
@@ -107,7 +123,7 @@ RISPONDI ESCLUSIVAMENTE con un oggetto JSON con questa struttura:
     {
       "titolo": "Titolo manuale",
       "autore": "Autore/i",
-      "editore": "Editore",
+      "editore": "Editore (DEVE essere presente se indicato nel programma)",
       "ruolo": "principale|alternativo"
     }
   ],
@@ -115,7 +131,8 @@ RISPONDI ESCLUSIVAMENTE con un oggetto JSON con questa struttura:
   "scenario_zanichelli": "zanichelli_principale|zanichelli_alternativo|zanichelli_assente"
 }
 
-Se un campo non è determinabile, usa null (per stringhe) o [] (per array).`;
+Se un campo non è determinabile, usa null (per stringhe) o [] (per array).
+Se l'editore di un manuale non è specificato nel programma, scrivi "non specificato" nel campo editore.`;
 }
 
 // --- Prompt Motivazione Target ---

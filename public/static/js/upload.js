@@ -106,6 +106,71 @@ async function previewPDF(index) {
   }
 }
 
+// --- Validazione post-LLM dello scenario Zanichelli ---
+// Verifica che lo scenario dichiarato dal LLM corrisponda ai manuali citati
+// Controlla: editore esplicito "Zanichelli" + match con catalogo ZANICHELLI_CATALOG
+function validateZanichelliScenario(classification) {
+  const manuali = classification.manuali_citati || [];
+  if (manuali.length === 0) return 'zanichelli_assente';
+  
+  const catalog = CONFIG.ZANICHELLI_CATALOG || [];
+  
+  // Per ogni manuale citato, verifica se è Zanichelli
+  const manualiConFlag = manuali.map(m => {
+    const editore = (m.editore || '').toLowerCase().trim();
+    const autore = (m.autore || '').toLowerCase().trim();
+    const titolo = (m.titolo || '').toLowerCase().trim();
+    
+    // 1. Editore esplicito "Zanichelli"
+    if (editore.includes('zanichelli')) {
+      return { ...m, _isZanichelli: true, _reason: 'editore esplicito' };
+    }
+    
+    // 2. Editore esplicitamente NON Zanichelli → sicuramente non è Zanichelli
+    const altriEditori = ['pearson', 'edises', 'edi-ses', 'mcgraw', 'utet', 'cea', 'piccin', 
+                          'elsevier', 'springer', 'edra', 'ambrosiana', 'wiley', 'adelphi',
+                          'hoepli', 'mondadori', 'il mulino', 'egea', 'giappichelli',
+                          'giuffrè', 'cacucci', 'laterza', 'carocci', 'franco angeli',
+                          'cortina', 'minerva', 'società editrice', 'esculapio', 'patron',
+                          'bononia', 'clueb', 'aracne', 'ledizioni', 'vita e pensiero'];
+    if (altriEditori.some(e => editore.includes(e))) {
+      return { ...m, _isZanichelli: false, _reason: 'editore concorrente' };
+    }
+    
+    // 3. Editore non specificato → confronta con catalogo Zanichelli
+    if (!editore || editore === 'non specificato' || editore === 'n/a' || editore === 'null') {
+      const match = catalog.some(c => {
+        const cAutore = c.author.toLowerCase();
+        const cTitolo = c.title.toLowerCase();
+        // Match autore (almeno il cognome principale)
+        const autoreParts = cAutore.split(/[,\s]+/).filter(p => p.length > 2);
+        const autoreMatch = autoreParts.some(p => autore.includes(p));
+        // Match titolo (parole significative)
+        const titoloMatch = cTitolo.split(/\s+/).filter(w => w.length > 3).some(w => titolo.includes(w));
+        return autoreMatch && titoloMatch;
+      });
+      return { ...m, _isZanichelli: match, _reason: match ? 'match catalogo (editore mancante)' : 'no match catalogo' };
+    }
+    
+    // 4. Editore presente ma non riconosciuto → non classificare come Zanichelli
+    return { ...m, _isZanichelli: false, _reason: 'editore sconosciuto, non Zanichelli' };
+  });
+  
+  // Log per debug
+  manualiConFlag.forEach(m => {
+    console.log(`[Validazione] "${m.titolo}" di ${m.autore} (${m.editore}) → Zanichelli: ${m._isZanichelli} (${m._reason})`);
+  });
+  
+  // Determina scenario
+  const principale = manualiConFlag.find(m => m.ruolo === 'principale');
+  const hasZanPrincipale = principale && principale._isZanichelli;
+  const hasZanAlternativo = manualiConFlag.some(m => m.ruolo === 'alternativo' && m._isZanichelli);
+  
+  if (hasZanPrincipale) return 'zanichelli_principale';
+  if (hasZanAlternativo) return 'zanichelli_alternativo';
+  return 'zanichelli_assente';
+}
+
 // --- Sanitizza testo estratto da PDF ---
 // Rimuove caratteri di controllo, null bytes e sequenze Unicode problematiche
 // che causano errori in JSON.parse() e PostgreSQL/Supabase
@@ -217,6 +282,13 @@ async function startProcessing() {
       // 3. Valida risposta LLM
       if (!classification || typeof classification !== 'object') {
         throw new Error('Risposta LLM non valida');
+      }
+
+      // 3b. VALIDAZIONE POST-LLM: verifica scenario_zanichelli dai manuali citati
+      const validatedScenario = validateZanichelliScenario(classification);
+      if (validatedScenario !== classification.scenario_zanichelli) {
+        console.warn(`[Upload] Scenario corretto per ${fileName}: "${classification.scenario_zanichelli}" → "${validatedScenario}"`);
+        classification.scenario_zanichelli = validatedScenario;
       }
 
       // 4. Salva su Supabase
