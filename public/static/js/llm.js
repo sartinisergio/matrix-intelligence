@@ -43,12 +43,30 @@ async function callOpenAI(systemPrompt, userPrompt, jsonMode = true) {
   const content = data.choices[0].message.content;
 
   if (jsonMode) {
+    // Sanitizza il contenuto: rimuove caratteri di controllo che rompono JSON.parse()
+    const sanitized = content
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+      .replace(/[\x80-\x9F]/g, '')
+      .replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => {
+        const code = parseInt(hex, 16);
+        // Rifiuta surrogates isolati e caratteri di controllo
+        if (code >= 0xD800 && code <= 0xDFFF) return '';
+        if (code <= 0x1F && code !== 0x09 && code !== 0x0A && code !== 0x0D) return '';
+        return match;
+      });
+    
     try {
-      return JSON.parse(content);
+      return JSON.parse(sanitized);
     } catch (e) {
       // Prova a estrarre JSON dalla risposta
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      const jsonMatch = sanitized.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          return JSON.parse(jsonMatch[0]);
+        } catch (e2) {
+          console.error('JSON fallback parse error:', e2, 'Content:', jsonMatch[0].substring(0, 200));
+        }
+      }
       throw new Error('Risposta LLM non è JSON valido');
     }
   }

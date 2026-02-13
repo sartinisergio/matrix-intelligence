@@ -106,6 +106,32 @@ async function previewPDF(index) {
   }
 }
 
+// --- Sanitizza testo estratto da PDF ---
+// Rimuove caratteri di controllo, null bytes e sequenze Unicode problematiche
+// che causano errori in JSON.parse() e PostgreSQL/Supabase
+function sanitizeExtractedText(text) {
+  if (!text) return '';
+  
+  return text
+    // Rimuove null bytes (\x00) - non accettati da PostgreSQL
+    .replace(/\x00/g, '')
+    // Rimuove caratteri di controllo C0 (U+0000-U+001F) eccetto tab, newline, carriage return
+    .replace(/[\x01-\x08\x0B\x0C\x0E-\x1F]/g, '')
+    // Rimuove caratteri di controllo C1 (U+0080-U+009F)
+    .replace(/[\x80-\x9F]/g, '')
+    // Rimuove caratteri Unicode sostitutivi (surrogates isolati)
+    .replace(/[\uD800-\uDFFF]/g, '')
+    // Rimuove BOM (Byte Order Mark)
+    .replace(/\uFEFF/g, '')
+    // Rimuove caratteri Unicode speciali problematici
+    .replace(/[\uFFF0-\uFFFF]/g, '')
+    // Normalizza whitespace multipli in singoli spazi
+    .replace(/[ \t]+/g, ' ')
+    // Normalizza newline multiple (max 2)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // --- Estrai testo da PDF ---
 async function extractTextFromPDF(file) {
   const arrayBuffer = await file.arrayBuffer();
@@ -119,7 +145,8 @@ async function extractTextFromPDF(file) {
     fullText += pageText + '\n\n';
   }
 
-  return fullText.trim();
+  // Sanitizza il testo per rimuovere caratteri problematici
+  return sanitizeExtractedText(fullText);
 }
 
 // --- Avvia elaborazione batch ---
