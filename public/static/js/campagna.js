@@ -1105,6 +1105,9 @@ async function generateTargets(campaignId) {
           const concorrenteCatalogo = findManualInCatalog(princ.titolo, princ.autore);
           if (concorrenteCatalogo) {
             indiceConcorrente = concorrenteCatalogo.chapters_summary || null;
+            console.log(`[Campagna] Indice TROVATO per "${princ.titolo}" → ${concorrenteCatalogo.title} (${(indiceConcorrente || '').substring(0, 80)}...)`);
+          } else {
+            console.warn(`[Campagna] ⚠️ Indice NON TROVATO per "${princ.titolo}" (${princ.autore || 'autore N/D'}) — il LLM lavorerà SENZA indice`);
           }
         }
         

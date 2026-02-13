@@ -125,9 +125,21 @@ function getTargetMotivationPrompt(bookData, targetData) {
   
   // --- DATI CONCORRENTE (indice dal catalogo, se trovato) ---
   let concorrenteContext = '';
+  let hasIndice = false;
   if (targetData.indice_concorrente) {
-    concorrenteContext = `\nINDICE COMPLETO DEL MANUALE ADOTTATO (dal catalogo):
-${targetData.indice_concorrente}`;
+    hasIndice = true;
+    concorrenteContext = `
+═══════════════════════════════════════════
+INDICE COMPLETO DEL MANUALE ADOTTATO (DATI VERIFICATI DAL CATALOGO):
+${targetData.indice_concorrente}
+═══════════════════════════════════════════
+ATTENZIONE: L'indice sopra è il dato UFFICIALE. Usa SOLO questi capitoli nella tua analisi.
+NON aggiungere, rimuovere o modificare capitoli. Se un tema del programma corrisponde a un capitolo dell'indice, il manuale LO COPRE.`;
+  } else {
+    concorrenteContext = `
+NOTA: L'indice del manuale adottato NON è disponibile nel catalogo.
+Puoi fare SOLO osservazioni generali basate sul titolo e sull'editore.
+NON inventare capitoli o contenuti del manuale. Scrivi esplicitamente "Indice non disponibile nel catalogo — analisi limitata ai dati del programma."`;
   }
   
   // --- FRAMEWORK DISCIPLINARE ---
@@ -158,6 +170,19 @@ ${targetData.indice_concorrente}`;
   // --- PROMPT ---
   if (isPreValutazione) {
     // ============ PRE-VALUTAZIONE ============
+    const metodoAnalisi = hasIndice
+      ? `METODO DI ANALISI (OBBLIGATORIO):
+1. Per ogni tema del programma del docente, cerca il capitolo corrispondente nell'INDICE fornito sopra
+2. Se il tema corrisponde a un capitolo → il manuale LO COPRE (non dire che manca!)
+3. Un GAP esiste SOLO se un tema del programma NON ha un capitolo corrispondente nell'indice
+4. Verifica OGNI affermazione contro l'indice prima di scriverla
+5. NON usare la tua conoscenza pregressa del libro — basati SOLO sull'indice fornito`
+      : `METODO DI ANALISI:
+L'indice del manuale non è disponibile. Limita l'analisi a:
+1. Confronto tra i temi del programma e il framework disciplinare
+2. Osservazioni basate sullo scenario (Zanichelli presente/assente)
+3. NON inventare contenuti o capitoli del manuale`;
+
     return `Sei un analista di mercato editoriale universitario.
 Prepari una scheda per un promotore Zanichelli che deve capire le LEVE per un possibile cambio di adozione su questa cattedra.
 
@@ -166,19 +191,27 @@ CONTESTO: Zanichelli sta valutando un nuovo volume di ${bookData.materia}${bookD
 ${cattedraBlock}
 ${concorrenteContext}${frameworkContext}
 
+${metodoAnalisi}
+
 ANALIZZA e rispondi con questa struttura (usa esattamente queste etichette):
 
-MANUALE ATTUALE: Descrivi il manuale adottato. Se hai l'indice, analizza quali capitoli corrispondono ai temi del programma del docente e quali NO. Il docente usa tutto il manuale o solo una parte? Ci sono aree del programma che il manuale copre male o non copre?
+MANUALE ATTUALE: ${hasIndice 
+  ? 'Elenca i capitoli dell\'indice che corrispondono ai temi del programma. Per ogni tema del programma, indica il capitolo che lo copre. Se un tema NON ha corrispondenza nell\'indice, segnalalo esplicitamente come gap.'
+  : 'Descrivi brevemente il manuale adottato basandoti solo sul titolo e l\'editore. Scrivi "Indice non disponibile — analisi basata solo sui temi del programma."'}
 
-GAP E PUNTI DEBOLI: Identifica i punti deboli specifici del manuale rispetto a QUESTO programma. Dove il docente deve integrare con altri materiali? Quali temi del programma non trovano riscontro nell'indice del manuale? Queste sono le leve per il cambio.
+GAP E PUNTI DEBOLI: ${hasIndice
+  ? 'Identifica SOLO i temi del programma che NON trovano corrispondenza nell\'indice. Non citare come gap temi che hanno un capitolo dedicato. Se non ci sono gap evidenti, scrivi "Il manuale copre tutti i temi principali del programma."'
+  : 'Analizza i temi del programma e identifica aree potenzialmente deboli. Segnala che l\'analisi è approssimativa senza l\'indice.'}
 
-LEVE PER IL CAMBIO: Su cosa deve puntare il nuovo volume per convincere questo docente a cambiare? Non suggerimenti generici ("casi studio", "approccio applicato") ma leve SPECIFICHE legate ai gap identificati. Cosa manca concretamente al manuale attuale che il docente probabilmente compensa con dispense, articoli o altri materiali?
+LEVE PER IL CAMBIO: Su cosa deve puntare il nuovo volume per convincere questo docente a cambiare? Solo leve SPECIFICHE legate ai gap reali identificati. Se il manuale copre bene il programma, concentrati su aspetti qualitativi: didattica, aggiornamento, risorse digitali, approccio.
 
 REGOLE TASSATIVE:
-- Basa TUTTO sui dati forniti. NON inventare contenuti del nuovo volume.
+- ${hasIndice ? 'Ogni affermazione sul manuale DEVE essere verificabile nell\'indice fornito.' : 'NON inventare capitoli o contenuti del manuale.'}
+- NON affermare che il manuale "non copre" un argomento se c'è un capitolo dedicato nell'indice.
+- NON usare la tua conoscenza pregressa del libro — solo i dati forniti in questo prompt.
 - Sii SPECIFICO: nomina capitoli, temi, aree concrete — niente frasi generiche.
 - Le leve devono essere azionabili: il promotore deve poterle usare in un colloquio.
-- 4-5 frasi massimo. Tono: nota interna, diretto, zero retorica.
+- 4-5 frasi per sezione. Tono: nota interna, diretto, zero retorica.
 - NON usare formule tipo "per competere efficacemente" o "un approccio piu applicato".`;
 
   } else {
@@ -190,6 +223,10 @@ REGOLE TASSATIVE:
       volumeInfo += `\nArgomenti dal sommario: ${bookData.temi.join(', ')}`;
     }
 
+    const metodoCompleto = hasIndice
+      ? `METODO: Confronta l'indice del manuale concorrente con il sommario del nuovo volume e i temi del programma. Un capitolo è un gap SOLO se NON appare nell'indice.`
+      : `METODO: Confronta il sommario del nuovo volume con i temi del programma. NON inventare contenuti del manuale concorrente.`;
+
     return `Sei un consulente commerciale per Zanichelli.
 Prepari una NOTA OPERATIVA per un promotore che deve presentare un nuovo volume a un docente.
 
@@ -198,18 +235,21 @@ ${volumeInfo}
 ${cattedraBlock}
 ${concorrenteContext}${frameworkContext}
 
+${metodoCompleto}
+
 ANALIZZA e rispondi con questa struttura:
 
-SITUAZIONE: Cosa adotta oggi e perche e vulnerabile al cambio? Identifica i gap tra il manuale attuale e il programma del docente.
+SITUAZIONE: Cosa adotta oggi e perche e vulnerabile al cambio? ${hasIndice ? 'Confronta l\'indice con i temi del programma per identificare gap reali.' : 'Analisi limitata ai temi del programma.'}
 
 LEVE: Dove il nuovo volume risponde meglio al programma rispetto al concorrente? Confronta argomenti specifici del sommario con i temi del programma. Nomina capitoli concreti.
 
 COLLOQUIO: Cosa dire al docente? Su quali 2-3 punti specifici insistere? Quale argomento aprire per primo?
 
 REGOLE TASSATIVE:
+- ${hasIndice ? 'Verifica ogni affermazione sul concorrente contro l\'indice fornito.' : 'NON inventare contenuti del manuale concorrente.'}
 - Basa TUTTO sui dati. NON inventare caratteristiche del volume non presenti nel sommario.
 - Confronta concretamente: capitoli concorrente vs argomenti nuovo volume vs programma.
-- 4-5 frasi. Tono: nota interna operativa, zero retorica.`;
+- 4-5 frasi per sezione. Tono: nota interna operativa, zero retorica.`;
   }
 }
 
@@ -225,8 +265,8 @@ async function generateMotivation(bookData, targetData) {
   const prompt = getTargetMotivationPrompt(bookData, targetData);
   const isPreVal = bookData.fase === 'pre_valutazione';
   const systemPrompt = isPreVal
-    ? 'Sei un analista di mercato editoriale universitario. Il tuo obiettivo e identificare le leve concrete per un cambio di adozione. Basa tutto sui dati forniti, non inventare. Rispondi in italiano. Usa le etichette richieste (MANUALE ATTUALE, GAP E PUNTI DEBOLI, LEVE PER IL CAMBIO). Sii specifico e diretto, niente frasi generiche.'
-    : 'Sei un consulente commerciale esperto del settore editoriale universitario. Il tuo obiettivo e preparare il promotore al colloquio con il docente. Basa tutto sui dati forniti, non inventare. Rispondi in italiano. Usa le etichette richieste (SITUAZIONE, LEVE, COLLOQUIO). Sii specifico e operativo.';
+    ? 'Sei un analista di mercato editoriale universitario. REGOLA FONDAMENTALE: se ti viene fornito l\'indice del manuale, OGNI tua affermazione sul suo contenuto DEVE essere verificabile nell\'indice. NON dire che un argomento "manca" se c\'è un capitolo dedicato. NON usare la tua conoscenza pregressa del libro. Basa tutto SOLO sui dati forniti nel prompt. Rispondi in italiano. Usa le etichette richieste. Sii specifico e diretto.'
+    : 'Sei un consulente commerciale esperto del settore editoriale universitario. Se ti viene fornito l\'indice del concorrente, verifica ogni affermazione contro di esso. NON inventare. Basa tutto sui dati forniti. Rispondi in italiano. Usa le etichette richieste. Sii specifico e operativo.';
   const result = await callOpenAI(
     systemPrompt,
     prompt,
