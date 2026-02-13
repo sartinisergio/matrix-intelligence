@@ -249,6 +249,12 @@ async function startProcessing() {
   const zanCount = getZanichelliFromCatalog().length;
   console.log(`[Upload] Catalogo caricato: ${catalogManuals.length} manuali totali, ${zanCount} Zanichelli`);
 
+  processingResults = { success: 0, errors: 0, skipped: 0, details: [] };
+  
+  // Salva copie locali per evitare problemi di garbage collection
+  const filesToProcess = [...fileQueue];
+  const total = filesToProcess.length;
+
   // Setup UI
   document.getElementById('btn-start-processing').disabled = true;
   document.getElementById('processing-progress').classList.remove('hidden');
@@ -259,19 +265,13 @@ async function startProcessing() {
   const progressText = document.getElementById('progress-text');
   const progressDetail = document.getElementById('progress-detail');
   if (progressBar) { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; }
-  if (progressText) progressText.textContent = `0/${filesToProcess.length}`;
+  if (progressText) progressText.textContent = `0/${total}`;
   if (progressDetail) progressDetail.textContent = 'Preparazione...';
   
   // Forza il browser a renderizzare prima di iniziare
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   // Riattiva la transizione
   if (progressBar) progressBar.style.transition = 'width 0.3s ease';
-
-  processingResults = { success: 0, errors: 0, skipped: 0, details: [] };
-  
-  // Salva copie locali per evitare problemi di garbage collection
-  const filesToProcess = [...fileQueue];
-  const total = filesToProcess.length;
 
   for (let i = 0; i < total; i++) {
     const file = filesToProcess[i];
