@@ -399,8 +399,11 @@ function dashboardPage(): string {
             <i class="fas fa-database text-zanichelli-light mr-2"></i>
             Database Programmi
           </h2>
-          <p class="text-gray-500 mt-1">Consulta e filtra i programmi analizzati</p>
+          <p class="text-gray-500 mt-1">Consulta, verifica i match e filtra i programmi analizzati</p>
         </div>
+
+        <!-- Banner validazione match -->
+        <div id="validation-banner" class="mb-4 hidden"></div>
 
         <!-- Filtri -->
         <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
@@ -455,13 +458,14 @@ function dashboardPage(): string {
                   <th class="px-4 py-3 font-medium">Materia</th>
                   <th class="px-4 py-3 font-medium">Classe</th>
                   <th class="px-4 py-3 font-medium">Manuale principale</th>
+                  <th class="px-3 py-3 font-medium">Match catalogo</th>
                   <th class="px-4 py-3 font-medium">Scenario</th>
                   <th class="px-4 py-3 font-medium text-center">Azioni</th>
                 </tr>
               </thead>
               <tbody id="db-table-body">
                 <tr>
-                  <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+                  <td colspan="8" class="px-4 py-12 text-center text-gray-400">
                     <i class="fas fa-inbox text-3xl mb-2 block"></i>
                     Nessun programma trovato. Carica dei PDF dalla sezione Upload.
                   </td>

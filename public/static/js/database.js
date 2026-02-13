@@ -1,8 +1,49 @@
 // ==========================================
 // MATRIX Intelligence — Database Programmi
+// Con sistema di validazione match catalogo
 // ==========================================
 
 let allPrograms = [];
+let catalogColumnsReady = false; // Flag per verificare se le colonne match esistono
+
+// --- Verifica/crea colonne match nella tabella programmi ---
+async function ensureCatalogColumns() {
+  if (catalogColumnsReady) return true;
+  
+  // Tenta una query di test per vedere se le colonne esistono
+  try {
+    const { data, error } = await supabaseClient
+      .from('programmi')
+      .select('manual_catalog_id')
+      .limit(1);
+    
+    if (error && error.message.includes('manual_catalog_id')) {
+      // Colonne non esistono — mostra istruzioni
+      console.warn('[Database] Colonne match catalogo non presenti. Serve migration SQL.');
+      showToast('Aggiungi le colonne match al database — vedi console per istruzioni', 'warning');
+      console.log(`
+╔═══════════════════════════════════════════════════════════════╗
+║  MIGRATION NECESSARIA — Esegui questo SQL su Supabase:       ║
+╠═══════════════════════════════════════════════════════════════╣
+║                                                               ║
+║  ALTER TABLE programmi                                        ║
+║    ADD COLUMN IF NOT EXISTS manual_catalog_id TEXT,            ║
+║    ADD COLUMN IF NOT EXISTS manual_catalog_title TEXT,         ║
+║    ADD COLUMN IF NOT EXISTS manual_catalog_author TEXT,        ║
+║    ADD COLUMN IF NOT EXISTS manual_catalog_publisher TEXT;     ║
+║                                                               ║
+║  Vai su Supabase → SQL Editor → incolla e Run                 ║
+╚═══════════════════════════════════════════════════════════════╝`);
+      return false;
+    }
+    
+    catalogColumnsReady = true;
+    return true;
+  } catch (e) {
+    console.warn('[Database] Verifica colonne fallita:', e);
+    return false;
+  }
+}
 
 // --- Carica programmi dal database ---
 async function loadDatabase() {
@@ -10,6 +51,12 @@ async function loadDatabase() {
 
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
+
+  // Assicura che il catalogo sia caricato (necessario per i match)
+  await loadCatalog();
+  
+  // Verifica che le colonne match esistano in Supabase
+  const columnsOk = await ensureCatalogColumns();
 
   try {
     const { data, error } = await supabaseClient
@@ -21,10 +68,287 @@ async function loadDatabase() {
     if (error) throw error;
 
     allPrograms = data || [];
+    
+    // Per ogni programma, calcola il match proposto se non già confermato
+    allPrograms.forEach(p => {
+      if (!p.manual_catalog_id) {
+        const match = autoMatchManual(p);
+        p._autoMatch = match; // match proposto (non salvato)
+      }
+    });
+    
     populateFilters();
     applyFilters();
+    updateValidationBanner();
   } catch (e) {
     showToast('Errore caricamento database: ' + e.message, 'error');
+  }
+}
+
+// --- Auto-match: propone un manuale dal catalogo ---
+function autoMatchManual(program) {
+  const manuali = program.manuali_citati || [];
+  const princ = manuali.find(m => m.ruolo === 'principale');
+  if (!princ || !princ.titolo) return null;
+  
+  const found = findManualInCatalog(princ.titolo, princ.autore);
+  if (!found) return null;
+  
+  return {
+    id: found.id || null,
+    title: found.title,
+    author: found.author,
+    publisher: found.publisher,
+    is_zanichelli: found.type === 'zanichelli' || found.is_zanichelli === true || 
+                   ['zanichelli', 'cea', 'ambrosiana'].includes((found.publisher || '').toLowerCase())
+  };
+}
+
+// --- Banner di validazione in cima alla sezione ---
+function updateValidationBanner() {
+  const banner = document.getElementById('validation-banner');
+  if (!banner) return;
+  
+  const unconfirmed = allPrograms.filter(p => !p.manual_catalog_id && p._autoMatch);
+  const noMatch = allPrograms.filter(p => !p.manual_catalog_id && !p._autoMatch);
+  const confirmed = allPrograms.filter(p => p.manual_catalog_id);
+  
+  if (allPrograms.length === 0) {
+    banner.classList.add('hidden');
+    return;
+  }
+  
+  if (unconfirmed.length === 0 && noMatch.length === 0) {
+    // Tutto confermato
+    banner.innerHTML = `
+      <div class="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
+        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+        <div>
+          <p class="font-medium text-green-800">Tutti i match sono confermati</p>
+          <p class="text-sm text-green-600">${confirmed.length} programmi pronti per le campagne</p>
+        </div>
+      </div>`;
+    banner.classList.remove('hidden');
+    return;
+  }
+  
+  banner.innerHTML = `
+    <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-exclamation-triangle text-amber-500 text-xl"></i>
+        <div>
+          <p class="font-medium text-amber-800">
+            ${unconfirmed.length + noMatch.length} programmi richiedono verifica del manuale
+          </p>
+          <p class="text-sm text-amber-600">
+            ${unconfirmed.length > 0 ? `${unconfirmed.length} con match proposto da confermare` : ''}
+            ${unconfirmed.length > 0 && noMatch.length > 0 ? ' · ' : ''}
+            ${noMatch.length > 0 ? `${noMatch.length} senza match — seleziona manualmente` : ''}
+          </p>
+        </div>
+      </div>
+      ${unconfirmed.length > 0 ? `
+        <button onclick="confirmAllMatches()" 
+                class="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors flex items-center gap-2">
+          <i class="fas fa-check-double"></i>
+          Conferma tutti (${unconfirmed.length})
+        </button>` : ''}
+    </div>`;
+  banner.classList.remove('hidden');
+}
+
+// --- Conferma tutti i match proposti ---
+async function confirmAllMatches() {
+  const unconfirmed = allPrograms.filter(p => !p.manual_catalog_id && p._autoMatch);
+  if (unconfirmed.length === 0) return;
+  
+  if (!confirm(`Confermare il match proposto per ${unconfirmed.length} programmi?`)) return;
+  
+  let successCount = 0;
+  for (const p of unconfirmed) {
+    try {
+      const { error } = await supabaseClient
+        .from('programmi')
+        .update({ 
+          manual_catalog_id: p._autoMatch.id,
+          manual_catalog_title: p._autoMatch.title,
+          manual_catalog_author: p._autoMatch.author,
+          manual_catalog_publisher: p._autoMatch.publisher
+        })
+        .eq('id', p.id);
+      
+      if (!error) {
+        p.manual_catalog_id = p._autoMatch.id;
+        p.manual_catalog_title = p._autoMatch.title;
+        p.manual_catalog_author = p._autoMatch.author;
+        p.manual_catalog_publisher = p._autoMatch.publisher;
+        successCount++;
+      }
+    } catch (e) {
+      console.error('Errore conferma match per', p.docente_nome, e);
+    }
+  }
+  
+  showToast(`${successCount} match confermati!`, 'success');
+  applyFilters();
+  updateValidationBanner();
+}
+
+// --- Conferma singolo match ---
+async function confirmSingleMatch(programId) {
+  const p = allPrograms.find(p => p.id === programId);
+  if (!p || !p._autoMatch) return;
+  
+  try {
+    const { error } = await supabaseClient
+      .from('programmi')
+      .update({ 
+        manual_catalog_id: p._autoMatch.id,
+        manual_catalog_title: p._autoMatch.title,
+        manual_catalog_author: p._autoMatch.author,
+        manual_catalog_publisher: p._autoMatch.publisher
+      })
+      .eq('id', p.id);
+    
+    if (error) throw error;
+    
+    p.manual_catalog_id = p._autoMatch.id;
+    p.manual_catalog_title = p._autoMatch.title;
+    p.manual_catalog_author = p._autoMatch.author;
+    p.manual_catalog_publisher = p._autoMatch.publisher;
+    
+    showToast('Match confermato!', 'success');
+    applyFilters();
+    updateValidationBanner();
+  } catch (e) {
+    showToast('Errore: ' + e.message, 'error');
+  }
+}
+
+// --- Apri dropdown selezione manuale dal catalogo ---
+function openManualSelector(programId) {
+  const p = allPrograms.find(p => p.id === programId);
+  if (!p) return;
+  
+  const modal = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  
+  // Raggruppa manuali per materia
+  const manualsBySubject = {};
+  (catalogManuals || []).forEach(m => {
+    const subj = m.subject || 'Altro';
+    if (!manualsBySubject[subj]) manualsBySubject[subj] = [];
+    manualsBySubject[subj].push(m);
+  });
+  
+  // Manuali citati dal docente per contesto
+  const manualiCitati = (p.manuali_citati || []).map(m => 
+    `<span class="text-xs bg-gray-100 px-2 py-1 rounded">${m.autore || '?'} — ${m.titolo || '?'} (${m.editore || '?'})</span>`
+  ).join(' ');
+  
+  let optionsHtml = '<option value="">— Seleziona dal catalogo —</option>';
+  optionsHtml += '<option value="__none__">❌ Manuale non presente nel catalogo</option>';
+  
+  Object.keys(manualsBySubject).sort().forEach(subj => {
+    optionsHtml += `<optgroup label="${subj}">`;
+    manualsBySubject[subj].forEach(m => {
+      const isZan = m.type === 'zanichelli' || m.is_zanichelli || 
+                    ['zanichelli', 'cea', 'ambrosiana'].includes((m.publisher || '').toLowerCase());
+      const icon = isZan ? '🔵' : '⚪';
+      const selected = (p.manual_catalog_id === m.id || 
+                        (p._autoMatch && p._autoMatch.id === m.id)) ? 'selected' : '';
+      optionsHtml += `<option value="${m.id || ''}" data-title="${m.title}" data-author="${m.author}" data-publisher="${m.publisher}" ${selected}>
+        ${icon} ${m.author} — ${m.title} (${m.publisher})
+      </option>`;
+    });
+    optionsHtml += '</optgroup>';
+  });
+  
+  content.innerHTML = `
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        <i class="fas fa-book-open text-zanichelli-light mr-2"></i>
+        Seleziona manuale principale dal catalogo
+      </h3>
+      
+      <div class="bg-gray-50 rounded-lg p-3">
+        <p class="text-sm text-gray-600"><strong>Docente:</strong> ${p.docente_nome || '—'} (${p.ateneo || '—'})</p>
+        <p class="text-sm text-gray-600"><strong>Materia:</strong> ${p.materia_inferita || '—'}</p>
+        <p class="text-sm text-gray-500 mt-2"><strong>Manuali citati nel PDF:</strong></p>
+        <div class="flex flex-wrap gap-1 mt-1">${manualiCitati || '<span class="text-gray-400 text-xs">Nessuno</span>'}</div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Manuale principale nel catalogo Matrix</label>
+        <select id="manual-select" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none text-sm">
+          ${optionsHtml}
+        </select>
+        <p class="text-xs text-gray-400 mt-1">🔵 = Zanichelli/CEA · ⚪ = Concorrente</p>
+      </div>
+      
+      <div class="flex gap-3 pt-2">
+        <button onclick="saveManualSelection('${p.id}')" 
+                class="flex-1 py-2 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors">
+          <i class="fas fa-check mr-1"></i>Conferma selezione
+        </button>
+        <button onclick="closeModal()" 
+                class="px-6 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+          Annulla
+        </button>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.remove('hidden');
+}
+
+// --- Salva selezione manuale ---
+async function saveManualSelection(programId) {
+  const select = document.getElementById('manual-select');
+  const value = select.value;
+  
+  if (!value) {
+    showToast('Seleziona un manuale', 'warning');
+    return;
+  }
+  
+  const p = allPrograms.find(p => p.id === programId);
+  if (!p) return;
+  
+  let updateData;
+  if (value === '__none__') {
+    updateData = {
+      manual_catalog_id: 'NOT_IN_CATALOG',
+      manual_catalog_title: null,
+      manual_catalog_author: null,
+      manual_catalog_publisher: null
+    };
+  } else {
+    const opt = select.options[select.selectedIndex];
+    updateData = {
+      manual_catalog_id: value,
+      manual_catalog_title: opt.dataset.title || null,
+      manual_catalog_author: opt.dataset.author || null,
+      manual_catalog_publisher: opt.dataset.publisher || null
+    };
+  }
+  
+  try {
+    const { error } = await supabaseClient
+      .from('programmi')
+      .update(updateData)
+      .eq('id', p.id);
+    
+    if (error) throw error;
+    
+    Object.assign(p, updateData);
+    
+    showToast('Manuale confermato!', 'success');
+    closeModal();
+    applyFilters();
+    updateValidationBanner();
+  } catch (e) {
+    showToast('Errore: ' + e.message, 'error');
   }
 }
 
@@ -36,7 +360,6 @@ function populateFilters() {
   const materiaSelect = document.getElementById('filter-materia');
   const ateneoSelect = document.getElementById('filter-ateneo');
 
-  // Salva selezione corrente
   const currentMateria = materiaSelect.value;
   const currentAteneo = ateneoSelect.value;
 
@@ -45,7 +368,6 @@ function populateFilters() {
   ateneoSelect.innerHTML = '<option value="">Tutti gli atenei</option>' +
     atenei.map(a => `<option value="${a}">${a}</option>`).join('');
 
-  // Ripristina selezione
   materiaSelect.value = currentMateria;
   ateneoSelect.value = currentAteneo;
 }
@@ -81,14 +403,14 @@ function resetFilters() {
   applyFilters();
 }
 
-// --- Render tabella ---
+// --- Render tabella con colonna match ---
 function renderTable(programs) {
   const tbody = document.getElementById('db-table-body');
 
   if (programs.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+        <td colspan="8" class="px-4 py-12 text-center text-gray-400">
           <i class="fas fa-inbox text-3xl mb-2 block"></i>
           Nessun programma trovato. Carica dei PDF dalla sezione Upload.
         </td>
@@ -104,6 +426,70 @@ function renderTable(programs) {
     const rowBg = p.scenario_zanichelli === 'zanichelli_principale' ? 'bg-green-50/50' :
                   p.scenario_zanichelli === 'zanichelli_alternativo' ? 'bg-yellow-50/50' : '';
 
+    // Match catalogo
+    let matchHtml;
+    if (p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG') {
+      // Confermato
+      matchHtml = `
+        <div class="flex items-center gap-1">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+            <i class="fas fa-check-circle"></i> Confermato
+          </span>
+          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
+                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Cambia">
+            <i class="fas fa-pen"></i>
+          </button>
+        </div>
+        <div class="text-xs text-gray-500 mt-0.5 truncate max-w-[180px]" title="${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}">
+          ${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}
+        </div>`;
+    } else if (p.manual_catalog_id === 'NOT_IN_CATALOG') {
+      // Non nel catalogo
+      matchHtml = `
+        <div class="flex items-center gap-1">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
+            <i class="fas fa-minus-circle"></i> Non in catalogo
+          </span>
+          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
+                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Cambia">
+            <i class="fas fa-pen"></i>
+          </button>
+        </div>`;
+    } else if (p._autoMatch) {
+      // Match proposto — da confermare
+      matchHtml = `
+        <div class="flex items-center gap-1">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium animate-pulse">
+            <i class="fas fa-question-circle"></i> Da confermare
+          </span>
+        </div>
+        <div class="text-xs text-gray-500 mt-0.5 truncate max-w-[180px]" title="${p._autoMatch.author} — ${p._autoMatch.title} (${p._autoMatch.publisher})">
+          ${p._autoMatch.author} — ${p._autoMatch.title}
+        </div>
+        <div class="flex gap-1 mt-1">
+          <button onclick="event.stopPropagation(); confirmSingleMatch('${p.id}')" 
+                  class="px-2 py-0.5 bg-green-500 text-white rounded text-xs hover:bg-green-600" title="Conferma">
+            <i class="fas fa-check"></i> OK
+          </button>
+          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
+                  class="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs hover:bg-gray-300" title="Cambia">
+            <i class="fas fa-exchange-alt"></i>
+          </button>
+        </div>`;
+    } else {
+      // Nessun match
+      matchHtml = `
+        <div class="flex items-center gap-1">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-medium">
+            <i class="fas fa-times-circle"></i> Nessun match
+          </span>
+        </div>
+        <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
+                class="mt-1 px-2 py-0.5 bg-zanichelli-blue text-white rounded text-xs hover:bg-zanichelli-dark">
+          <i class="fas fa-search"></i> Seleziona
+        </button>`;
+    }
+
     return `
       <tr class="border-t hover:bg-gray-50 cursor-pointer ${rowBg}" onclick="showProgramDetail('${p.id}')">
         <td class="px-4 py-3">
@@ -113,7 +499,8 @@ function renderTable(programs) {
         <td class="px-4 py-3 text-gray-600">${p.ateneo || '—'}</td>
         <td class="px-4 py-3 text-gray-600">${p.materia_inferita || '—'}</td>
         <td class="px-4 py-3 text-gray-500 text-xs">${p.classe_laurea || '—'}</td>
-        <td class="px-4 py-3 text-gray-600 text-xs">${truncate(manualText, 40)}</td>
+        <td class="px-4 py-3 text-gray-600 text-xs">${truncate(manualText, 35)}</td>
+        <td class="px-3 py-2">${matchHtml}</td>
         <td class="px-4 py-3">${scenarioBadge(p.scenario_zanichelli)}</td>
         <td class="px-4 py-3 text-center">
           <div class="flex items-center justify-center gap-2">
@@ -158,9 +545,28 @@ function showProgramDetail(id) {
     `<span class="px-2 py-1 bg-zanichelli-accent text-zanichelli-blue rounded-full text-xs">${t}</span>`
   ).join('');
 
+  // Match info
+  let matchInfo = '';
+  if (p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG') {
+    matchInfo = `
+      <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p class="text-sm font-medium text-green-800"><i class="fas fa-check-circle mr-1"></i>Match catalogo confermato</p>
+        <p class="text-sm text-green-700">${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''} (${p.manual_catalog_publisher || ''})</p>
+      </div>`;
+  } else if (p._autoMatch) {
+    matchInfo = `
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-sm font-medium text-amber-800"><i class="fas fa-question-circle mr-1"></i>Match proposto (non confermato)</p>
+        <p class="text-sm text-amber-700">${p._autoMatch.author} — ${p._autoMatch.title} (${p._autoMatch.publisher})</p>
+        <button onclick="confirmSingleMatch('${p.id}'); closeModal(); setTimeout(()=>showProgramDetail('${p.id}'), 500);" 
+                class="mt-2 px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600">
+          <i class="fas fa-check mr-1"></i>Conferma
+        </button>
+      </div>`;
+  }
+
   content.innerHTML = `
     <div class="space-y-6">
-      <!-- Info docente -->
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="text-xs text-gray-500 uppercase tracking-wide">Docente</label>
@@ -196,19 +602,18 @@ function showProgramDetail(id) {
         </div>
       </div>
 
-      <!-- Temi -->
+      ${matchInfo}
+
       <div>
         <label class="text-xs text-gray-500 uppercase tracking-wide mb-2 block">Temi Principali</label>
         <div class="flex flex-wrap gap-2">${temi || '<span class="text-gray-400">Nessun tema</span>'}</div>
       </div>
 
-      <!-- Manuali -->
       <div>
         <label class="text-xs text-gray-500 uppercase tracking-wide mb-2 block">Manuali Citati</label>
         <div class="space-y-2">${manuali || '<p class="text-gray-400">Nessun manuale citato</p>'}</div>
       </div>
 
-      <!-- File sorgente -->
       <div>
         <label class="text-xs text-gray-500 uppercase tracking-wide mb-2 block">File PDF Originale</label>
         <p class="text-sm text-gray-500"><i class="fas fa-file-pdf text-red-400 mr-1"></i>${p.pdf_storage_path || '—'}</p>

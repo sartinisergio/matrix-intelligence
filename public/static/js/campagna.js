@@ -1100,14 +1100,29 @@ async function generateTargets(campaignId) {
         const altri = manualiDocente.filter(m => m.ruolo !== 'principale');
         
         // ARRICCHIMENTO: cerca l'indice del concorrente nel catalogo
+        // PRIORITÀ: usa il match confermato dall'utente se disponibile
         let indiceConcorrente = null;
-        if (princ && princ.titolo) {
+        let matchSource = 'nessuno';
+        
+        if (t.programData.manual_catalog_id && t.programData.manual_catalog_id !== 'NOT_IN_CATALOG') {
+          // Match CONFERMATO dall'utente — fonte più affidabile
+          const confirmedManual = catalogManuals.find(m => m.id === t.programData.manual_catalog_id);
+          if (confirmedManual) {
+            indiceConcorrente = confirmedManual.chapters_summary || null;
+            matchSource = 'confermato';
+            console.log(`[Campagna] ✅ Match CONFERMATO: "${t.programData.manual_catalog_author}" — "${t.programData.manual_catalog_title}" (${t.programData.manual_catalog_publisher})`);
+          }
+        }
+        
+        if (!indiceConcorrente && t.programData.manual_catalog_id !== 'NOT_IN_CATALOG' && princ && princ.titolo) {
+          // Fallback: fuzzy matching (meno affidabile)
           const concorrenteCatalogo = findManualInCatalog(princ.titolo, princ.autore);
           if (concorrenteCatalogo) {
             indiceConcorrente = concorrenteCatalogo.chapters_summary || null;
-            console.log(`[Campagna] ✅ Indice trovato: "${princ.titolo}" (${princ.autore || '?'}) → catalogo: "${concorrenteCatalogo.title}" di ${concorrenteCatalogo.author} (${concorrenteCatalogo.publisher})`);
+            matchSource = 'auto';
+            console.warn(`[Campagna] ⚠️ Match AUTO (non confermato): "${princ.titolo}" (${princ.autore || '?'}) → "${concorrenteCatalogo.title}" di ${concorrenteCatalogo.author} — VERIFICARE!`);
           } else {
-            console.warn(`[Campagna] ⚠️ Indice NON TROVATO per "${princ.titolo}" (${princ.autore || 'autore N/D'}) — il LLM lavorerà SENZA indice`);
+            console.warn(`[Campagna] ❌ Nessun match per "${princ.titolo}" (${princ.autore || 'N/D'}) — LLM senza indice`);
           }
         }
         
