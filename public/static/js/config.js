@@ -25,46 +25,34 @@ const CONFIG = {
   
   // Rate limiting
   BATCH_DELAY_MS: 2000, // 2 secondi tra le chiamate LLM
-  
-  // Autori Zanichelli noti (legacy - mantenuto per compatibilità)
-  ZANICHELLI_AUTHORS: [
-    'atkins', 'mcquarrie', 'manotti', 'tiripicchio', 'solomons',
-    'vollhardt', 'mcmurry', 'hart', 'krugman', 'wells', 'brue',
-    'mcconnell', 'flynn', 'mankiw', 'alessandrini', 'giancoli',
-    'contessa', 'marzo', 'halliday', 'resnick', 'walker', 'pawlina', 'ross'
-  ],
-  
-  // Catalogo ufficiale manuali Zanichelli (autore + titolo + materia)
-  // Usato dal prompt LLM e dalla validazione post-LLM per identificare correttamente
-  // se un manuale citato in un programma è pubblicato da Zanichelli
-  ZANICHELLI_CATALOG: [
-    // Chimica Generale
-    { author: 'Atkins', title: 'Chimica generale', subject: 'Chimica Generale' },
-    { author: 'McQuarrie', title: 'Chimica generale', subject: 'Chimica Generale' },
-    { author: 'Atkins', title: 'Fondamenti di Chimica', subject: 'Chimica Generale' },
-    { author: 'Manotti Lanfredi, Tiripicchio', title: 'Fondamenti di chimica', subject: 'Chimica Generale' },
-    { author: 'Atkins', title: 'Principi di Chimica', subject: 'Chimica Generale' },
-    // Chimica Organica
-    { author: 'Solomons', title: 'Chimica organica', subject: 'Chimica Organica' },
-    { author: 'Vollhardt', title: 'Chimica organica', subject: 'Chimica Organica' },
-    { author: 'McMurry', title: 'Chimica organica', subject: 'Chimica Organica' },
-    { author: 'Hart', title: 'Fondamenti di chimica organica', subject: 'Chimica Organica' },
-    { author: 'McMurry', title: 'Fondamenti di chimica organica', subject: 'Chimica Organica' },
-    // Economia Politica
-    { author: 'Krugman, Wells', title: 'Essenziale di Economia', subject: 'Economia Politica' },
-    { author: 'Brue, McConnell, Flynn', title: "L'essenziale di Economia", subject: 'Economia Politica' },
-    { author: 'Mankiw', title: "L'essenziale di Economia", subject: 'Economia Politica' },
-    { author: 'Mankiw', title: 'Principi di Economia', subject: 'Economia Politica' },
-    // Fisica
-    { author: 'Alessandrini', title: 'Fisica', subject: 'Fisica' },
-    { author: 'Giancoli', title: 'Fisica', subject: 'Fisica' },
-    { author: 'Contessa, Marzo', title: 'Fisica applicata alle scienze biomediche', subject: 'Fisica' },
-    { author: 'Giancoli', title: 'Fisica con fisica moderna', subject: 'Fisica' },
-    { author: 'Halliday, Resnick, Walker', title: 'Fondamenti di Fisica', subject: 'Fisica' },
-    // Istologia
-    { author: 'Pawlina, Ross', title: 'Istologia', subject: 'Istologia' }
-  ]
 };
+
+// NOTE: ZANICHELLI_AUTHORS e ZANICHELLI_CATALOG sono stati rimossi.
+// L'identificazione dei manuali Zanichelli avviene dinamicamente
+// dal catalogo sincronizzato da Matrix (variabile globale catalogManuals).
+// Usare getZanichelliFromCatalog() per ottenere la lista aggiornata.
+
+// --- Funzione globale: estrai manuali Zanichelli dal catalogo sincronizzato ---
+// Legge dalla variabile globale catalogManuals (definita in campagna.js)
+// Restituisce array di { author, title, subject, publisher }
+function getZanichelliFromCatalog() {
+  // catalogManuals è la variabile globale caricata da campagna.js
+  // (da localStorage sync oppure dal file statico)
+  if (typeof catalogManuals === 'undefined' || !Array.isArray(catalogManuals) || catalogManuals.length === 0) {
+    console.warn('[Config] catalogManuals non disponibile, impossibile identificare Zanichelli');
+    return [];
+  }
+  
+  return catalogManuals.filter(m => {
+    // Compatibilità: supporta sia formato Matrix (type) che Intelligence (is_zanichelli)
+    return m.type === 'zanichelli' || m.is_zanichelli === true;
+  }).map(m => ({
+    author: m.author || '',
+    title: m.title || '',
+    subject: m.subject || '',
+    publisher: m.publisher || 'Zanichelli'
+  }));
+}
 
 // Variabile globale per il client Supabase
 let supabaseClient = null;

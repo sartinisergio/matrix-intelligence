@@ -76,9 +76,13 @@ async function callOpenAI(systemPrompt, userPrompt, jsonMode = true) {
 
 // --- Prompt Pre-classificazione ---
 function getPreClassificationPrompt() {
-  // Lista precisa dei manuali Zanichelli con autore + titolo + materia
-  const zanichelli_catalog = CONFIG.ZANICHELLI_CATALOG || [];
-  const catalogStr = zanichelli_catalog.map(m => `  - ${m.author} — "${m.title}" (${m.subject})`).join('\n');
+  // Legge i manuali Zanichelli dal catalogo sincronizzato da Matrix
+  const zanichelli_catalog = getZanichelliFromCatalog();
+  const catalogStr = zanichelli_catalog.length > 0
+    ? zanichelli_catalog.map(m => `  - ${m.author} — "${m.title}" (${m.subject})`).join('\n')
+    : '  (catalogo non ancora sincronizzato - verificare solo editore esplicito)';
+  
+  console.log(`[LLM] Prompt pre-classificazione: ${zanichelli_catalog.length} manuali Zanichelli dal catalogo Matrix`);
   
   return `Sei un esperto analista di programmi universitari italiani, specializzato nel settore editoriale.
 Analizza il seguente programma di un insegnamento universitario ed estrai le informazioni richieste in formato JSON.

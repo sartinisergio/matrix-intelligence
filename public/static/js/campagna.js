@@ -1518,7 +1518,12 @@ function checkSubjectMatch(materia1, materia2) {
 function isZanichelliAuthor(authorStr) {
   if (!authorStr) return false;
   const lower = authorStr.toLowerCase();
-  return CONFIG.ZANICHELLI_AUTHORS.some(a => lower.includes(a));
+  // Usa il catalogo sincronizzato da Matrix (non più lista statica)
+  const zanCatalog = getZanichelliFromCatalog();
+  return zanCatalog.some(m => {
+    const authorParts = m.author.toLowerCase().split(/[,\s]+/).filter(p => p.length > 2);
+    return authorParts.some(p => lower.includes(p));
+  });
 }
 
 // --- Levenshtein Similarity ---

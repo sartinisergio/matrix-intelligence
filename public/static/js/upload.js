@@ -108,12 +108,14 @@ async function previewPDF(index) {
 
 // --- Validazione post-LLM dello scenario Zanichelli ---
 // Verifica che lo scenario dichiarato dal LLM corrisponda ai manuali citati
-// Controlla: editore esplicito "Zanichelli" + match con catalogo ZANICHELLI_CATALOG
+// Controlla: editore esplicito "Zanichelli" + match con catalogo sincronizzato da Matrix
 function validateZanichelliScenario(classification) {
   const manuali = classification.manuali_citati || [];
   if (manuali.length === 0) return 'zanichelli_assente';
   
-  const catalog = CONFIG.ZANICHELLI_CATALOG || [];
+  // Legge i Zanichelli dal catalogo sincronizzato (non più da config statico)
+  const catalog = getZanichelliFromCatalog();
+  console.log(`[Validazione] Catalogo Zanichelli: ${catalog.length} titoli da Matrix`);
   
   // Per ogni manuale citato, verifica se è Zanichelli
   const manualiConFlag = manuali.map(m => {
@@ -284,7 +286,8 @@ async function startProcessing() {
         throw new Error('Risposta LLM non valida');
       }
 
-      // 3b. VALIDAZIONE POST-LLM: verifica scenario_zanichelli dai manuali citati
+      // 3b. VALIDAZIONE POST-LLM: verifica e corregge scenario_zanichelli
+      // Il LLM può sbagliare confondendo autori omonimi di editori diversi
       const validatedScenario = validateZanichelliScenario(classification);
       if (validatedScenario !== classification.scenario_zanichelli) {
         console.warn(`[Upload] Scenario corretto per ${fileName}: "${classification.scenario_zanichelli}" → "${validatedScenario}"`);
