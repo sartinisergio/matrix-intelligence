@@ -354,11 +354,11 @@ function dashboardPage(): string {
         <div id="processing-progress" class="mt-6 hidden">
           <div class="bg-white rounded-xl shadow-sm border p-6">
             <div class="flex items-center justify-between mb-3">
-              <h3 class="font-semibold text-gray-700">Analisi in corso...</h3>
+              <h3 id="progress-title" class="font-semibold text-gray-700">Analisi in corso...</h3>
               <span id="progress-text" class="text-sm font-medium text-zanichelli-light">0/0</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div id="progress-bar" class="bg-zanichelli-light h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div id="progress-bar" class="bg-zanichelli-light h-3 rounded-full" style="width: 0%"></div>
             </div>
             <p id="progress-detail" class="text-sm text-gray-500 mt-2"></p>
           </div>

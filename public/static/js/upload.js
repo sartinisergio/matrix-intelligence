@@ -5,6 +5,66 @@
 let fileQueue = [];
 let processingResults = { success: 0, errors: 0, skipped: 0, details: [] };
 
+// --- Sistema Progress Bar Reattivo ---
+// Stato globale separato dal loop di processing
+const progressState = {
+  current: 0,
+  total: 0,
+  phase: '',
+  fileName: '',
+  active: false,
+  _animFrameId: null
+};
+
+// Renderer continuo che gira indipendentemente dal processing
+function startProgressRenderer() {
+  progressState.active = true;
+  
+  function renderFrame() {
+    if (!progressState.active) return;
+    
+    const bar = document.getElementById('progress-bar');
+    const text = document.getElementById('progress-text');
+    const detail = document.getElementById('progress-detail');
+    const title = document.getElementById('progress-title');
+    
+    const total = progressState.total;
+    const current = progressState.current;
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+    
+    if (bar) bar.style.width = pct + '%';
+    if (text) text.textContent = `${current}/${total}`;
+    if (detail) detail.textContent = `${progressState.phase} ${progressState.fileName}`;
+    if (title && current > 0 && current < total) {
+      title.textContent = `Analisi in corso... (${pct}%)`;
+    }
+    
+    progressState._animFrameId = requestAnimationFrame(renderFrame);
+  }
+  
+  renderFrame();
+}
+
+function stopProgressRenderer() {
+  progressState.active = false;
+  if (progressState._animFrameId) {
+    cancelAnimationFrame(progressState._animFrameId);
+    progressState._animFrameId = null;
+  }
+}
+
+function setProgress(current, total, phase, fileName) {
+  progressState.current = current;
+  progressState.total = total;
+  progressState.phase = phase;
+  progressState.fileName = fileName;
+}
+
+// Utility: pausa asincrona
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // --- Configura PDF.js worker ---
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -262,26 +322,25 @@ async function startProcessing() {
   document.getElementById('processing-progress').classList.remove('hidden');
   document.getElementById('upload-results').classList.add('hidden');
   
-  // Inizializza la progress bar visibile subito
+  // Reset barra di progresso
   const progressBar = document.getElementById('progress-bar');
-  const progressText = document.getElementById('progress-text');
-  const progressDetail = document.getElementById('progress-detail');
   if (progressBar) { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; }
-  if (progressText) progressText.textContent = `0/${total}`;
-  if (progressDetail) progressDetail.textContent = 'Preparazione...';
   
-  // Forza il browser a renderizzare prima di iniziare (usa setTimeout, non rAF)
-  await new Promise(r => setTimeout(r, 50));
-  // Riattiva la transizione
-  if (progressBar) progressBar.style.transition = 'width 0.3s ease';
+  // Inizializza stato e avvia renderer continuo
+  setProgress(0, total, '⏳', 'Preparazione...');
+  startProgressRenderer();
+  
+  // Pausa breve per mostrare lo stato iniziale
+  await new Promise(r => setTimeout(r, 100));
+  // Riattiva transizione fluida
+  if (progressBar) progressBar.style.transition = 'width 0.5s ease';
 
   for (let i = 0; i < total; i++) {
     const file = filesToProcess[i];
     const fileName = file ? file.name : `file_${i + 1}.pdf`;
     
-    updateProgress(i, total, `📄 Estrazione testo: ${fileName}`);
-    // Forza il browser a rendere l'aggiornamento della UI
-    await forceRender();
+    // Aggiorna stato progress (il renderer si occupa del DOM)
+    setProgress(i, total, '📄 Estrazione testo:', fileName);
 
     try {
       if (!file) {
@@ -298,8 +357,7 @@ async function startProcessing() {
       }
 
       // 2. Pre-classificazione LLM
-      updateProgress(i, total, `🤖 Analisi AI: ${fileName}`);
-      await forceRender();
+      setProgress(i, total, '🤖 Analisi AI:', fileName);
       const classification = await preClassifyProgram(text);
 
       // 3. Valida risposta LLM
@@ -316,8 +374,7 @@ async function startProcessing() {
       }
 
       // 4. Salva su Supabase
-      updateProgress(i, total, `💾 Salvataggio: ${fileName}`);
-      await forceRender();
+      setProgress(i, total, '💾 Salvataggio:', fileName);
       const record = {
         user_id: session.user.id,
         docente_nome: classification.docente_nome || null,
@@ -338,6 +395,8 @@ async function startProcessing() {
 
       processingResults.success++;
       processingResults.details.push({ name: fileName, status: 'success', message: `${classification.docente_nome || 'Docente'} — ${classification.materia_inferita || 'Materia'}` });
+      // Aggiorna il contatore file completato
+      setProgress(i + 1, total, '✅ Completato:', fileName);
 
     } catch (error) {
       console.error(`Errore processing ${fileName}:`, error);
@@ -351,46 +410,27 @@ async function startProcessing() {
     }
   }
 
-  // Mostra risultati - completamento
+  // Ferma il renderer e mostra completamento
+  stopProgressRenderer();
+  
+  // Aggiorna manualmente lo stato finale
   const finalBar = document.getElementById('progress-bar');
   const finalText = document.getElementById('progress-text');
   const finalDetail = document.getElementById('progress-detail');
+  const finalTitle = document.getElementById('progress-title');
   if (finalBar) finalBar.style.width = '100%';
   if (finalText) finalText.textContent = `${total}/${total}`;
+  if (finalTitle) finalTitle.textContent = 'Analisi completata!';
   if (finalDetail) finalDetail.textContent = `✅ Completato! ${processingResults.success} analizzati, ${processingResults.errors} errori, ${processingResults.skipped} saltati`;
-  await forceRender();
   showResults();
   fileQueue = [];
   renderFileQueue();
   document.getElementById('btn-start-processing').disabled = false;
 }
 
-// --- Aggiorna progress bar ---
-function updateProgress(current, total, detail) {
-  // Calcola percentuale: usa (current+1) per mostrare che stiamo lavorando sul file corrente
-  const pct = total > 0 ? Math.round(((current + 1) / total) * 100) : 0;
-  
-  // Aggiorna DOM direttamente
-  const bar = document.getElementById('progress-bar');
-  const text = document.getElementById('progress-text');
-  const det = document.getElementById('progress-detail');
-  
-  if (bar) bar.style.width = Math.min(pct, 100) + '%';
-  if (text) text.textContent = `${current + 1}/${total}`;
-  if (det) det.textContent = detail;
-  
-  // Log per debug
-  console.log(`[Upload] ${current + 1}/${total} (${pct}%) - ${detail}`);
-}
-
-// Forza il browser a rendere le modifiche DOM
-// Usa setTimeout(0) per cedere il controllo al rendering engine
-// requestAnimationFrame non basta perché resta nella microtask queue
-function forceRender() {
-  return new Promise(resolve => {
-    setTimeout(resolve, 100); // 100ms garantisce rendering visivo
-  });
-}
+// NOTA: updateProgress e forceRender sono stati rimossi.
+// Il sistema usa ora progressState + startProgressRenderer() che gira con requestAnimationFrame
+// in modo indipendente dal loop di processing, garantendo aggiornamenti visivi continui.
 
 // --- Mostra risultati ---
 function showResults() {
