@@ -1105,7 +1105,7 @@ async function generateTargets(campaignId) {
           const concorrenteCatalogo = findManualInCatalog(princ.titolo, princ.autore);
           if (concorrenteCatalogo) {
             indiceConcorrente = concorrenteCatalogo.chapters_summary || null;
-            console.log(`[Campagna] Indice TROVATO per "${princ.titolo}" → ${concorrenteCatalogo.title} (${(indiceConcorrente || '').substring(0, 80)}...)`);
+            console.log(`[Campagna] ✅ Indice trovato: "${princ.titolo}" (${princ.autore || '?'}) → catalogo: "${concorrenteCatalogo.title}" di ${concorrenteCatalogo.author} (${concorrenteCatalogo.publisher})`);
           } else {
             console.warn(`[Campagna] ⚠️ Indice NON TROVATO per "${princ.titolo}" (${princ.autore || 'autore N/D'}) — il LLM lavorerà SENZA indice`);
           }
@@ -1317,45 +1317,81 @@ function generateTemplateMotivation(campaign, target) {
 
 // === LOOKUP CONCORRENTE NEL CATALOGO ===
 // Cerca un manuale nel catalogo MATRIX per recuperare l'indice completo.
-// Matching flessibile: confronta titolo e autore con tolleranza.
+// PRIORITÀ: titolo + autore insieme, poi titolo da solo.
+// BUG FIX: molti manuali hanno lo stesso titolo (es. 10x "Fondamenti di Chimica")
+// quindi il matching per solo titolo restituiva il primo nell'array (spesso sbagliato).
 function findManualInCatalog(titoloCercato, autoreCercato) {
   if (!catalogManuals || !catalogManuals.length || !titoloCercato) return null;
   
   const titNorm = titoloCercato.toLowerCase().trim();
   const autNorm = (autoreCercato || '').toLowerCase().trim();
   
-  // 1. Match esatto sul titolo
-  let found = catalogManuals.find(m => 
-    m.title && m.title.toLowerCase().trim() === titNorm
-  );
-  if (found) return found;
+  // Estrai primo cognome dall'autore cercato (gestisce "Brown, LeMay" → "brown")
+  const primoAutore = autNorm.split(/[,;&\s]+/).find(w => w.length > 2) || '';
   
-  // 2. Match parziale: il titolo del catalogo contiene il cercato o viceversa
-  found = catalogManuals.find(m => {
-    if (!m.title) return false;
-    const catTit = m.title.toLowerCase().trim();
-    return catTit.includes(titNorm) || titNorm.includes(catTit);
-  });
-  if (found) return found;
-  
-  // 3. Match su autore + prima parola significativa del titolo
-  if (autNorm) {
-    const primaParola = titNorm.split(/\s+/).find(w => w.length > 3) || titNorm.split(/\s+/)[0];
+  // === FASE 1: TITOLO + AUTORE (priorità massima) ===
+  if (primoAutore) {
+    // 1a. Match esatto titolo + autore contiene cognome
+    let found = catalogManuals.find(m => {
+      if (!m.title || !m.author) return false;
+      return m.title.toLowerCase().trim() === titNorm && 
+             m.author.toLowerCase().includes(primoAutore);
+    });
+    if (found) return found;
+    
+    // 1b. Titolo parziale + autore
     found = catalogManuals.find(m => {
-      if (!m.author || !m.title) return false;
+      if (!m.title || !m.author) return false;
+      const catTit = m.title.toLowerCase().trim();
       const catAut = m.author.toLowerCase();
-      const catTit = m.title.toLowerCase();
-      return catAut.includes(autNorm.split(',')[0].split(' ')[0]) && catTit.includes(primaParola);
+      return (catTit.includes(titNorm) || titNorm.includes(catTit)) && 
+             catAut.includes(primoAutore);
+    });
+    if (found) return found;
+    
+    // 1c. Autore + parole significative del titolo (almeno 2)
+    const paroleTitolo = titNorm.split(/\s+/).filter(w => w.length > 3);
+    if (paroleTitolo.length > 0) {
+      found = catalogManuals.find(m => {
+        if (!m.author || !m.title) return false;
+        const catAut = m.author.toLowerCase();
+        const catTit = m.title.toLowerCase();
+        return catAut.includes(primoAutore) && 
+               paroleTitolo.some(p => catTit.includes(p));
+      });
+      if (found) return found;
+    }
+  }
+  
+  // === FASE 2: SOLO TITOLO (fallback — rischio ambiguità) ===
+  // Solo se non c'è autore, perché con titoli comuni ("Fondamenti di Chimica")
+  // il primo match nell'array potrebbe essere sbagliato
+  if (!primoAutore) {
+    // 2a. Match esatto titolo
+    let found = catalogManuals.find(m => 
+      m.title && m.title.toLowerCase().trim() === titNorm
+    );
+    if (found) return found;
+    
+    // 2b. Match parziale titolo
+    found = catalogManuals.find(m => {
+      if (!m.title) return false;
+      const catTit = m.title.toLowerCase().trim();
+      return catTit.includes(titNorm) || titNorm.includes(catTit);
     });
     if (found) return found;
   }
   
-  // 4. Levenshtein su titolo (soglia alta)
+  // === FASE 3: LEVENSHTEIN come ultimo tentativo ===
   let bestMatch = null;
   let bestScore = 0;
   for (const m of catalogManuals) {
     if (!m.title) continue;
-    const sim = levenshteinSimilarity(titNorm, m.title.toLowerCase().trim());
+    let sim = levenshteinSimilarity(titNorm, m.title.toLowerCase().trim());
+    // Bonus se autore corrisponde
+    if (primoAutore && m.author && m.author.toLowerCase().includes(primoAutore)) {
+      sim += 0.15; // Boost significativo per match autore
+    }
     if (sim > 0.7 && sim > bestScore) {
       bestScore = sim;
       bestMatch = m;
