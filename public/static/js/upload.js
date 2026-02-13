@@ -191,7 +191,9 @@ async function startProcessing() {
     const file = filesToProcess[i];
     const fileName = file ? file.name : `file_${i + 1}.pdf`;
     
-    updateProgress(i, total, `Analisi: ${fileName}`);
+    updateProgress(i, total, `📄 Estrazione testo: ${fileName}`);
+    // Forza il browser a rendere l'aggiornamento della UI
+    await new Promise(r => setTimeout(r, 50));
 
     try {
       if (!file) {
@@ -208,6 +210,8 @@ async function startProcessing() {
       }
 
       // 2. Pre-classificazione LLM
+      updateProgress(i, total, `🤖 Analisi AI: ${fileName}`);
+      await new Promise(r => setTimeout(r, 50));
       const classification = await preClassifyProgram(text);
 
       // 3. Valida risposta LLM
@@ -216,6 +220,8 @@ async function startProcessing() {
       }
 
       // 4. Salva su Supabase
+      updateProgress(i, total, `💾 Salvataggio: ${fileName}`);
+      await new Promise(r => setTimeout(r, 50));
       const record = {
         user_id: session.user.id,
         docente_nome: classification.docente_nome || null,
@@ -250,7 +256,14 @@ async function startProcessing() {
   }
 
   // Mostra risultati
-  updateProgress(total, total, 'Completato!');
+  // updateProgress usa (current+1), quindi per mostrare total/total passiamo total-1
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const progressDetail = document.getElementById('progress-detail');
+  if (progressBar) progressBar.style.width = '100%';
+  if (progressText) progressText.textContent = `${total}/${total}`;
+  if (progressDetail) progressDetail.textContent = `✅ Completato! ${processingResults.success} analizzati, ${processingResults.errors} errori, ${processingResults.skipped} saltati`;
+  await new Promise(r => setTimeout(r, 100));
   showResults();
   fileQueue = [];
   renderFileQueue();
@@ -259,10 +272,18 @@ async function startProcessing() {
 
 // --- Aggiorna progress bar ---
 function updateProgress(current, total, detail) {
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-  document.getElementById('progress-bar').style.width = pct + '%';
-  document.getElementById('progress-text').textContent = `${current}/${total}`;
-  document.getElementById('progress-detail').textContent = detail;
+  // Calcola percentuale: usa (current+1) per mostrare che stiamo lavorando sul file corrente
+  const pct = total > 0 ? Math.round(((current + 1) / total) * 100) : 0;
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const progressDetail = document.getElementById('progress-detail');
+  
+  if (progressBar) progressBar.style.width = Math.min(pct, 100) + '%';
+  if (progressText) progressText.textContent = `${current + 1}/${total}`;
+  if (progressDetail) progressDetail.textContent = detail;
+  
+  // Log per debug
+  console.log(`[Upload] Progresso: ${current + 1}/${total} (${pct}%) - ${detail}`);
 }
 
 // --- Mostra risultati ---
