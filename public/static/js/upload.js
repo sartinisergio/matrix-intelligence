@@ -123,18 +123,19 @@ function validateZanichelliScenario(classification) {
     const autore = (m.autore || '').toLowerCase().trim();
     const titolo = (m.titolo || '').toLowerCase().trim();
     
-    // 1. Editore esplicito "Zanichelli"
-    if (editore.includes('zanichelli')) {
-      return { ...m, _isZanichelli: true, _reason: 'editore esplicito' };
+    // 1. Editore esplicito "Zanichelli" o marchi del gruppo
+    if (editore.includes('zanichelli') || editore === 'cea' || editore.includes('ambrosiana')) {
+      return { ...m, _isZanichelli: true, _reason: 'editore gruppo Zanichelli' };
     }
     
     // 2. Editore esplicitamente NON Zanichelli → sicuramente non è Zanichelli
-    const altriEditori = ['pearson', 'edises', 'edi-ses', 'mcgraw', 'utet', 'cea', 'piccin', 
-                          'elsevier', 'springer', 'edra', 'ambrosiana', 'wiley', 'adelphi',
+    const altriEditori = ['pearson', 'edises', 'edi-ses', 'mcgraw', 'utet', 'piccin', 
+                          'elsevier', 'springer', 'edra', 'wiley', 'adelphi',
                           'hoepli', 'mondadori', 'il mulino', 'egea', 'giappichelli',
                           'giuffrè', 'cacucci', 'laterza', 'carocci', 'franco angeli',
                           'cortina', 'minerva', 'società editrice', 'esculapio', 'patron',
-                          'bononia', 'clueb', 'aracne', 'ledizioni', 'vita e pensiero'];
+                          'bononia', 'clueb', 'aracne', 'ledizioni', 'vita e pensiero',
+                          'edi-ermes', 'edi ermes', 'ediermes', 'idelson', 'gnocchi'];
     if (altriEditori.some(e => editore.includes(e))) {
       return { ...m, _isZanichelli: false, _reason: 'editore concorrente' };
     }
@@ -268,8 +269,8 @@ async function startProcessing() {
   if (progressText) progressText.textContent = `0/${total}`;
   if (progressDetail) progressDetail.textContent = 'Preparazione...';
   
-  // Forza il browser a renderizzare prima di iniziare
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  // Forza il browser a renderizzare prima di iniziare (usa setTimeout, non rAF)
+  await new Promise(r => setTimeout(r, 50));
   // Riattiva la transizione
   if (progressBar) progressBar.style.transition = 'width 0.3s ease';
 
@@ -382,11 +383,11 @@ function updateProgress(current, total, detail) {
 }
 
 // Forza il browser a rendere le modifiche DOM
+// Usa setTimeout(0) per cedere il controllo al rendering engine
+// requestAnimationFrame non basta perché resta nella microtask queue
 function forceRender() {
   return new Promise(resolve => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(resolve);
-    });
+    setTimeout(resolve, 16); // ~1 frame a 60fps
   });
 }
 

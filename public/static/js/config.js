@@ -45,7 +45,15 @@ function getZanichelliFromCatalog() {
   
   return catalogManuals.filter(m => {
     // Compatibilità: supporta sia formato Matrix (type) che Intelligence (is_zanichelli)
-    return m.type === 'zanichelli' || m.is_zanichelli === true;
+    // Dopo sincronizzazione da Matrix: type === 'zanichelli'
+    // File statico locale: is_zanichelli === true
+    // Fallback: publisher è Zanichelli o un marchio del gruppo Zanichelli
+    if (m.type === 'zanichelli') return true;
+    if (m.is_zanichelli === true) return true;
+    // CEA (Casa Editrice Ambrosiana) è un marchio del gruppo Zanichelli
+    const pub = (m.publisher || '').toLowerCase();
+    if (pub === 'zanichelli' || pub === 'cea' || pub.includes('ambrosiana')) return true;
+    return false;
   }).map(m => ({
     author: m.author || '',
     title: m.title || '',

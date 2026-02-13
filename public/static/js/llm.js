@@ -100,6 +100,7 @@ Lo scenario_zanichelli dipende ESCLUSIVAMENTE dall'EDITORE del manuale, NON dal 
 
 Un manuale è Zanichelli SOLO SE:
 - Nel programma è esplicitamente indicato "Zanichelli" come editore, OPPURE
+- L'editore è "CEA" (Casa Editrice Ambrosiana) che è un marchio del gruppo Zanichelli, OPPURE
 - Il manuale corrisponde (autore + titolo simile) a uno del CATALOGO ZANICHELLI qui sotto
 
 CATALOGO ZANICHELLI (riferimento ufficiale):
