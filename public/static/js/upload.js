@@ -243,10 +243,29 @@ async function startProcessing() {
     return;
   }
 
+  // Carica il catalogo manuali (necessario per la validazione Zanichelli)
+  // Il catalogo potrebbe non essere stato caricato se l'utente è andato direttamente su Upload
+  await loadCatalog();
+  const zanCount = getZanichelliFromCatalog().length;
+  console.log(`[Upload] Catalogo caricato: ${catalogManuals.length} manuali totali, ${zanCount} Zanichelli`);
+
   // Setup UI
   document.getElementById('btn-start-processing').disabled = true;
   document.getElementById('processing-progress').classList.remove('hidden');
   document.getElementById('upload-results').classList.add('hidden');
+  
+  // Inizializza la progress bar visibile subito
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const progressDetail = document.getElementById('progress-detail');
+  if (progressBar) { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; }
+  if (progressText) progressText.textContent = `0/${filesToProcess.length}`;
+  if (progressDetail) progressDetail.textContent = 'Preparazione...';
+  
+  // Forza il browser a renderizzare prima di iniziare
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  // Riattiva la transizione
+  if (progressBar) progressBar.style.transition = 'width 0.3s ease';
 
   processingResults = { success: 0, errors: 0, skipped: 0, details: [] };
   
@@ -260,7 +279,7 @@ async function startProcessing() {
     
     updateProgress(i, total, `📄 Estrazione testo: ${fileName}`);
     // Forza il browser a rendere l'aggiornamento della UI
-    await new Promise(r => setTimeout(r, 50));
+    await forceRender();
 
     try {
       if (!file) {
@@ -278,7 +297,7 @@ async function startProcessing() {
 
       // 2. Pre-classificazione LLM
       updateProgress(i, total, `🤖 Analisi AI: ${fileName}`);
-      await new Promise(r => setTimeout(r, 50));
+      await forceRender();
       const classification = await preClassifyProgram(text);
 
       // 3. Valida risposta LLM
@@ -296,7 +315,7 @@ async function startProcessing() {
 
       // 4. Salva su Supabase
       updateProgress(i, total, `💾 Salvataggio: ${fileName}`);
-      await new Promise(r => setTimeout(r, 50));
+      await forceRender();
       const record = {
         user_id: session.user.id,
         docente_nome: classification.docente_nome || null,
@@ -330,15 +349,14 @@ async function startProcessing() {
     }
   }
 
-  // Mostra risultati
-  // updateProgress usa (current+1), quindi per mostrare total/total passiamo total-1
-  const progressBar = document.getElementById('progress-bar');
-  const progressText = document.getElementById('progress-text');
-  const progressDetail = document.getElementById('progress-detail');
-  if (progressBar) progressBar.style.width = '100%';
-  if (progressText) progressText.textContent = `${total}/${total}`;
-  if (progressDetail) progressDetail.textContent = `✅ Completato! ${processingResults.success} analizzati, ${processingResults.errors} errori, ${processingResults.skipped} saltati`;
-  await new Promise(r => setTimeout(r, 100));
+  // Mostra risultati - completamento
+  const finalBar = document.getElementById('progress-bar');
+  const finalText = document.getElementById('progress-text');
+  const finalDetail = document.getElementById('progress-detail');
+  if (finalBar) finalBar.style.width = '100%';
+  if (finalText) finalText.textContent = `${total}/${total}`;
+  if (finalDetail) finalDetail.textContent = `✅ Completato! ${processingResults.success} analizzati, ${processingResults.errors} errori, ${processingResults.skipped} saltati`;
+  await forceRender();
   showResults();
   fileQueue = [];
   renderFileQueue();
@@ -349,16 +367,27 @@ async function startProcessing() {
 function updateProgress(current, total, detail) {
   // Calcola percentuale: usa (current+1) per mostrare che stiamo lavorando sul file corrente
   const pct = total > 0 ? Math.round(((current + 1) / total) * 100) : 0;
-  const progressBar = document.getElementById('progress-bar');
-  const progressText = document.getElementById('progress-text');
-  const progressDetail = document.getElementById('progress-detail');
   
-  if (progressBar) progressBar.style.width = Math.min(pct, 100) + '%';
-  if (progressText) progressText.textContent = `${current + 1}/${total}`;
-  if (progressDetail) progressDetail.textContent = detail;
+  // Aggiorna DOM direttamente
+  const bar = document.getElementById('progress-bar');
+  const text = document.getElementById('progress-text');
+  const det = document.getElementById('progress-detail');
+  
+  if (bar) bar.style.width = Math.min(pct, 100) + '%';
+  if (text) text.textContent = `${current + 1}/${total}`;
+  if (det) det.textContent = detail;
   
   // Log per debug
   console.log(`[Upload] Progresso: ${current + 1}/${total} (${pct}%) - ${detail}`);
+}
+
+// Forza il browser a rendere le modifiche DOM
+function forceRender() {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    });
+  });
 }
 
 // --- Mostra risultati ---
