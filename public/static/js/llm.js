@@ -76,68 +76,36 @@ async function callOpenAI(systemPrompt, userPrompt, jsonMode = true) {
 
 // --- Prompt Pre-classificazione ---
 function getPreClassificationPrompt() {
-  // Legge i manuali Zanichelli dal catalogo sincronizzato da Matrix
-  const zanichelli_catalog = getZanichelliFromCatalog();
-  const catalogStr = zanichelli_catalog.length > 0
-    ? zanichelli_catalog.map(m => `  - ${m.author} — "${m.title}" (${m.subject})`).join('\n')
-    : '  (catalogo non ancora sincronizzato - verificare solo editore esplicito)';
-  
-  console.log(`[LLM] Prompt pre-classificazione: ${zanichelli_catalog.length} manuali Zanichelli dal catalogo Matrix`);
-  
-  return `Sei un esperto analista di programmi universitari italiani, specializzato nel settore editoriale.
+  return `Sei un esperto analista di programmi universitari italiani.
 Analizza il seguente programma di un insegnamento universitario ed estrai le informazioni richieste in formato JSON.
 
-REGOLE IMPORTANTI:
+REGOLE:
 1. Estrai SOLO informazioni esplicitamente presenti o chiaramente inferibili dal testo
-2. Per i manuali citati, riporta esattamente come appaiono nel programma: titolo, autore, editore
-3. Assegna il ruolo "principale" al primo manuale o quello indicato come "testo di riferimento" / "testo consigliato" / "testo adottato"
-4. Assegna "alternativo" a tutti gli altri manuali (letture consigliate, testi complementari, approfondimenti)
-5. Inferisci la disciplina accademica dal contesto (nome corso, argomenti, facoltà)
-6. Estrai 5-10 parole chiave che rappresentano i temi principali del corso
+2. Per i manuali citati, riporta ESATTAMENTE come appaiono nel programma: titolo, autore, editore
+3. L'EDITORE è fondamentale: riportalo sempre se indicato nel programma
+4. Assegna il ruolo "principale" al primo manuale o quello indicato come testo di riferimento/adottato
+5. Assegna "alternativo" a tutti gli altri (letture consigliate, complementari, approfondimenti)
+6. Inferisci la disciplina accademica dal contesto (nome corso, argomenti, facoltà)
+7. Estrai 5-10 parole chiave dei temi principali del corso
+8. Per scenario_zanichelli: verifica se l'EDITORE dei manuali citati è "Zanichelli" o "CEA" (Casa Editrice Ambrosiana, marchio del gruppo Zanichelli). NON basarti solo sul cognome dell'autore.
+   - "zanichelli_principale": il manuale principale è edito da Zanichelli o CEA
+   - "zanichelli_alternativo": solo un manuale alternativo è edito da Zanichelli o CEA
+   - "zanichelli_assente": nessun manuale è edito da Zanichelli o CEA
 
-REGOLE CRITICHE PER SCENARIO ZANICHELLI:
-Lo scenario_zanichelli dipende ESCLUSIVAMENTE dall'EDITORE del manuale, NON dal cognome dell'autore.
-
-Un manuale è Zanichelli SOLO SE:
-- Nel programma è esplicitamente indicato "Zanichelli" come editore, OPPURE
-- L'editore è "CEA" (Casa Editrice Ambrosiana) che è un marchio del gruppo Zanichelli, OPPURE
-- Il manuale corrisponde (autore + titolo simile) a uno del CATALOGO ZANICHELLI qui sotto
-
-CATALOGO ZANICHELLI (riferimento ufficiale):
-${catalogStr}
-
-ATTENZIONE ai falsi positivi:
-- Un autore può pubblicare con editori diversi (es. Brown pubblica con Zanichelli MA ANCHE con Pearson/EdiSES)
-- Se l'editore indicato nel programma NON è Zanichelli (es. Pearson, EdiSES, McGraw-Hill, UTET, CEA, Piccin, Elsevier, Springer, Edra, Casa Editrice Ambrosiana), allora NON è un manuale Zanichelli
-- Se l'editore non è specificato, confronta autore+titolo con il catalogo sopra. Se non c'è corrispondenza, NON classificare come Zanichelli
-
-Determina scenario_zanichelli così:
-- "zanichelli_principale": il manuale con ruolo "principale" è pubblicato da Zanichelli
-- "zanichelli_alternativo": nessun manuale principale è Zanichelli, ma almeno un manuale "alternativo" è pubblicato da Zanichelli
-- "zanichelli_assente": nessun manuale citato è pubblicato da Zanichelli
-
-RISPONDI ESCLUSIVAMENTE con un oggetto JSON con questa struttura:
+RISPONDI SOLO con un JSON:
 {
   "docente_nome": "Nome Cognome o null",
-  "docente_email": "email@ateneo.it o null",
+  "docente_email": "email o null",
   "ateneo": "Nome Ateneo o null",
-  "corso_laurea": "Nome del corso di laurea o null",
-  "classe_laurea": "Es: L-13, LM-54 o null",
+  "corso_laurea": "Nome corso o null",
+  "classe_laurea": "Es: L-13 o null",
   "materia_inferita": "Disciplina inferita",
   "manuali_citati": [
-    {
-      "titolo": "Titolo manuale",
-      "autore": "Autore/i",
-      "editore": "Editore (DEVE essere presente se indicato nel programma)",
-      "ruolo": "principale|alternativo"
-    }
+    {"titolo": "Titolo", "autore": "Autore/i", "editore": "Editore o non specificato", "ruolo": "principale|alternativo"}
   ],
-  "temi_principali": ["tema1", "tema2", "tema3"],
+  "temi_principali": ["tema1", "tema2"],
   "scenario_zanichelli": "zanichelli_principale|zanichelli_alternativo|zanichelli_assente"
-}
-
-Se un campo non è determinabile, usa null (per stringhe) o [] (per array).
-Se l'editore di un manuale non è specificato nel programma, scrivi "non specificato" nel campo editore.`;
+}`;
 }
 
 // --- Prompt Motivazione Target ---

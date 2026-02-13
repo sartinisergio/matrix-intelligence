@@ -159,10 +159,11 @@ function validateZanichelliScenario(classification) {
     return { ...m, _isZanichelli: false, _reason: 'editore sconosciuto, non Zanichelli' };
   });
   
-  // Log per debug
-  manualiConFlag.forEach(m => {
-    console.log(`[Validazione] "${m.titolo}" di ${m.autore} (${m.editore}) → Zanichelli: ${m._isZanichelli} (${m._reason})`);
-  });
+  // Log solo riepilogo (non ogni singolo manuale)
+  const zanFound = manualiConFlag.filter(m => m._isZanichelli);
+  if (zanFound.length > 0) {
+    console.log(`[Validazione] Zanichelli trovati: ${zanFound.map(m => `"${m.titolo}" (${m._reason})`).join(', ')}`);
+  }
   
   // Determina scenario
   const principale = manualiConFlag.find(m => m.ruolo === 'principale');
@@ -379,7 +380,7 @@ function updateProgress(current, total, detail) {
   if (det) det.textContent = detail;
   
   // Log per debug
-  console.log(`[Upload] Progresso: ${current + 1}/${total} (${pct}%) - ${detail}`);
+  console.log(`[Upload] ${current + 1}/${total} (${pct}%) - ${detail}`);
 }
 
 // Forza il browser a rendere le modifiche DOM
@@ -387,7 +388,7 @@ function updateProgress(current, total, detail) {
 // requestAnimationFrame non basta perché resta nella microtask queue
 function forceRender() {
   return new Promise(resolve => {
-    setTimeout(resolve, 16); // ~1 frame a 60fps
+    setTimeout(resolve, 100); // 100ms garantisce rendering visivo
   });
 }
 
