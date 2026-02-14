@@ -1258,13 +1258,38 @@ async function regenerateMotivation(targetIndex) {
     if (!session) throw new Error('Sessione scaduta');
     
     const programId = target.programma_id;
-    const { data: freshProgram, error: fetchErr } = await supabaseClient
-      .from('programmi')
-      .select('*')
-      .eq('id', programId)
-      .single();
+    let freshProgram = null;
     
-    if (fetchErr || !freshProgram) throw new Error('Programma non trovato nel database');
+    // Tentativo 1: cerca per ID
+    if (programId) {
+      const { data, error } = await supabaseClient
+        .from('programmi')
+        .select('*')
+        .eq('id', programId)
+        .single();
+      if (!error && data) freshProgram = data;
+    }
+    
+    // Tentativo 2: fallback per docente + ateneo (se il programma è stato ricreato)
+    if (!freshProgram && target.docente_nome) {
+      console.warn(`[Rigenera] ID "${programId}" non trovato, cerco per docente "${target.docente_nome}"...`);
+      const { data: matches, error: matchErr } = await supabaseClient
+        .from('programmi')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .ilike('docente_nome', target.docente_nome);
+      
+      if (!matchErr && matches && matches.length > 0) {
+        // Se più risultati, preferisci quello con stesso ateneo
+        freshProgram = matches.find(m => m.ateneo === target.ateneo) || matches[0];
+        console.log(`[Rigenera] ✅ Trovato per nome: ${freshProgram.docente_nome} (${freshProgram.ateneo}), nuovo ID: ${freshProgram.id}`);
+        
+        // Aggiorna il programma_id nel target per le prossime volte
+        currentTargets[targetIndex].programma_id = freshProgram.id;
+      }
+    }
+    
+    if (!freshProgram) throw new Error(`Programma non trovato per "${target.docente_nome || programId}". Verifica che esista nel Database.`);
     
     // 2. Carica risorse
     await loadCatalog();
