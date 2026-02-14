@@ -194,11 +194,40 @@ function initLoginPage() {
   initSupabase();
   updateConfigStatus();
   
+  // Siamo sulla landing page (ha hero) o sulla pagina /login dedicata?
+  const isLandingPage = !!document.querySelector('.hero-gradient');
+  
   if (!supabaseClient) {
     // Mostra automaticamente la tab di configurazione
     switchTab('config');
+  } else if (isLandingPage) {
+    // Landing page: NON fare redirect automatico.
+    // Se già loggato, trasforma "Accedi" in "Vai al Dashboard"
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        // Aggiorna pulsante hero
+        const heroBtn = document.querySelector('a[href="#login-section"]');
+        if (heroBtn) {
+          heroBtn.href = '/dashboard';
+          heroBtn.innerHTML = '<i class="fas fa-th-large"></i> Vai al Dashboard';
+        }
+        // Aggiorna pulsante submit login
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+          loginBtn.type = 'button';
+          loginBtn.innerHTML = '<i class="fas fa-th-large"></i> Vai al Dashboard';
+          loginBtn.onclick = () => { window.location.href = '/dashboard'; };
+        }
+        // Mostra badge "Già connesso" nel form
+        const configStatus = document.getElementById('config-status');
+        if (configStatus) {
+          configStatus.innerHTML = '<div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700"><i class="fas fa-check-circle mr-1"></i> Sei già connesso come <strong>' + (session.user.email || '') + '</strong></div>';
+        }
+      }
+    });
+    switchTab('login');
   } else {
-    // Controlla se già loggato
+    // Pagina /login dedicata: redirect automatico se già loggato
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
       if (session) window.location.href = '/dashboard';
     });
