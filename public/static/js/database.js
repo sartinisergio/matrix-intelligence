@@ -129,7 +129,7 @@ function updateValidationBanner() {
         <button onclick="archiveAllConfirmed()" 
                 class="px-4 py-2 bg-zanichelli-blue text-white rounded-lg text-sm font-medium hover:bg-zanichelli-dark transition-colors flex items-center gap-2 ml-auto">
           <i class="fas fa-archive"></i>
-          Archivia tutti i confermati (${notArchived.length})
+          Salva adozioni nell'Archivio (${notArchived.length})
         </button>`;
     }
     

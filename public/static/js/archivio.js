@@ -127,17 +127,17 @@ function renderArchivio(adozioni) {
       <tr>
         <td colspan="6" class="px-4 py-12 text-center text-gray-400">
           <i class="fas fa-book-open text-3xl mb-2 block"></i>
-          Nessuna adozione trovata. ${allAdozioni.length === 0 ? 'Conferma i match nel Database e usa "Archivia tutti i confermati".' : 'Prova a modificare i filtri.'}
+          Nessuna adozione trovata. ${allAdozioni.length === 0 ? 'Conferma i match nel Database e usa "Salva adozioni nell\'Archivio".' : 'Prova a modificare i filtri.'}
         </td>
       </tr>`;
     return;
   }
 
-  // Raggruppa per programma_id
-  const grouped = {};
+  // 1. Raggruppa per programma_id
+  const byProgram = {};
   adozioni.forEach(a => {
-    if (!grouped[a.programma_id]) {
-      grouped[a.programma_id] = {
+    if (!byProgram[a.programma_id]) {
+      byProgram[a.programma_id] = {
         ateneo: a.ateneo,
         classe_laurea: a.classe_laurea,
         corso_laurea: a.corso_laurea,
@@ -147,7 +147,7 @@ function renderArchivio(adozioni) {
         libri: []
       };
     }
-    grouped[a.programma_id].libri.push({
+    byProgram[a.programma_id].libri.push({
       titolo: a.manuale_titolo,
       autore: a.manuale_autore,
       editore: a.manuale_editore,
@@ -156,8 +156,8 @@ function renderArchivio(adozioni) {
     });
   });
 
-  // Ordina libri: principale prima, poi per titolo
-  Object.values(grouped).forEach(g => {
+  // Ordina libri dentro ogni programma: principale prima
+  Object.values(byProgram).forEach(g => {
     g.libri.sort((a, b) => {
       if (a.ruolo === 'principale' && b.ruolo !== 'principale') return -1;
       if (a.ruolo !== 'principale' && b.ruolo === 'principale') return 1;
@@ -165,26 +165,59 @@ function renderArchivio(adozioni) {
     });
   });
 
-  // Render
-  tbody.innerHTML = Object.values(grouped).map(g => {
-    const libriHtml = g.libri.map(l => {
-      const star = l.ruolo === 'principale' ? '<i class="fas fa-star text-amber-400 mr-1" title="Testo principale"></i>' : '';
-      const zanBadge = l.is_zanichelli ? '<span class="ml-1 px-1 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-medium">Z</span>' : '';
-      const editoreStr = l.editore ? `, ${l.editore}` : '';
-      const ruoloColor = l.ruolo === 'principale' ? 'text-gray-800 font-medium' : 'text-gray-600';
-      return `<div class="py-1 ${ruoloColor}">${star}<strong>${l.titolo || 'N/D'}</strong> <span class="text-gray-400">(${l.autore || 'N/D'}${editoreStr})</span>${zanBadge}</div>`;
-    }).join('');
+  // 2. Raggruppa i programmi per materia (insegnamento)
+  const byMateria = {};
+  Object.entries(byProgram).forEach(([pid, g]) => {
+    const materia = g.insegnamento || 'Materia non specificata';
+    if (!byMateria[materia]) byMateria[materia] = [];
+    byMateria[materia].push(g);
+  });
 
-    return `
-      <tr class="border-t hover:bg-gray-50 align-top">
-        <td class="px-4 py-3 text-gray-600 text-sm">${g.ateneo || '—'}</td>
-        <td class="px-4 py-3 text-gray-500 text-xs">${g.classe_laurea || '—'}</td>
-        <td class="px-4 py-3 text-gray-600 text-xs">${g.corso_laurea || '—'}</td>
-        <td class="px-4 py-3 text-gray-600 text-sm">${g.insegnamento || '—'}</td>
-        <td class="px-4 py-3 text-gray-800 text-sm font-medium">${g.docente_nome || '—'}</td>
-        <td class="px-4 py-3 text-sm">${libriHtml}</td>
+  // Ordina materie alfabeticamente
+  const materieOrdinate = Object.keys(byMateria).sort((a, b) => a.localeCompare(b));
+
+  // 3. Render con header di materia
+  let html = '';
+  materieOrdinate.forEach(materia => {
+    const programmi = byMateria[materia];
+    // Ordina programmi per ateneo dentro la materia
+    programmi.sort((a, b) => (a.ateneo || '').localeCompare(b.ateneo || ''));
+
+    // Header materia (riga spanning)
+    html += `
+      <tr class="bg-zanichelli-accent border-t-2 border-zanichelli-blue/20">
+        <td colspan="6" class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-book text-zanichelli-blue"></i>
+            <span class="font-bold text-zanichelli-blue text-sm">${materia}</span>
+            <span class="text-xs text-zanichelli-blue/60 ml-2">${programmi.length} ${programmi.length === 1 ? 'cattedra' : 'cattedre'}</span>
+          </div>
+        </td>
       </tr>`;
-  }).join('');
+
+    // Righe dei programmi dentro la materia
+    programmi.forEach(g => {
+      const libriHtml = g.libri.map(l => {
+        const star = l.ruolo === 'principale' ? '<i class="fas fa-star text-amber-400 mr-1" title="Testo principale"></i>' : '';
+        const zanBadge = l.is_zanichelli ? '<span class="ml-1 px-1 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-medium">Z</span>' : '';
+        const editoreStr = l.editore ? `, ${l.editore}` : '';
+        const ruoloColor = l.ruolo === 'principale' ? 'text-gray-800 font-medium' : 'text-gray-600';
+        return `<div class="py-1 ${ruoloColor}">${star}<strong>${l.titolo || 'N/D'}</strong> <span class="text-gray-400">(${l.autore || 'N/D'}${editoreStr})</span>${zanBadge}</div>`;
+      }).join('');
+
+      html += `
+        <tr class="border-t hover:bg-gray-50 align-top">
+          <td class="px-4 py-3 text-gray-600 text-sm">${g.ateneo || '—'}</td>
+          <td class="px-4 py-3 text-gray-500 text-xs">${g.classe_laurea || '—'}</td>
+          <td class="px-4 py-3 text-gray-600 text-xs">${g.corso_laurea || '—'}</td>
+          <td class="px-4 py-3 text-gray-600 text-sm">${g.insegnamento || '—'}</td>
+          <td class="px-4 py-3 text-gray-800 text-sm font-medium">${g.docente_nome || '—'}</td>
+          <td class="px-4 py-3 text-sm">${libriHtml}</td>
+        </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
 }
 
 // --- Export CSV ---
