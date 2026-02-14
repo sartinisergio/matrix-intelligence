@@ -1222,6 +1222,168 @@ async function generateTargets(campaignId) {
   showToast(`${faseLabel}: ${targets.length} target trovati!`, 'success');
 }
 
+// ===================================================
+// RIGENERA MOTIVAZIONE SINGOLO TARGET
+// ===================================================
+
+async function regenerateMotivation(targetIndex) {
+  const target = currentTargets[targetIndex];
+  if (!target) {
+    showToast('Target non trovato', 'error');
+    return;
+  }
+  
+  const campaign = allCampaigns.find(c => c.id === currentCampaignId);
+  if (!campaign) {
+    showToast('Campagna non trovata', 'error');
+    return;
+  }
+  
+  const hasApiKey = !!CONFIG.OPENAI_API_KEY;
+  if (!hasApiKey) {
+    showToast('Configura la API Key OpenAI nelle Impostazioni', 'error');
+    return;
+  }
+  
+  // Mostra spinner sul pulsante
+  const btn = document.getElementById(`btn-regen-${targetIndex}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Rigenerando...';
+  }
+  
+  try {
+    // 1. Ricarica il programma fresco da Supabase (con manual_catalog_id aggiornato)
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) throw new Error('Sessione scaduta');
+    
+    const programId = target.programma_id;
+    const { data: freshProgram, error: fetchErr } = await supabaseClient
+      .from('programmi')
+      .select('*')
+      .eq('id', programId)
+      .single();
+    
+    if (fetchErr || !freshProgram) throw new Error('Programma non trovato nel database');
+    
+    // 2. Carica risorse
+    await loadCatalog();
+    await loadFrameworks();
+    
+    const materia = campaign.libro_materia;
+    const framework = findFrameworkForSubject(materia);
+    
+    // 3. Determina fase
+    const bookThemes = campaign.libro_temi || [];
+    const hasIndice = campaign.libro_indice && campaign.libro_indice.trim().length > 20;
+    const fase = (bookThemes.length > 0 || hasIndice) ? 'completa' : 'pre_valutazione';
+    
+    // 4. Dati del volume
+    const bookData = {
+      titolo: campaign.libro_titolo,
+      autore: campaign.libro_autore,
+      materia: campaign.libro_materia,
+      temi: bookThemes.slice(0, 15),
+      hasIndice: hasIndice,
+      fase: fase
+    };
+    
+    // 5. Manuali citati dal docente
+    const manualiDocente = freshProgram.manuali_citati || [];
+    const princ = manualiDocente.find(m => m.ruolo === 'principale');
+    const altri = manualiDocente.filter(m => m.ruolo !== 'principale');
+    
+    // 6. Indice concorrente — PRIORITÀ: match confermato
+    let indiceConcorrente = null;
+    let matchSource = 'nessuno';
+    
+    if (freshProgram.manual_catalog_id && freshProgram.manual_catalog_id !== 'NOT_IN_CATALOG') {
+      const confirmedManual = catalogManuals.find(m => m.id === freshProgram.manual_catalog_id);
+      if (confirmedManual) {
+        indiceConcorrente = confirmedManual.chapters_summary || null;
+        matchSource = 'confermato';
+        console.log(`[Rigenera] ✅ Match CONFERMATO: "${freshProgram.manual_catalog_author}" — "${freshProgram.manual_catalog_title}" (${freshProgram.manual_catalog_publisher})`);
+      }
+    }
+    
+    if (!indiceConcorrente && freshProgram.manual_catalog_id !== 'NOT_IN_CATALOG' && princ && princ.titolo) {
+      const concorrenteCatalogo = findManualInCatalog(princ.titolo, princ.autore);
+      if (concorrenteCatalogo) {
+        indiceConcorrente = concorrenteCatalogo.chapters_summary || null;
+        matchSource = 'auto';
+        console.warn(`[Rigenera] ⚠️ Match AUTO: "${princ.titolo}" → "${concorrenteCatalogo.title}" di ${concorrenteCatalogo.author}`);
+      }
+    }
+    
+    if (!indiceConcorrente) {
+      console.warn(`[Rigenera] ❌ Nessun indice disponibile per ${freshProgram.docente_nome}`);
+    }
+    
+    // 7. Framework moduli dettagliati
+    let frameworkModuliDettaglio = [];
+    if (framework && framework.syllabus_modules) {
+      frameworkModuliDettaglio = framework.syllabus_modules.map(m => ({
+        nome: m.name,
+        concetti: (m.key_concepts || []).filter(k => typeof k === 'string').slice(0, 5)
+      }));
+    }
+    
+    // 8. Componi targetInfo
+    const targetInfo = {
+      docente_nome: freshProgram.docente_nome,
+      ateneo: freshProgram.ateneo,
+      materia_inferita: freshProgram.materia_inferita,
+      temi_principali: freshProgram.temi_principali,
+      manuale_attuale: princ ? `${princ.titolo || ''} (${princ.autore || ''})` : 'Nessuno citato',
+      manuale_editore: princ?.editore || '',
+      indice_concorrente: indiceConcorrente,
+      manuali_complementari: altri.map(m => m.titolo || '').filter(Boolean).join(', ') || 'Nessuno',
+      scenario_zanichelli: freshProgram.scenario_zanichelli,
+      classe_laurea: freshProgram.classe_laurea,
+      profilo_classe: target.profilo_classe || null,
+      framework_score: target.framework_score || 0,
+      temi_comuni_framework: target.temi_comuni || [],
+      overlap_pct: target.overlap_pct || 0,
+      framework_moduli_coperti: target.framework_moduli_coperti || [],
+      framework_dettaglio: frameworkModuliDettaglio
+    };
+    
+    // 9. Genera motivazione via LLM
+    console.log(`[Rigenera] 🤖 Generazione motivazione per ${freshProgram.docente_nome}...`);
+    const newMotivazione = await generateMotivation(bookData, targetInfo);
+    
+    // 10. Aggiorna il target localmente
+    currentTargets[targetIndex].motivazione = newMotivazione;
+    
+    // 11. Salva su Supabase
+    try {
+      await supabaseClient.from('campagne').update({
+        target_generati: currentTargets,
+        updated_at: new Date().toISOString()
+      }).eq('id', currentCampaignId);
+      
+      // Aggiorna anche in memoria
+      if (campaign) campaign.target_generati = currentTargets;
+    } catch (saveErr) {
+      console.error('[Rigenera] Errore salvataggio:', saveErr);
+    }
+    
+    // 12. Ri-renderizza la tabella
+    renderTargets(currentTargets);
+    showToast(`Motivazione rigenerata per ${freshProgram.docente_nome}!`, 'success');
+    
+  } catch (e) {
+    console.error('[Rigenera] Errore:', e);
+    showToast(`Errore rigenerazione: ${e.message}`, 'error');
+  } finally {
+    // Ripristina pulsante (anche se il render l'ha già sostituito)
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i>Rigenera';
+    }
+  }
+}
+
 // === MOTIVAZIONI TEMPLATE — PRE-VALUTAZIONE ===
 // Il volume NON esiste ancora. Non promuoviamo niente.
 // Queste note servono come INTELLIGENCE DI MERCATO:
@@ -1659,11 +1821,18 @@ function renderTargets(targets) {
         </td>
         <td class="px-4 py-3 text-sm text-gray-600 max-w-md">${formatMotivazione(t.motivazione, i)}</td>
         <td class="px-4 py-3 text-center">
-          <button onclick="generateEmail(${i})" 
-                  class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-xs hover:bg-zanichelli-dark transition-colors whitespace-nowrap"
-                  title="Genera mail personalizzata per ${t.docente_nome || 'il docente'}">
-            <i class="fas fa-envelope mr-1"></i>Genera Mail
-          </button>
+          <div class="flex flex-col gap-1.5 items-center">
+            <button id="btn-regen-${i}" onclick="regenerateMotivation(${i})" 
+                    class="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs hover:bg-amber-600 transition-colors whitespace-nowrap"
+                    title="Rigenera la motivazione con dati aggiornati dal catalogo">
+              <i class="fas fa-sync-alt mr-1"></i>Rigenera
+            </button>
+            <button onclick="generateEmail(${i})" 
+                    class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-xs hover:bg-zanichelli-dark transition-colors whitespace-nowrap"
+                    title="Genera mail personalizzata per ${t.docente_nome || 'il docente'}">
+              <i class="fas fa-envelope mr-1"></i>Genera Mail
+            </button>
+          </div>
         </td>
       </tr>`;
   }).join('');
