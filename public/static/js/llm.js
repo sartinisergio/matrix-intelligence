@@ -142,6 +142,19 @@ Puoi fare SOLO osservazioni generali basate sul titolo e sull'editore.
 NON inventare capitoli o contenuti del manuale. Scrivi esplicitamente "Indice non disponibile nel catalogo — analisi limitata ai dati del programma."`;
   }
   
+  // --- TESTO INTEGRALE DEL PROGRAMMA (nuovo: passato dal campo testo_programma) ---
+  let testoProgrammaBlock = '';
+  if (targetData.testo_programma && targetData.testo_programma.trim().length > 50) {
+    // Cap di sicurezza: 25.000 caratteri per evitare PDF anomali
+    const testoTroncato = targetData.testo_programma.trim().slice(0, 25000);
+    const troncato = targetData.testo_programma.trim().length > 25000;
+    testoProgrammaBlock = `
+═══════════════════════════════════════════
+TESTO INTEGRALE DEL PROGRAMMA DEL DOCENTE (estratto dal PDF):
+${testoTroncato}${troncato ? '\n[... testo troncato a 25.000 caratteri ...]' : ''}
+═══════════════════════════════════════════`;
+  }
+  
   // --- FRAMEWORK DISCIPLINARE ---
   let frameworkContext = '';
   if (targetData.framework_dettaglio && targetData.framework_dettaglio.length > 0) {
@@ -163,7 +176,6 @@ NON inventare capitoli o contenuti del manuale. Scrivi esplicitamente "Indice no
 - Docente: ${targetData.docente_nome || 'N/D'}
 - Ateneo: ${targetData.ateneo || 'N/D'}
 - Insegnamento: ${targetData.materia_inferita || 'N/D'}, ${targetData.classe_laurea || ''}
-- Temi del programma: ${(targetData.temi_principali || []).join(', ') || 'Non disponibili'}
 - Manuale adottato: ${targetData.manuale_attuale || 'Nessuno identificato'} ${targetData.manuale_editore ? '(' + targetData.manuale_editore + ')' : ''}${manualiCompl}
 - Scenario: ${targetData.scenario_zanichelli || 'N/D'}`;
 
@@ -172,57 +184,54 @@ NON inventare capitoli o contenuti del manuale. Scrivi esplicitamente "Indice no
     // ============ PRE-VALUTAZIONE ============
     const metodoAnalisi = hasIndice
       ? `METODO DI ANALISI (OBBLIGATORIO):
-1. Per ogni tema del programma del docente, cerca il capitolo corrispondente nell'INDICE fornito sopra
-2. Se il tema corrisponde a un capitolo → il manuale LO COPRE (non dire che manca!)
-3. Un GAP esiste SOLO se un tema del programma NON ha un capitolo corrispondente nell'indice
-4. Verifica OGNI affermazione contro l'indice prima di scriverla
+1. Leggi ATTENTAMENTE il testo integrale del programma: CFU, obiettivi, metodologia, criteri di valutazione, contenuti dettagliati
+2. Per ogni tema del programma, cerca il capitolo corrispondente nell'INDICE del manuale
+3. Se il tema corrisponde a un capitolo → il manuale LO COPRE (non dire che manca!)
+4. Un GAP esiste SOLO se un tema del programma NON ha un capitolo corrispondente nell'indice
 5. NON usare la tua conoscenza pregressa del libro — basati SOLO sull'indice fornito`
       : `METODO DI ANALISI:
-L'indice del manuale non è disponibile. Limita l'analisi a:
-1. Confronto tra i temi del programma e il framework disciplinare
-2. Osservazioni basate sullo scenario (Zanichelli presente/assente)
-3. NON inventare contenuti o capitoli del manuale`;
+L'indice del manuale non è disponibile. Usa il testo integrale del programma per:
+1. Capire struttura, livello, metodologia e specificità del corso
+2. NON inventare contenuti o capitoli del manuale`;
 
     return `Sei un analista editoriale senior che prepara schede operative per promotori Zanichelli.
-Il promotore andrà dal docente e deve sapere ESATTAMENTE con cosa si confronta, non informazioni generiche.
+Il promotore andrà dal docente e deve capire ESATTAMENTE la cattedra e con cosa si confronta.
 
 CONTESTO: Zanichelli valuta un nuovo volume di ${bookData.materia}${bookData.titolo ? ' ("' + bookData.titolo + '")' : ''}. Il volume non esiste ancora. Questa è una pre-valutazione della cattedra.
 
 ${cattedraBlock}
+${testoProgrammaBlock}
 ${concorrenteContext}${frameworkContext}
 
 ${metodoAnalisi}
 
-ANALIZZA e rispondi con questa struttura (usa esattamente queste etichette):
+ANALIZZA IL TESTO INTEGRALE DEL PROGRAMMA e rispondi con questa struttura (usa esattamente queste etichette):
 
-PROGRAMMA DEL DOCENTE: NON elencare i temi (il promotore li conosce già). Rispondi invece a queste domande:
-- Che TAGLIO ha questo corso rispetto a uno standard di ${bookData.materia}? (più teorico? più applicativo? orientato a una professione specifica?)
-- C'è qualche SPECIFICITÀ che lo distingue? (es: enfasi su un'area, assenza di un'area tipica, approccio interdisciplinare, legame con laboratorio)
-- A che LIVELLO si colloca? (introduttivo per L-2? avanzato? propedeutico a cosa?)
-${targetData.framework_dettaglio && targetData.framework_dettaglio.length > 0 ? '- Rispetto al framework disciplinare, ci sono moduli ASSENTI o particolarmente ENFATIZZATI?' : ''}
-Se il programma è standard senza particolarità evidenti, scrivilo chiaramente: "Programma standard di ${bookData.materia} senza specificità rilevanti."
+PROGRAMMA DEL DOCENTE: Analizza il programma in profondità. NON elencare gli argomenti. Il promotore deve capire:
+- STRUTTURA DIDATTICA: Come è organizzato il corso? (CFU, ore lezione vs esercitazione, eventuali laboratori, modalità d'esame — scritto/orale/progetto). Queste informazioni sono nel testo del programma: leggile e riportale.
+- TAGLIO: Che orientamento ha? (teorico puro? applicativo-professionalizzante? con enfasi su calcolo/stechiometria? orientato a biologia/farmacia/ingegneria?). Dedurlo dagli argomenti E dalla classe di laurea.
+- SPECIFICITÀ: Cosa distingue QUESTO programma da uno standard di ${bookData.materia}? Cerca: argomenti inusuali, enfasi particolari su aree specifiche, assenza di moduli tipici, approccio interdisciplinare. Se dal testo emergono metodologie didattiche particolari (TBL, didattica innovativa, coteaching), segnalale.
+- Se il programma è standard senza particolarità, scrivi: "Programma standard" e spiega brevemente PERCHÉ è standard (copre tutti i moduli classici senza enfasi particolari).
 
 MANUALE ATTUALE: ${hasIndice 
-  ? 'NON elencare capitolo per capitolo. Rispondi in modo sintetico: (1) Il manuale copre adeguatamente il programma? Sì/Parzialmente/No. (2) Se parzialmente o no: QUALI temi specifici del programma NON hanno un capitolo corrispondente nell\'indice? Elenca SOLO i gap reali. (3) Il manuale ha capitoli che il docente NON usa nel suo programma? Se sì, quali? Questo indica sovradimensionamento. (4) Giudizio: adeguato, sovradimensionato o sottodimensionato per questa specifica cattedra?'
-  : 'Indice non disponibile. Basandoti solo sul titolo, editore e scenario, descrivi in 2 frasi cosa si sa del manuale adottato e segnala che l\'analisi è limitata.'}
+  ? 'Valutazione sintetica ma CONCRETA: (1) COPERTURA: il manuale copre il programma? Sì/Parzialmente/No — e una frase di spiegazione. (2) GAP REALI: temi del programma SENZA capitolo nell\'indice. Elenca SOLO quelli verificati. Se zero, scrivi "Nessun gap". (3) SOVRADIMENSIONAMENTO: il manuale ha capitoli che il docente NON usa? Se sì, quanti e quali macro-aree? Questo è un dato operativo per il promotore (il docente paga per contenuti che non usa). (4) GIUDIZIO in una riga: adeguato / sovradimensionato / sottodimensionato.'
+  : 'Indice non disponibile. Basandoti solo sul titolo, editore e scenario, descrivi in 2 frasi cosa si può dedurre e segnala il limite dell\'analisi.'}
 
 GAP E OPPORTUNITÀ: ${hasIndice
-  ? 'Rispondi SOLO se ci sono gap reali (temi del programma senza capitolo nell\'indice). Se il manuale copre tutto, scrivi: "Nessun gap di contenuto. L\'opportunità è sul piano qualitativo." e indica UNA sola opportunità concreta che emerge da QUESTO specifico programma (non frasi generiche). VIETATO scrivere: "il docente potrebbe avere necessità di esercizi/applicazioni/risorse digitali" — questo vale per QUALSIASI docente e non è un\'informazione utile.'
-  : 'Senza indice, segnala che i gap non sono verificabili. Indica solo osservazioni basate sullo scenario Zanichelli.'}
+  ? 'PRIMA i GAP VERIFICATI: temi del programma senza corrispondenza nell\'indice. Se non ce ne sono, scrivi "Nessun gap di contenuto verificato." POI le OPPORTUNITÀ SPECIFICHE per questa cattedra — deducibili SOLO dal testo del programma. Esempi validi: "Il corso prevede 36 ore di esercitazioni su stechiometria → il volume deve avere un forte apparato esercitativo su equilibri e stechiometria." / "Esame scritto con 5 esercizi + 5 domande teoriche → serve un testo con esercizi svolti e domande di autovalutazione." Esempi VIETATI (generici): "il docente potrebbe avere bisogno di risorse digitali" / "materiale aggiornato" / "approccio innovativo".'
+  : 'Senza indice, segnala che i gap non sono verificabili. Indica solo opportunità deducibili dal testo integrale del programma.'}
 
-LEVE PER IL CAMBIO: Elenca esattamente 2 leve, numerate. Ogni leva DEVE seguire questo formato:
-"1. [DATO DAL PROGRAMMA] → [CONSEGUENZA PER IL PROMOTORE]"
-Esempio: "1. Il programma include chimica ambientale (tema assente nell'indice Brown) → il nuovo volume potrebbe coprire quest'area come differenziatore."
-Esempio: "2. Corso per L-2 Biotecnologie con enfasi biochimica → il promotore può insistere sull'integrazione chimica-biologia che Brown (generalista) non offre."
-Se non ci sono leve specifiche, scrivi onestamente: "Cattedra con bassa vulnerabilità al cambio: il manuale attuale copre bene il programma. Il promotore dovrà puntare su fattori non legati al contenuto (prezzo, servizio, relazione)."
+LEVE PER IL CAMBIO: Elenca esattamente 2 leve, numerate. Ogni leva collega un DATO CONCRETO dal programma a una CONSEGUENZA OPERATIVA per il promotore.
+Formato: "1. [DATO SPECIFICO] → [AZIONE/ARGOMENTO PER IL PROMOTORE]"
+Le leve devono emergere dal testo del programma, NON essere generiche.
+Se non ci sono leve credibili, scrivi: "Cattedra con bassa vulnerabilità al cambio: [motivo specifico]. Il promotore può puntare su: [fattore concreto non legato al contenuto]."
 
-DIVIETI ASSOLUTI (la scheda viene SCARTATA se li violi):
+REGOLE (la scheda viene SCARTATA se violate):
 - ${hasIndice ? 'Ogni affermazione sul manuale DEVE essere verificabile nell\'indice fornito.' : 'NON inventare capitoli o contenuti del manuale.'}
-- NON affermare che il manuale "non copre" un argomento se c'è un capitolo dedicato nell'indice
-- NON usare la tua conoscenza pregressa del libro — solo i dati forniti qui
-- NON scrivere frasi generiche applicabili a qualsiasi cattedra: "risorse digitali", "approccio innovativo", "esercizi pratici", "aggiornamento contenuti", "materiale supplementare" SENZA un collegamento a un dato SPECIFICO di questo programma
-- NON ripetere i temi del programma come elenco — il promotore li ha già
-- Tono: nota interna tra colleghi, diretto, asciutto. 3-4 frasi per sezione, massimo.`;
+- LEGGI il testo integrale del programma: CFU, ore, esame, obiettivi sono tutti lì. Non ignorarli.
+- NON scrivere frasi generiche valide per qualsiasi cattedra
+- NON ripetere l'elenco degli argomenti — il promotore li ha già
+- Tono: nota operativa interna, diretta, senza retorica. 3-5 frasi per sezione.`;
 
   } else {
     // ============ FASE COMPLETA ============

@@ -1140,6 +1140,7 @@ async function generateTargets(campaignId) {
           ateneo: t.programData.ateneo,
           materia_inferita: t.programData.materia_inferita,
           temi_principali: t.programData.temi_principali,
+          testo_programma: t.programData.testo_programma || '',
           manuale_attuale: princ ? `${princ.titolo || ''} (${princ.autore || ''})` : 'Nessuno citato',
           manuale_editore: princ?.editore || '',
           indice_concorrente: indiceConcorrente,
@@ -1154,6 +1155,7 @@ async function generateTargets(campaignId) {
           framework_dettaglio: frameworkModuliDettaglio
         };
         
+        console.log(`[Campagna] 📄 Testo programma per ${t.programData.docente_nome}: ${(t.programData.testo_programma || '').length} caratteri`);
         t.motivazione = await generateMotivation(bookData, targetInfo);
       } catch (e) {
         console.error('Errore motivazione LLM per', t.programData.docente_nome, e);
@@ -1359,6 +1361,7 @@ async function regenerateMotivation(targetIndex) {
       ateneo: freshProgram.ateneo,
       materia_inferita: freshProgram.materia_inferita,
       temi_principali: freshProgram.temi_principali,
+      testo_programma: freshProgram.testo_programma || '',
       manuale_attuale: princ ? `${princ.titolo || ''} (${princ.autore || ''})` : 'Nessuno citato',
       manuale_editore: princ?.editore || '',
       indice_concorrente: indiceConcorrente,
@@ -1374,6 +1377,7 @@ async function regenerateMotivation(targetIndex) {
     };
     
     // 9. Genera motivazione via LLM
+    console.log(`[Rigenera] 📄 Testo programma per ${freshProgram.docente_nome}: ${(freshProgram.testo_programma || '').length} caratteri`);
     console.log(`[Rigenera] 🤖 Generazione motivazione per ${freshProgram.docente_nome}...`);
     const newMotivazione = await generateMotivation(bookData, targetInfo);
     
