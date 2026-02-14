@@ -195,20 +195,23 @@ ${metodoAnalisi}
 
 ANALIZZA e rispondi con questa struttura (usa esattamente queste etichette):
 
+PROGRAMMA DEL DOCENTE: Descrivi il corso di questo docente: quali temi tratta, come è strutturato (sequenza logica degli argomenti), qual è il livello (base/avanzato), quali sono le specificità o gli aspetti caratteristici rispetto a un corso standard di ${bookData.materia}. Evidenzia se il programma ha un'impostazione teorica, applicativa, sperimentale o mista.${targetData.framework_dettaglio && targetData.framework_dettaglio.length > 0 ? ' Confronta con il framework disciplinare standard per segnalare eventuali temi assenti o enfatizzati.' : ''}
+
 MANUALE ATTUALE: ${hasIndice 
-  ? 'Elenca i capitoli dell\'indice che corrispondono ai temi del programma. Per ogni tema del programma, indica il capitolo che lo copre. Se un tema NON ha corrispondenza nell\'indice, segnalalo esplicitamente come gap.'
+  ? 'Analizza la COPERTURA del manuale rispetto al programma del docente. Per ogni tema del programma, verifica se esiste un capitolo corrispondente nell\'indice. Usa il formato: "Tema X → coperto dal Cap. N". Se un tema NON ha corrispondenza nell\'indice, segnalalo come: "Tema Y → NON coperto". Concludi con un giudizio sintetico: il manuale è adeguato, parzialmente adeguato o inadeguato per questo specifico programma?'
   : 'Descrivi brevemente il manuale adottato basandoti solo sul titolo e l\'editore. Scrivi "Indice non disponibile — analisi basata solo sui temi del programma."'}
 
-GAP E PUNTI DEBOLI: ${hasIndice
-  ? 'Identifica SOLO i temi del programma che NON trovano corrispondenza nell\'indice. Non citare come gap temi che hanno un capitolo dedicato. Se non ci sono gap evidenti, scrivi "Il manuale copre tutti i temi principali del programma."'
+GAP E OPPORTUNITÀ: ${hasIndice
+  ? 'Identifica SOLO i temi del programma che NON trovano corrispondenza nell\'indice. Non citare come gap temi che hanno un capitolo dedicato. Se non ci sono gap evidenti, scrivi "Il manuale copre tutti i temi principali del programma." e concentrati su opportunità qualitative: il docente ha esigenze didattiche particolari (es. più esercizi, più applicazioni, materiale digitale) che emergono dalla struttura del suo programma?'
   : 'Analizza i temi del programma e identifica aree potenzialmente deboli. Segnala che l\'analisi è approssimativa senza l\'indice.'}
 
-LEVE PER IL CAMBIO: Su cosa deve puntare il nuovo volume per convincere questo docente a cambiare? Solo leve SPECIFICHE legate ai gap reali identificati. Se il manuale copre bene il programma, concentrati su aspetti qualitativi: didattica, aggiornamento, risorse digitali, approccio.
+LEVE PER IL CAMBIO: Basandoti sui gap e sulle specificità del programma, elenca 2-3 leve CONCRETE e SPECIFICHE per questa cattedra. Ogni leva deve collegare un'esigenza del docente (emersa dal programma) a una caratteristica che il nuovo volume dovrebbe avere. Se il manuale attuale copre bene il programma, le leve devono essere qualitative: approccio didattico, struttura del testo, risorse supplementari, aggiornamento contenuti. Il promotore deve poter usare queste leve in un colloquio reale.
 
 REGOLE TASSATIVE:
 - ${hasIndice ? 'Ogni affermazione sul manuale DEVE essere verificabile nell\'indice fornito.' : 'NON inventare capitoli o contenuti del manuale.'}
 - NON affermare che il manuale "non copre" un argomento se c'è un capitolo dedicato nell'indice.
 - NON usare la tua conoscenza pregressa del libro — solo i dati forniti in questo prompt.
+- Parti SEMPRE dal programma del docente: è il centro dell'analisi, non il manuale.
 - Sii SPECIFICO: nomina capitoli, temi, aree concrete — niente frasi generiche.
 - Le leve devono essere azionabili: il promotore deve poterle usare in un colloquio.
 - 4-5 frasi per sezione. Tono: nota interna, diretto, zero retorica.
