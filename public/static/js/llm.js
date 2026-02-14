@@ -207,11 +207,10 @@ ${metodoAnalisi}
 
 ANALIZZA IL TESTO INTEGRALE DEL PROGRAMMA e rispondi con questa struttura (usa esattamente queste etichette):
 
-PROGRAMMA DEL DOCENTE: Analizza il programma in profondità. NON elencare gli argomenti. Il promotore deve capire:
-- STRUTTURA DIDATTICA: Come è organizzato il corso? (CFU, ore lezione vs esercitazione, eventuali laboratori, modalità d'esame — scritto/orale/progetto). Queste informazioni sono nel testo del programma: leggile e riportale.
-- TAGLIO: Che orientamento ha? (teorico puro? applicativo-professionalizzante? con enfasi su calcolo/stechiometria? orientato a biologia/farmacia/ingegneria?). Dedurlo dagli argomenti E dalla classe di laurea.
-- SPECIFICITÀ: Cosa distingue QUESTO programma da uno standard di ${bookData.materia}? Cerca: argomenti inusuali, enfasi particolari su aree specifiche, assenza di moduli tipici, approccio interdisciplinare. Se dal testo emergono metodologie didattiche particolari (TBL, didattica innovativa, coteaching), segnalale.
-- Se il programma è standard senza particolarità, scrivi: "Programma standard" e spiega brevemente PERCHÉ è standard (copre tutti i moduli classici senza enfasi particolari).
+PROGRAMMA DEL DOCENTE: NON elencare gli argomenti. Usa questa struttura:
+- SCHEDA: UNA sola riga telegrafica con i dati essenziali. Formato: "[N] CFU | Esame: [modalità] | [classe di laurea]". Esempio: "9 CFU | Esame: scritto (5 esercizi + 5 domande) + orale | L-2 Scienze Biologiche". Se un dato non è disponibile, omettilo. NON aggiungere date, orari, nomi edifici o altre informazioni logistiche.
+- TAGLIO: Che orientamento ha il corso? (teorico puro? applicativo-professionalizzante? con enfasi su calcolo/stechiometria? orientato a biologia/farmacia/ingegneria?). Dedurlo dagli argomenti E dalla classe di laurea. 2-3 frasi.
+- SPECIFICITÀ: Cosa distingue QUESTO programma da uno standard di ${bookData.materia}? Cerca: argomenti inusuali, enfasi particolari, assenza di moduli tipici, approccio interdisciplinare, metodologie didattiche particolari (TBL, coteaching, laboratorio). Se il programma è standard, scrivi: "Programma standard" e spiega brevemente PERCHÉ (copre i moduli classici senza enfasi particolari). 2-3 frasi.
 
 MANUALE ATTUALE: ${hasIndice 
   ? 'Valutazione sintetica ma CONCRETA: (1) COPERTURA: il manuale copre il programma? Sì/Parzialmente/No — e una frase di spiegazione. (2) GAP REALI: temi del programma SENZA capitolo nell\'indice. Elenca SOLO quelli verificati. Se zero, scrivi "Nessun gap". (3) SOVRADIMENSIONAMENTO: il manuale ha capitoli che il docente NON usa? Se sì, quanti e quali macro-aree? Questo è un dato operativo per il promotore (il docente paga per contenuti che non usa). (4) GIUDIZIO in una riga: adeguato / sovradimensionato / sottodimensionato.'
