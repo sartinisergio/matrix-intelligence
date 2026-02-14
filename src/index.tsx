@@ -43,7 +43,7 @@ function loginPage(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MATRIX Intelligence — Login</title>
+  <title>MATRIX Intelligence — Analisi di mercato editoriale universitario</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
@@ -65,134 +65,324 @@ function loginPage(): string {
       }
     }
   </script>
+  <style>
+    .hero-gradient { background: linear-gradient(135deg, #002654 0%, #003B7B 40%, #0066CC 100%); }
+    .feature-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,59,123,0.15); }
+    .step-line { position: relative; }
+    .step-line::after { content: ''; position: absolute; top: 50%; right: -32px; width: 32px; height: 2px; background: #0066CC; }
+    .step-line:last-child::after { display: none; }
+    @media (max-width: 768px) { .step-line::after { display: none; } }
+    html { scroll-behavior: smooth; }
+  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-zanichelli-dark via-zanichelli-blue to-zanichelli-light flex items-center justify-center p-4">
-  
-  <div class="w-full max-w-md">
-    <!-- Logo / Brand -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl mb-4">
-        <i class="fas fa-brain text-4xl text-white"></i>
-      </div>
-      <h1 class="text-3xl font-bold text-white">MATRIX Intelligence</h1>
-      <p class="text-blue-200 mt-2">Piattaforma di analisi per promotori editoriali</p>
+<body class="min-h-screen bg-gray-50">
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero-gradient min-h-[80vh] flex items-center relative overflow-hidden">
+    <!-- Pattern decorativo -->
+    <div class="absolute inset-0 opacity-5">
+      <div class="absolute top-20 left-10 text-9xl font-bold text-white">M</div>
+      <div class="absolute bottom-10 right-10 text-9xl font-bold text-white">I</div>
     </div>
+    
+    <div class="max-w-6xl mx-auto px-6 py-20 relative z-10 w-full">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Testo -->
+        <div>
+          <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
+            <i class="fas fa-brain text-blue-300"></i>
+            <span class="text-blue-200 text-sm font-medium">Piattaforma per promotori editoriali</span>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
+            MATRIX<br><span class="text-blue-300">Intelligence</span>
+          </h1>
+          <p class="text-xl text-blue-100 leading-relaxed mb-8">
+            Analisi di mercato editoriale universitario, automatizzata.<br>
+            <span class="text-blue-300">Dai PDF dei programmi alle campagne di promozione.</span>
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a href="#login-section" 
+               class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-zanichelli-blue rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors shadow-lg">
+              <i class="fas fa-sign-in-alt"></i>
+              Accedi
+            </a>
+            <a href="#funzionalita" 
+               class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-medium text-lg hover:bg-white/20 transition-colors border border-white/20">
+              <i class="fas fa-arrow-down"></i>
+              Scopri di piu
+            </a>
+          </div>
+        </div>
+        
+        <!-- Visual: statistiche -->
+        <div class="hidden md:block">
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+            <div class="grid grid-cols-2 gap-6">
+              <div class="text-center p-4">
+                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-file-pdf text-blue-300 text-3xl"></i></div>
+                <div class="text-blue-200 text-sm mt-2">Upload multiplo PDF</div>
+              </div>
+              <div class="text-center p-4">
+                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-robot text-blue-300 text-3xl"></i></div>
+                <div class="text-blue-200 text-sm mt-2">Analisi AI automatica</div>
+              </div>
+              <div class="text-center p-4">
+                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-bullseye text-blue-300 text-3xl"></i></div>
+                <div class="text-blue-200 text-sm mt-2">Campagne mirate</div>
+              </div>
+              <div class="text-center p-4">
+                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-book-open text-blue-300 text-3xl"></i></div>
+                <div class="text-blue-200 text-sm mt-2">Archivio Adozioni</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Card Login -->
-    <div class="bg-white rounded-2xl shadow-2xl p-8">
-      <!-- Stato configurazione -->
-      <div id="config-status" class="mb-4 text-center"></div>
+  <!-- ===================== FUNZIONALITA ===================== -->
+  <section id="funzionalita" class="py-20 bg-white">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <h2 class="text-3xl font-bold text-gray-800 mb-3">Cosa fa Matrix Intelligence</h2>
+        <p class="text-gray-500 text-lg max-w-2xl mx-auto">Dalla raccolta dei programmi alla generazione delle campagne, tutto in un unico flusso</p>
+      </div>
+      
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1: Upload -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
+          <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-cloud-upload-alt text-zanichelli-light text-2xl"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 mb-2">Carica i PDF</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Upload multiplo dei programmi universitari. L'AI estrae docente, ateneo, materia, manuali citati e scenario Zanichelli.
+          </p>
+        </div>
+        
+        <!-- Card 2: Database -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
+          <div class="w-14 h-14 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-database text-amber-500 text-2xl"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 mb-2">Analizza il mercato</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Match automatico con il catalogo. Verifica le adozioni, conferma i manuali e classifica ogni cattedra per scenario.
+          </p>
+        </div>
+        
+        <!-- Card 3: Campagne -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
+          <div class="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-bullseye text-green-500 text-2xl"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 mb-2">Campagne mirate</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Pre-valutazione e analisi completa per ogni target. L'AI genera schede operative e mail personalizzate per il promotore.
+          </p>
+        </div>
+        
+        <!-- Card 4: Archivio -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
+          <div class="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-book-open text-indigo-500 text-2xl"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 mb-2">Archivio Adozioni</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Banca dati bibliografica delle adozioni. Filtra per materia, editore, ateneo. Esporta in CSV per le tue analisi.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <!-- Tab Login / Registrazione / Configura -->
-      <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
-        <button id="tab-login" onclick="switchTab('login')" 
-                class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
-          Accedi
-        </button>
-        <button id="tab-register" onclick="switchTab('register')" 
-                class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
-          Registrati
-        </button>
-        <button id="tab-config" onclick="switchTab('config')" 
-                class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
-          <i class="fas fa-cog mr-1"></i>Configura
-        </button>
+  <!-- ===================== COME FUNZIONA ===================== -->
+  <section class="py-20 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <h2 class="text-3xl font-bold text-gray-800 mb-3">Come funziona</h2>
+        <p class="text-gray-500 text-lg">Tre passaggi, dal PDF alla campagna</p>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Step 1 -->
+        <div class="step-line text-center">
+          <div class="w-16 h-16 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-2xl font-bold text-white">1</span>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg mb-2">Carica i programmi</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Trascina i PDF dei programmi universitari. L'intelligenza artificiale analizza ogni documento ed estrae automaticamente tutte le informazioni rilevanti.
+          </p>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="step-line text-center">
+          <div class="w-16 h-16 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-2xl font-bold text-white">2</span>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg mb-2">Conferma i match</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Il sistema propone un match con il catalogo per ogni manuale citato. Tu verifichi con un clic e correggi se necessario. Dati affidabili, validati dal promotore.
+          </p>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="step-line text-center">
+          <div class="w-16 h-16 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-2xl font-bold text-white">3</span>
+          </div>
+          <h3 class="font-bold text-gray-800 text-lg mb-2">Genera le campagne</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Seleziona un volume e lancia la campagna. Per ogni docente ricevi una scheda operativa con gap, leve e una mail di primo contatto pronta da inviare.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LOGIN ===================== -->
+  <section id="login-section" class="py-20 hero-gradient">
+    <div class="max-w-md mx-auto px-6">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4">
+          <i class="fas fa-brain text-3xl text-white"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-white">Accedi a Matrix Intelligence</h2>
+        <p class="text-blue-200 mt-2">Inserisci le tue credenziali per iniziare</p>
       </div>
 
-      <!-- Form Login -->
-      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4 hidden">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <div class="relative">
-            <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="email" id="login-email" required
-                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
-                   placeholder="sergio@zanichelli.it">
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <div class="relative">
-            <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="password" id="login-password" required
-                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
-                   placeholder="La tua password">
-          </div>
-        </div>
-        <button type="submit" id="login-btn"
-                class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
-          <i class="fas fa-sign-in-alt"></i>
-          Accedi
-        </button>
-      </form>
+      <!-- Card Login -->
+      <div class="bg-white rounded-2xl shadow-2xl p-8">
+        <!-- Stato configurazione -->
+        <div id="config-status" class="mb-4 text-center"></div>
 
-      <!-- Form Registrazione (nascosto) -->
-      <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <div class="relative">
-            <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="email" id="register-email" required
-                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
-                   placeholder="la-tua-email@esempio.it">
-          </div>
+        <!-- Tab Login / Registrazione / Configura -->
+        <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
+          <button id="tab-login" onclick="switchTab('login')" 
+                  class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
+            Accedi
+          </button>
+          <button id="tab-register" onclick="switchTab('register')" 
+                  class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
+            Registrati
+          </button>
+          <button id="tab-config" onclick="switchTab('config')" 
+                  class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
+            <i class="fas fa-cog mr-1"></i>Configura
+          </button>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <div class="relative">
-            <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="password" id="register-password" required minlength="6"
-                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
-                   placeholder="Minimo 6 caratteri">
-          </div>
-        </div>
-        <button type="submit" id="register-btn"
-                class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
-          <i class="fas fa-user-plus"></i>
-          Crea Account
-        </button>
-      </form>
 
-      <!-- Form Configurazione Supabase (nascosto) -->
-      <form id="config-form" onsubmit="handleSaveConfig(event)" class="space-y-4 hidden">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-          <i class="fas fa-info-circle mr-1"></i>
-          Inserisci le credenziali dal tuo progetto Supabase.<br>
-          Le trovi in: <strong>Settings &rarr; API Keys &rarr; Legacy anon key</strong>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">URL Progetto Supabase</label>
-          <div class="relative">
-            <i class="fas fa-globe absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="url" id="config-supabase-url" required
-                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none text-sm"
-                   placeholder="https://xxxxx.supabase.co">
+        <!-- Form Login -->
+        <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4 hidden">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <div class="relative">
+              <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input type="email" id="login-email" required
+                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
+                     placeholder="sergio@zanichelli.it">
+            </div>
           </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Anon Key (inizia con eyJ...)</label>
-          <div class="relative">
-            <i class="fas fa-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="text" id="config-supabase-key" required
-                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none text-sm font-mono"
-                   placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <div class="relative">
+              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input type="password" id="login-password" required
+                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
+                     placeholder="La tua password">
+            </div>
           </div>
-        </div>
-        <button type="submit"
-                class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
-          <i class="fas fa-save"></i>
-          Salva Configurazione
-        </button>
-      </form>
+          <button type="submit" id="login-btn"
+                  class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
+            <i class="fas fa-sign-in-alt"></i>
+            Accedi
+          </button>
+        </form>
 
-      <!-- Messaggi -->
-      <div id="auth-message" class="mt-4 hidden"></div>
+        <!-- Form Registrazione -->
+        <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <div class="relative">
+              <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input type="email" id="register-email" required
+                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
+                     placeholder="la-tua-email@esempio.it">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <div class="relative">
+              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input type="password" id="register-password" required minlength="6"
+                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none"
+                     placeholder="Minimo 6 caratteri">
+            </div>
+          </div>
+          <button type="submit" id="register-btn"
+                  class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
+            <i class="fas fa-user-plus"></i>
+            Crea Account
+          </button>
+        </form>
+
+        <!-- Form Configurazione Supabase -->
+        <form id="config-form" onsubmit="handleSaveConfig(event)" class="space-y-4 hidden">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+            <i class="fas fa-info-circle mr-1"></i>
+            Inserisci le credenziali dal tuo progetto Supabase.<br>
+            Le trovi in: <strong>Settings &rarr; API Keys &rarr; Legacy anon key</strong>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">URL Progetto Supabase</label>
+            <div class="relative">
+              <i class="fas fa-globe absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input type="url" id="config-supabase-url" required
+                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none text-sm"
+                     placeholder="https://xxxxx.supabase.co">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Anon Key (inizia con eyJ...)</label>
+            <div class="relative">
+              <i class="fas fa-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input type="text" id="config-supabase-key" required
+                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none text-sm font-mono"
+                     placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+            </div>
+          </div>
+          <button type="submit"
+                  class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
+            <i class="fas fa-save"></i>
+            Salva Configurazione
+          </button>
+        </form>
+
+        <!-- Messaggi -->
+        <div id="auth-message" class="mt-4 hidden"></div>
+      </div>
+
+      <p class="text-center text-blue-200 text-sm mt-6">
+        MATRIX Intelligence v0.1 &mdash; Zanichelli
+      </p>
     </div>
+  </section>
 
-    <p class="text-center text-blue-200 text-sm mt-6">
-      MATRIX Intelligence v0.1 &mdash; Zanichelli
-    </p>
-  </div>
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="bg-zanichelli-dark py-8">
+    <div class="max-w-6xl mx-auto px-6 text-center">
+      <div class="flex items-center justify-center gap-2 mb-3">
+        <i class="fas fa-brain text-blue-300"></i>
+        <span class="text-white font-semibold">MATRIX Intelligence</span>
+      </div>
+      <p class="text-blue-300/60 text-sm">
+        Strumento interno per promotori editoriali Zanichelli &mdash; v0.1
+      </p>
+    </div>
+  </footer>
 
   <script src="/static/js/config.js"></script>
   <script src="/static/js/auth.js"></script>
