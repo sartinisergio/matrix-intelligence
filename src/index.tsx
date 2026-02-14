@@ -267,6 +267,11 @@ function dashboardPage(): string {
         <i class="fas fa-bullseye w-5 text-center"></i>
         <span>Campagne</span>
       </button>
+      <button onclick="navigateTo('archivio')" id="nav-archivio"
+              class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all hover:bg-white/10 text-blue-200">
+        <i class="fas fa-book-open w-5 text-center"></i>
+        <span>Archivio Adozioni</span>
+      </button>
       <button onclick="navigateTo('impostazioni')" id="nav-impostazioni"
               class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all hover:bg-white/10 text-blue-200">
         <i class="fas fa-cog w-5 text-center"></i>
@@ -742,6 +747,154 @@ function dashboardPage(): string {
         </div>
       </section>
 
+      <!-- ===================== SEZIONE ARCHIVIO ADOZIONI ===================== -->
+      <section id="section-archivio" class="section hidden">
+        <div class="mb-6 flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800">
+              <i class="fas fa-book-open text-zanichelli-light mr-2"></i>
+              Archivio Adozioni
+            </h2>
+            <p class="text-gray-500 mt-1">Banca dati bibliografica delle adozioni universitarie</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="exportArchivioCSV()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+              <i class="fas fa-file-csv mr-1"></i>Esporta CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistiche rapide -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-xl shadow-sm border p-4 text-center">
+            <div id="arch-stat-programmi" class="text-2xl font-bold text-zanichelli-blue">0</div>
+            <div class="text-xs text-gray-500 mt-1">Programmi archiviati</div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border p-4 text-center">
+            <div id="arch-stat-atenei" class="text-2xl font-bold text-indigo-600">0</div>
+            <div class="text-xs text-gray-500 mt-1">Atenei</div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border p-4 text-center">
+            <div id="arch-stat-manuali" class="text-2xl font-bold text-amber-600">0</div>
+            <div class="text-xs text-gray-500 mt-1">Manuali censiti</div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border p-4 text-center">
+            <div id="arch-stat-editori" class="text-2xl font-bold text-green-600">0</div>
+            <div class="text-xs text-gray-500 mt-1">Editori</div>
+          </div>
+        </div>
+
+        <!-- Filtri di Ricerca -->
+        <div class="bg-white rounded-xl shadow-sm border p-5 mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-700">
+              <i class="fas fa-search text-zanichelli-light mr-2"></i>Filtri di Ricerca
+            </h3>
+            <button onclick="resetArchivioFilters()" class="text-sm text-gray-400 hover:text-gray-600">
+              <i class="fas fa-times mr-1"></i>Cancella Filtri
+            </button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Materia Standardizzata</label>
+              <select id="arch-filter-materia" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none" onchange="applyArchivioFilters()">
+                <option value="">Seleziona materia...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Ateneo</label>
+              <input type="text" id="arch-filter-ateneo" placeholder="es. Università di Bologna"
+                     class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
+                     oninput="applyArchivioFilters()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Corso di Laurea</label>
+              <input type="text" id="arch-filter-corso" placeholder="es. Biotecnologie"
+                     class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
+                     oninput="applyArchivioFilters()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Classe di Laurea</label>
+              <select id="arch-filter-classe" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none" onchange="applyArchivioFilters()">
+                <option value="">Seleziona classe di laurea...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Docente</label>
+              <input type="text" id="arch-filter-docente" placeholder="es. Mario Rossi"
+                     class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
+                     oninput="applyArchivioFilters()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Insegnamento</label>
+              <input type="text" id="arch-filter-insegnamento" placeholder="es. Chimica Generale"
+                     class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
+                     oninput="applyArchivioFilters()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Titolo Libro</label>
+              <input type="text" id="arch-filter-titolo" placeholder="es. Fondamenti di Chimica"
+                     class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
+                     oninput="applyArchivioFilters()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Autore Libro</label>
+              <input type="text" id="arch-filter-autore" placeholder="es. Brown"
+                     class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
+                     oninput="applyArchivioFilters()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Editore Libro</label>
+              <input type="text" id="arch-filter-editore" placeholder="es. EdiSES, Zanichelli"
+                     class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
+                     oninput="applyArchivioFilters()">
+            </div>
+            <div class="flex items-end">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="arch-filter-principali" class="w-4 h-4 rounded border-gray-300 text-zanichelli-blue focus:ring-zanichelli-light" onchange="applyArchivioFilters()">
+                <span class="text-sm text-gray-600">Cerca solo tra i testi principali</span>
+              </label>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t">
+            <button onclick="applyArchivioFilters()" class="w-full py-2.5 bg-zanichelli-blue text-white rounded-lg text-sm font-medium hover:bg-zanichelli-dark transition-colors">
+              <i class="fas fa-search mr-2"></i>Applica Filtri
+            </button>
+          </div>
+        </div>
+
+        <!-- Contatore risultati -->
+        <div class="flex items-center justify-between mb-3">
+          <span id="arch-count" class="text-sm text-gray-500">0 programmi trovati</span>
+        </div>
+
+        <!-- Tabella Archivio -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr>
+                  <th class="px-4 py-3 font-medium">Ateneo</th>
+                  <th class="px-4 py-3 font-medium">Classe</th>
+                  <th class="px-4 py-3 font-medium">Corso</th>
+                  <th class="px-4 py-3 font-medium">Insegnamento</th>
+                  <th class="px-4 py-3 font-medium">Docente</th>
+                  <th class="px-4 py-3 font-medium">Libri</th>
+                </tr>
+              </thead>
+              <tbody id="arch-table-body">
+                <tr>
+                  <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+                    <i class="fas fa-book-open text-3xl mb-2 block"></i>
+                    Nessuna adozione archiviata. Conferma i match nel Database e usa "Archivia tutti i confermati".
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ===================== SEZIONE IMPOSTAZIONI ===================== -->
       <section id="section-impostazioni" class="section hidden">
         <div class="mb-6">
@@ -901,6 +1054,7 @@ function dashboardPage(): string {
   <script src="/static/js/llm.js"></script>
   <script src="/static/js/upload.js"></script>
   <script src="/static/js/database.js"></script>
+  <script src="/static/js/archivio.js"></script>
   <script src="/static/js/campagna.js"></script>
   <script src="/static/js/sync.js"></script>
 </body>

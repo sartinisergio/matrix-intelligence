@@ -104,6 +104,7 @@ function navigateTo(section) {
   // Carica dati per la sezione
   if (section === 'database') loadDatabase();
   if (section === 'campagne') loadCampaigns();
+  if (section === 'archivio') loadArchivio();
   if (section === 'impostazioni') loadSettings();
 }
 

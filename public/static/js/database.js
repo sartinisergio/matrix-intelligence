@@ -119,14 +119,32 @@ function updateValidationBanner() {
   }
   
   if (unconfirmed.length === 0 && noMatch.length === 0) {
-    // Tutto confermato
+    // Tutto confermato — mostra opzione archiviazione
+    const notArchived = confirmed.filter(p => !p.archiviato);
+    const archivedCount = confirmed.filter(p => p.archiviato).length;
+    
+    let archivioBtn = '';
+    if (notArchived.length > 0) {
+      archivioBtn = `
+        <button onclick="archiveAllConfirmed()" 
+                class="px-4 py-2 bg-zanichelli-blue text-white rounded-lg text-sm font-medium hover:bg-zanichelli-dark transition-colors flex items-center gap-2 ml-auto">
+          <i class="fas fa-archive"></i>
+          Archivia tutti i confermati (${notArchived.length})
+        </button>`;
+    }
+    
     banner.innerHTML = `
       <div class="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
         <i class="fas fa-check-circle text-green-500 text-xl"></i>
-        <div>
+        <div class="flex-1">
           <p class="font-medium text-green-800">Tutti i match sono confermati</p>
-          <p class="text-sm text-green-600">${confirmed.length} programmi pronti per le campagne</p>
+          <p class="text-sm text-green-600">
+            ${confirmed.length} programmi pronti per le campagne
+            ${archivedCount > 0 ? ` · ${archivedCount} già archiviati` : ''}
+            ${notArchived.length > 0 ? ` · ${notArchived.length} da archiviare` : ''}
+          </p>
         </div>
+        ${archivioBtn}
       </div>`;
     banner.classList.remove('hidden');
     return;
@@ -192,6 +210,107 @@ async function confirmAllMatches() {
   showToast(`${successCount} match confermati!`, 'success');
   applyFilters();
   updateValidationBanner();
+}
+
+// --- Archivia tutti i programmi confermati nella tabella adozioni ---
+async function archiveAllConfirmed() {
+  const confirmed = allPrograms.filter(p => p.manual_catalog_id && !p.archiviato);
+  if (confirmed.length === 0) {
+    showToast('Nessun programma da archiviare', 'warning');
+    return;
+  }
+  
+  if (!confirm(`Archiviare ${confirmed.length} programmi confermati nell'Archivio Adozioni?\n\nPer ogni programma verranno salvati tutti i manuali citati (principale + alternativi).`)) return;
+  
+  let successCount = 0;
+  let adozioniCount = 0;
+  
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) {
+    showToast('Sessione scaduta, effettua il login', 'error');
+    return;
+  }
+  
+  for (const p of confirmed) {
+    try {
+      const manuali = p.manuali_citati || [];
+      const adozioni = [];
+      
+      // Crea una riga per ogni manuale citato
+      for (const m of manuali) {
+        adozioni.push({
+          user_id: session.user.id,
+          programma_id: p.id,
+          ateneo: p.ateneo || null,
+          corso_laurea: p.corso_laurea || null,
+          classe_laurea: p.classe_laurea || null,
+          insegnamento: p.materia_inferita || null,
+          docente_nome: p.docente_nome || null,
+          manuale_titolo: m.titolo || null,
+          manuale_autore: m.autore || null,
+          manuale_editore: m.editore || null,
+          ruolo: m.ruolo || 'alternativo',
+          is_zanichelli: !!(m.editore && m.editore.toLowerCase().includes('zanichelli')),
+          anno_accademico: extractAnnoAccademico(p.testo_programma) || null
+        });
+      }
+      
+      // Se nessun manuale citato ma c'è un match catalogo confermato, usa quello
+      if (adozioni.length === 0 && p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG') {
+        adozioni.push({
+          user_id: session.user.id,
+          programma_id: p.id,
+          ateneo: p.ateneo || null,
+          corso_laurea: p.corso_laurea || null,
+          classe_laurea: p.classe_laurea || null,
+          insegnamento: p.materia_inferita || null,
+          docente_nome: p.docente_nome || null,
+          manuale_titolo: p.manual_catalog_title || null,
+          manuale_autore: p.manual_catalog_author || null,
+          manuale_editore: p.manual_catalog_publisher || null,
+          ruolo: 'principale',
+          is_zanichelli: !!(p.manual_catalog_publisher && p.manual_catalog_publisher.toLowerCase().includes('zanichelli')),
+          anno_accademico: extractAnnoAccademico(p.testo_programma) || null
+        });
+      }
+      
+      if (adozioni.length === 0) continue;
+      
+      // Prima elimina eventuali adozioni precedenti per questo programma (evita duplicati)
+      await supabaseClient.from('adozioni').delete().eq('programma_id', p.id);
+      
+      // Inserisci le nuove adozioni
+      const { error: insertErr } = await supabaseClient.from('adozioni').insert(adozioni);
+      if (insertErr) throw insertErr;
+      
+      // Segna il programma come archiviato
+      const { error: updateErr } = await supabaseClient
+        .from('programmi')
+        .update({ archiviato: true })
+        .eq('id', p.id);
+      
+      if (!updateErr) {
+        p.archiviato = true;
+        successCount++;
+        adozioniCount += adozioni.length;
+      }
+    } catch (e) {
+      console.error('[Archivio] Errore per', p.docente_nome, ':', e);
+    }
+  }
+  
+  showToast(`${successCount} programmi archiviati (${adozioniCount} adozioni create)!`, 'success');
+  applyFilters();
+  updateValidationBanner();
+}
+
+// --- Estrai anno accademico dal testo del programma ---
+function extractAnnoAccademico(testo) {
+  if (!testo) return null;
+  // Cerca pattern tipo "2025/2026" o "2025-2026" o "A.A. 2025/2026"
+  const match = testo.match(/(\d{4})[\/\-](\d{4})/);
+  if (match) return `${match[1]}/${match[2]}`;
+  return null;
 }
 
 // --- Conferma singolo match ---
@@ -495,6 +614,7 @@ function renderTable(programs) {
         <td class="px-4 py-3">
           <div class="font-medium text-gray-800">${p.docente_nome || '—'}</div>
           ${p.docente_email ? `<div class="text-xs text-gray-400">${p.docente_email}</div>` : ''}
+          ${p.archiviato ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded text-[10px] mt-0.5"><i class="fas fa-archive text-[8px]"></i>Archiviato</span>' : ''}
         </td>
         <td class="px-4 py-3 text-gray-600">${p.ateneo || '—'}</td>
         <td class="px-4 py-3 text-gray-600">${p.materia_inferita || '—'}</td>
