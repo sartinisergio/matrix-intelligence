@@ -176,18 +176,24 @@ function renderArchivio(adozioni) {
   // Ordina materie alfabeticamente
   const materieOrdinate = Object.keys(byMateria).sort((a, b) => a.localeCompare(b));
 
-  // 3. Render con header di materia
+  // 3. Render con header di materia collassabili (chiusi per default)
   let html = '';
+  let materiaIdx = 0;
   materieOrdinate.forEach(materia => {
     const programmi = byMateria[materia];
     // Ordina programmi per ateneo dentro la materia
     programmi.sort((a, b) => (a.ateneo || '').localeCompare(b.ateneo || ''));
 
-    // Header materia (riga spanning)
+    const groupId = `arch-group-${materiaIdx}`;
+    materiaIdx++;
+
+    // Header materia — cliccabile, collassato per default
     html += `
-      <tr class="bg-zanichelli-accent border-t-2 border-zanichelli-blue/20">
+      <tr class="bg-zanichelli-accent border-t-2 border-zanichelli-blue/20 cursor-pointer hover:bg-blue-100/50 transition-colors"
+          onclick="toggleArchivioGroup('${groupId}', this)">
         <td colspan="6" class="px-4 py-3">
           <div class="flex items-center gap-2">
+            <i class="fas fa-chevron-right text-zanichelli-blue/50 text-xs transition-transform arch-chevron" style="width:12px"></i>
             <i class="fas fa-book text-zanichelli-blue"></i>
             <span class="font-bold text-zanichelli-blue text-sm">${materia}</span>
             <span class="text-xs text-zanichelli-blue/60 ml-2">${programmi.length} ${programmi.length === 1 ? 'cattedra' : 'cattedre'}</span>
@@ -195,7 +201,7 @@ function renderArchivio(adozioni) {
         </td>
       </tr>`;
 
-    // Righe dei programmi dentro la materia
+    // Righe dei programmi dentro la materia — nascoste per default
     programmi.forEach(g => {
       const libriHtml = g.libri.map(l => {
         const star = l.ruolo === 'principale' ? '<i class="fas fa-star text-amber-400 mr-1" title="Testo principale"></i>' : '';
@@ -206,7 +212,7 @@ function renderArchivio(adozioni) {
       }).join('');
 
       html += `
-        <tr class="border-t hover:bg-gray-50 align-top">
+        <tr class="border-t hover:bg-gray-50 align-top arch-row ${groupId} hidden">
           <td class="px-4 py-3 text-gray-600 text-sm">${g.ateneo || '—'}</td>
           <td class="px-4 py-3 text-gray-500 text-xs">${g.classe_laurea || '—'}</td>
           <td class="px-4 py-3 text-gray-600 text-xs">${g.corso_laurea || '—'}</td>
@@ -218,6 +224,31 @@ function renderArchivio(adozioni) {
   });
 
   tbody.innerHTML = html;
+}
+
+// --- Toggle espandi/comprimi gruppo materia ---
+function toggleArchivioGroup(groupId, headerRow) {
+  const rows = document.querySelectorAll(`.${groupId}`);
+  const chevron = headerRow.querySelector('.arch-chevron');
+  const isHidden = rows.length > 0 && rows[0].classList.contains('hidden');
+  
+  rows.forEach(r => {
+    if (isHidden) {
+      r.classList.remove('hidden');
+    } else {
+      r.classList.add('hidden');
+    }
+  });
+  
+  if (chevron) {
+    if (isHidden) {
+      chevron.classList.remove('fa-chevron-right');
+      chevron.classList.add('fa-chevron-down');
+    } else {
+      chevron.classList.remove('fa-chevron-down');
+      chevron.classList.add('fa-chevron-right');
+    }
+  }
 }
 
 // --- Export CSV ---
