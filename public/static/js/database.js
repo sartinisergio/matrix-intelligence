@@ -629,71 +629,72 @@ function renderTable(programs) {
     const rowBg = p.scenario_zanichelli === 'zanichelli_principale' ? 'bg-green-50/50' :
                   p.scenario_zanichelli === 'zanichelli_alternativo' ? 'bg-yellow-50/50' : '';
 
-    // Match catalogo
+    // Match catalogo — logica unificata
+    // Tutti gli stati "decisi" (match reale, NOT_IN_CATALOG, NO_MANUAL, NOT_SPECIFIED)
+    // mostrano badge verde "Confermato" + dettaglio + opzioni per cambiare
     let matchHtml;
-    if (p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG' && p.manual_catalog_id !== 'NO_MANUAL' && p.manual_catalog_id !== 'NOT_SPECIFIED') {
-      // Confermato con match reale
+    const specialIds = ['NOT_IN_CATALOG', 'NO_MANUAL', 'NOT_SPECIFIED'];
+    const isConfirmed = p.manual_catalog_id && !specialIds.includes(p.manual_catalog_id); // match reale dal catalogo
+    const isNotInCatalog = p.manual_catalog_id === 'NOT_IN_CATALOG';
+    const isNoManual = p.manual_catalog_id === 'NO_MANUAL';
+    const isNotSpecified = p.manual_catalog_id === 'NOT_SPECIFIED';
+    const isDecided = isConfirmed || isNotInCatalog || isNoManual || isNotSpecified;
+
+    if (isDecided) {
+      // --- STATO DECISO: badge verde + dettaglio specifico + opzioni cambio ---
+      let detailBadge = '';
+      let detailText = '';
+
+      if (isConfirmed) {
+        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px]">
+          <i class="fas fa-book"></i> Nel catalogo
+        </span>`;
+        detailText = `<div class="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]" title="${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}">
+          ${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}
+        </div>`;
+      } else if (isNotInCatalog) {
+        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">
+          <i class="fas fa-minus-circle"></i> Non in catalogo
+        </span>`;
+      } else if (isNoManual) {
+        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-600 rounded text-[10px]">
+          <i class="fas fa-book-open"></i> Nessun manuale adottato
+        </span>`;
+      } else if (isNotSpecified) {
+        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-500 rounded text-[10px]">
+          <i class="fas fa-question"></i> Non indicato nel programma
+        </span>`;
+      }
+
       matchHtml = `
         <div class="flex items-center gap-1">
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
             <i class="fas fa-check-circle"></i> Confermato
           </span>
-          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
-                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Cambia">
-            <i class="fas fa-pen"></i>
-          </button>
-        </div>
-        <div class="text-xs text-gray-500 mt-0.5 truncate max-w-[180px]" title="${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}">
-          ${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}
-        </div>`;
-    } else if (p.manual_catalog_id === 'NOT_IN_CATALOG') {
-      // Non nel catalogo — mostra anche opzioni per riclassificare
-      matchHtml = `
-        <div class="flex items-center gap-1">
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
-            <i class="fas fa-minus-circle"></i> Non in catalogo
-          </span>
-          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
-                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Cambia">
-            <i class="fas fa-pen"></i>
-          </button>
-        </div>
-        <div class="flex flex-col gap-1 mt-1">
-          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
-                  class="px-2 py-0.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">
-            <i class="fas fa-book-open"></i> Nessun manuale
-          </button>
-          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
-                  class="px-2 py-0.5 bg-orange-400 text-white rounded text-xs hover:bg-orange-500">
-            <i class="fas fa-question"></i> Non indicato
-          </button>
-        </div>`;
-    } else if (p.manual_catalog_id === 'NO_MANUAL') {
-      // Nessun manuale adottato
-      matchHtml = `
-        <div class="flex items-center gap-1">
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-            <i class="fas fa-book-open"></i> Nessun manuale
-          </span>
           <button onclick="event.stopPropagation(); resetManualStatus('${p.id}')" 
-                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Annulla">
+                  class="text-gray-400 hover:text-red-500 text-xs" title="Annulla conferma">
             <i class="fas fa-undo"></i>
           </button>
-        </div>`;
-    } else if (p.manual_catalog_id === 'NOT_SPECIFIED') {
-      // Non indicato nel programma
-      matchHtml = `
-        <div class="flex items-center gap-1">
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-600 rounded text-xs font-medium">
-            <i class="fas fa-question"></i> Non indicato
-          </span>
-          <button onclick="event.stopPropagation(); resetManualStatus('${p.id}')" 
-                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Annulla">
-            <i class="fas fa-undo"></i>
+        </div>
+        ${detailBadge}
+        ${detailText}
+        <div class="flex flex-wrap gap-1 mt-1">
+          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
+                  class="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-[10px] hover:bg-gray-300" title="Cerca nel catalogo">
+            <i class="fas fa-search"></i> Catalogo
           </button>
+          ${!isNoManual ? `<button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
+                  class="px-2 py-0.5 bg-purple-100 text-purple-600 rounded text-[10px] hover:bg-purple-200" title="Nessun manuale adottato">
+            <i class="fas fa-book-open"></i> No manuale
+          </button>` : ''}
+          ${!isNotSpecified ? `<button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
+                  class="px-2 py-0.5 bg-orange-100 text-orange-500 rounded text-[10px] hover:bg-orange-200" title="Non indicato nel programma">
+            <i class="fas fa-question"></i> Non indicato
+          </button>` : ''}
         </div>`;
+
     } else if (p._autoMatch) {
-      // Match proposto — da confermare
+      // --- MATCH PROPOSTO — da confermare ---
       matchHtml = `
         <div class="flex items-center gap-1">
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium animate-pulse">
@@ -712,9 +713,20 @@ function renderTable(programs) {
                   class="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs hover:bg-gray-300" title="Cambia">
             <i class="fas fa-exchange-alt"></i>
           </button>
+        </div>
+        <div class="flex gap-1 mt-1">
+          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
+                  class="px-2 py-0.5 bg-purple-500 text-white rounded text-[10px] hover:bg-purple-600">
+            <i class="fas fa-book-open"></i> No manuale
+          </button>
+          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
+                  class="px-2 py-0.5 bg-orange-400 text-white rounded text-[10px] hover:bg-orange-500">
+            <i class="fas fa-question"></i> Non indicato
+          </button>
         </div>`;
+
     } else {
-      // Nessun match
+      // --- NESSUN MATCH ---
       matchHtml = `
         <div class="flex items-center gap-1">
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-medium">
@@ -724,11 +736,11 @@ function renderTable(programs) {
         <div class="flex flex-col gap-1 mt-1">
           <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
                   class="px-2 py-0.5 bg-zanichelli-blue text-white rounded text-xs hover:bg-zanichelli-dark">
-            <i class="fas fa-search"></i> Seleziona
+            <i class="fas fa-search"></i> Seleziona dal catalogo
           </button>
           <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
                   class="px-2 py-0.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">
-            <i class="fas fa-book-open"></i> Nessun manuale
+            <i class="fas fa-book-open"></i> Nessun manuale adottato
           </button>
           <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
                   class="px-2 py-0.5 bg-orange-400 text-white rounded text-xs hover:bg-orange-500">
@@ -793,13 +805,30 @@ function showProgramDetail(id) {
     `<span class="px-2 py-1 bg-zanichelli-accent text-zanichelli-blue rounded-full text-xs">${t}</span>`
   ).join('');
 
-  // Match info
+  // Match info nel dettaglio modale
   let matchInfo = '';
   if (p.manual_catalog_id && !['NOT_IN_CATALOG', 'NO_MANUAL', 'NOT_SPECIFIED'].includes(p.manual_catalog_id)) {
     matchInfo = `
       <div class="bg-green-50 border border-green-200 rounded-lg p-3">
         <p class="text-sm font-medium text-green-800"><i class="fas fa-check-circle mr-1"></i>Match catalogo confermato</p>
         <p class="text-sm text-green-700">${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''} (${p.manual_catalog_publisher || ''})</p>
+      </div>`;
+  } else if (p.manual_catalog_id === 'NOT_IN_CATALOG') {
+    matchInfo = `
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <p class="text-sm font-medium text-gray-700"><i class="fas fa-check-circle text-green-500 mr-1"></i>Confermato — <i class="fas fa-minus-circle text-gray-400 mr-1"></i>Manuale non presente nel catalogo</p>
+      </div>`;
+  } else if (p.manual_catalog_id === 'NO_MANUAL') {
+    matchInfo = `
+      <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+        <p class="text-sm font-medium text-purple-700"><i class="fas fa-check-circle text-green-500 mr-1"></i>Confermato — <i class="fas fa-book-open mr-1"></i>Nessun manuale adottato</p>
+        <p class="text-xs text-purple-500 mt-1">Il docente non adotta un testo specifico (usa dispense, slide o appunti)</p>
+      </div>`;
+  } else if (p.manual_catalog_id === 'NOT_SPECIFIED') {
+    matchInfo = `
+      <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+        <p class="text-sm font-medium text-orange-600"><i class="fas fa-check-circle text-green-500 mr-1"></i>Confermato — <i class="fas fa-question mr-1"></i>Non indicato nel programma</p>
+        <p class="text-xs text-orange-400 mt-1">Il programma non specifica il manuale adottato — serve indagine</p>
       </div>`;
   } else if (p._autoMatch) {
     matchInfo = `
