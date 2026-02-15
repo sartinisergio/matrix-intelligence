@@ -3,13 +3,9 @@
 // ==========================================
 
 const CONFIG = {
-  // Supabase - configurabile dall'utente nelle impostazioni
-  get SUPABASE_URL() {
-    return localStorage.getItem('matrix_supabase_url') || '';
-  },
-  get SUPABASE_ANON_KEY() {
-    return localStorage.getItem('matrix_supabase_key') || '';
-  },
+  // Supabase - credenziali pre-configurate (anon key è pubblica, sicurezza garantita da RLS)
+  SUPABASE_URL: 'https://umutrwocaqhfypophylu.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtdXRyd29jYXFoZnlwb3BoeWx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MTc3NTcsImV4cCI6MjA4NjI5Mzc1N30.dXoQXAXhkKr5atqGxy8UGWfbHKVLpikqJ8G4oM_4BwE',
   
   // OpenAI
   get OPENAI_API_KEY() {

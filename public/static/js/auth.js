@@ -192,14 +192,21 @@ async function checkSession() {
 // --- Init pagina login ---
 function initLoginPage() {
   initSupabase();
-  updateConfigStatus();
+  
+  // Supabase è sempre pre-configurato, mostra direttamente il tab login
+  switchTab('login');
   
   // Siamo sulla landing page (ha hero) o sulla pagina /login dedicata?
   const isLandingPage = !!document.querySelector('.hero-gradient');
   
   if (!supabaseClient) {
-    // Mostra automaticamente la tab di configurazione
-    switchTab('config');
+    // Fallback improbabile: Supabase non inizializzato
+    const msg = document.getElementById('auth-message');
+    if (msg) {
+      msg.classList.remove('hidden');
+      msg.className = 'mt-4 p-3 rounded-lg border text-sm bg-red-50 text-red-700 border-red-200';
+      msg.textContent = 'Errore di connessione al server. Ricarica la pagina.';
+    }
   } else if (isLandingPage) {
     // Landing page: NON fare redirect automatico.
     // Se già loggato, trasforma "Accedi" in "Vai al Dashboard"
@@ -225,7 +232,6 @@ function initLoginPage() {
         }
       }
     });
-    switchTab('login');
   } else {
     // Pagina /login dedicata: redirect automatico se già loggato
     supabaseClient.auth.getSession().then(({ data: { session } }) => {

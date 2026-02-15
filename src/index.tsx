@@ -259,7 +259,7 @@ function loginPage(): string {
         <!-- Stato configurazione -->
         <div id="config-status" class="mb-4 text-center"></div>
 
-        <!-- Tab Login / Registrazione / Configura -->
+        <!-- Tab Login / Registrazione -->
         <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
           <button id="tab-login" onclick="switchTab('login')" 
                   class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
@@ -268,10 +268,6 @@ function loginPage(): string {
           <button id="tab-register" onclick="switchTab('register')" 
                   class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
             Registrati
-          </button>
-          <button id="tab-config" onclick="switchTab('config')" 
-                  class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-500 hover:text-gray-700">
-            <i class="fas fa-cog mr-1"></i>Configura
           </button>
         </div>
 
@@ -326,38 +322,6 @@ function loginPage(): string {
                   class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
             <i class="fas fa-user-plus"></i>
             Crea Account
-          </button>
-        </form>
-
-        <!-- Form Configurazione Supabase -->
-        <form id="config-form" onsubmit="handleSaveConfig(event)" class="space-y-4 hidden">
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-            <i class="fas fa-info-circle mr-1"></i>
-            Inserisci le credenziali dal tuo progetto Supabase.<br>
-            Le trovi in: <strong>Settings &rarr; API Keys &rarr; Legacy anon key</strong>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">URL Progetto Supabase</label>
-            <div class="relative">
-              <i class="fas fa-globe absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-              <input type="url" id="config-supabase-url" required
-                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none text-sm"
-                     placeholder="https://xxxxx.supabase.co">
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Anon Key (inizia con eyJ...)</label>
-            <div class="relative">
-              <i class="fas fa-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-              <input type="text" id="config-supabase-key" required
-                     class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zanichelli-light focus:border-transparent outline-none text-sm font-mono"
-                     placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-            </div>
-          </div>
-          <button type="submit"
-                  class="w-full py-3 bg-zanichelli-blue text-white rounded-lg font-medium hover:bg-zanichelli-dark transition-colors flex items-center justify-center gap-2">
-            <i class="fas fa-save"></i>
-            Salva Configurazione
           </button>
         </form>
 
