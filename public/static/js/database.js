@@ -631,8 +631,8 @@ function renderTable(programs) {
 
     // Match catalogo
     let matchHtml;
-    if (p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG') {
-      // Confermato
+    if (p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG' && p.manual_catalog_id !== 'NO_MANUAL' && p.manual_catalog_id !== 'NOT_SPECIFIED') {
+      // Confermato con match reale
       matchHtml = `
         <div class="flex items-center gap-1">
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
@@ -647,7 +647,7 @@ function renderTable(programs) {
           ${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}
         </div>`;
     } else if (p.manual_catalog_id === 'NOT_IN_CATALOG') {
-      // Non nel catalogo
+      // Non nel catalogo — mostra anche opzioni per riclassificare
       matchHtml = `
         <div class="flex items-center gap-1">
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
@@ -656,6 +656,16 @@ function renderTable(programs) {
           <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
                   class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Cambia">
             <i class="fas fa-pen"></i>
+          </button>
+        </div>
+        <div class="flex flex-col gap-1 mt-1">
+          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
+                  class="px-2 py-0.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">
+            <i class="fas fa-book-open"></i> Nessun manuale
+          </button>
+          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
+                  class="px-2 py-0.5 bg-orange-400 text-white rounded text-xs hover:bg-orange-500">
+            <i class="fas fa-question"></i> Non indicato
           </button>
         </div>`;
     } else if (p.manual_catalog_id === 'NO_MANUAL') {
@@ -785,7 +795,7 @@ function showProgramDetail(id) {
 
   // Match info
   let matchInfo = '';
-  if (p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG') {
+  if (p.manual_catalog_id && !['NOT_IN_CATALOG', 'NO_MANUAL', 'NOT_SPECIFIED'].includes(p.manual_catalog_id)) {
     matchInfo = `
       <div class="bg-green-50 border border-green-200 rounded-lg p-3">
         <p class="text-sm font-medium text-green-800"><i class="fas fa-check-circle mr-1"></i>Match catalogo confermato</p>
