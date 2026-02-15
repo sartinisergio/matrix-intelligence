@@ -111,7 +111,7 @@ function updateValidationBanner() {
   
   const unconfirmed = allPrograms.filter(p => !p.manual_catalog_id && p._autoMatch);
   const noMatch = allPrograms.filter(p => !p.manual_catalog_id && !p._autoMatch);
-  const confirmed = allPrograms.filter(p => p.manual_catalog_id);
+  const confirmed = allPrograms.filter(p => p.manual_catalog_id); // include NO_MANUAL, NOT_SPECIFIED, NOT_IN_CATALOG e match reali
   
   if (allPrograms.length === 0) {
     banner.classList.add('hidden');
@@ -236,8 +236,9 @@ async function archiveAllConfirmed() {
       const manuali = p.manuali_citati || [];
       const adozioni = [];
       
-      // Crea una riga per ogni manuale citato
-      for (const m of manuali) {
+      // Caso speciale: programma senza manuale o non indicato
+      if (p.manual_catalog_id === 'NO_MANUAL' || p.manual_catalog_id === 'NOT_SPECIFIED') {
+        const label = p.manual_catalog_id === 'NO_MANUAL' ? 'Nessun manuale adottato' : 'Non indicato nel programma';
         adozioni.push({
           user_id: session.user.id,
           programma_id: p.id,
@@ -246,32 +247,51 @@ async function archiveAllConfirmed() {
           classe_laurea: p.classe_laurea || null,
           insegnamento: p.materia_inferita || null,
           docente_nome: p.docente_nome || null,
-          manuale_titolo: m.titolo || null,
-          manuale_autore: m.autore || null,
-          manuale_editore: m.editore || null,
-          ruolo: m.ruolo || 'alternativo',
-          is_zanichelli: !!(m.editore && m.editore.toLowerCase().includes('zanichelli')),
+          manuale_titolo: label,
+          manuale_autore: '—',
+          manuale_editore: '—',
+          ruolo: 'nessuno',
+          is_zanichelli: false,
           anno_accademico: extractAnnoAccademico(p.testo_programma) || null
         });
-      }
-      
-      // Se nessun manuale citato ma c'è un match catalogo confermato, usa quello
-      if (adozioni.length === 0 && p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG') {
-        adozioni.push({
-          user_id: session.user.id,
-          programma_id: p.id,
-          ateneo: p.ateneo || null,
-          corso_laurea: p.corso_laurea || null,
-          classe_laurea: p.classe_laurea || null,
-          insegnamento: p.materia_inferita || null,
-          docente_nome: p.docente_nome || null,
-          manuale_titolo: p.manual_catalog_title || null,
-          manuale_autore: p.manual_catalog_author || null,
-          manuale_editore: p.manual_catalog_publisher || null,
-          ruolo: 'principale',
-          is_zanichelli: !!(p.manual_catalog_publisher && p.manual_catalog_publisher.toLowerCase().includes('zanichelli')),
-          anno_accademico: extractAnnoAccademico(p.testo_programma) || null
-        });
+      } else {
+        // Crea una riga per ogni manuale citato
+        for (const m of manuali) {
+          adozioni.push({
+            user_id: session.user.id,
+            programma_id: p.id,
+            ateneo: p.ateneo || null,
+            corso_laurea: p.corso_laurea || null,
+            classe_laurea: p.classe_laurea || null,
+            insegnamento: p.materia_inferita || null,
+            docente_nome: p.docente_nome || null,
+            manuale_titolo: m.titolo || null,
+            manuale_autore: m.autore || null,
+            manuale_editore: m.editore || null,
+            ruolo: m.ruolo || 'alternativo',
+            is_zanichelli: !!(m.editore && m.editore.toLowerCase().includes('zanichelli')),
+            anno_accademico: extractAnnoAccademico(p.testo_programma) || null
+          });
+        }
+        
+        // Se nessun manuale citato ma c'è un match catalogo confermato, usa quello
+        if (adozioni.length === 0 && p.manual_catalog_id && p.manual_catalog_id !== 'NOT_IN_CATALOG') {
+          adozioni.push({
+            user_id: session.user.id,
+            programma_id: p.id,
+            ateneo: p.ateneo || null,
+            corso_laurea: p.corso_laurea || null,
+            classe_laurea: p.classe_laurea || null,
+            insegnamento: p.materia_inferita || null,
+            docente_nome: p.docente_nome || null,
+            manuale_titolo: p.manual_catalog_title || null,
+            manuale_autore: p.manual_catalog_author || null,
+            manuale_editore: p.manual_catalog_publisher || null,
+            ruolo: 'principale',
+            is_zanichelli: !!(p.manual_catalog_publisher && p.manual_catalog_publisher.toLowerCase().includes('zanichelli')),
+            anno_accademico: extractAnnoAccademico(p.testo_programma) || null
+          });
+        }
       }
       
       if (adozioni.length === 0) continue;
@@ -337,6 +357,70 @@ async function confirmSingleMatch(programId) {
     p.manual_catalog_publisher = p._autoMatch.publisher;
     
     showToast('Match confermato!', 'success');
+    applyFilters();
+    updateValidationBanner();
+  } catch (e) {
+    showToast('Errore: ' + e.message, 'error');
+  }
+}
+
+// --- Marca un programma come "Nessun manuale adottato" o "Non indicato" ---
+async function markNoManual(programId, type) {
+  const p = allPrograms.find(p => p.id === programId);
+  if (!p) return;
+  
+  const label = type === 'NO_MANUAL' ? 'Nessun manuale adottato' : 'Non indicato nel programma';
+  
+  try {
+    const { error } = await supabaseClient
+      .from('programmi')
+      .update({ 
+        manual_catalog_id: type,
+        manual_catalog_title: label,
+        manual_catalog_author: '—',
+        manual_catalog_publisher: '—'
+      })
+      .eq('id', p.id);
+    
+    if (error) throw error;
+    
+    p.manual_catalog_id = type;
+    p.manual_catalog_title = label;
+    p.manual_catalog_author = '—';
+    p.manual_catalog_publisher = '—';
+    
+    showToast(`Programma marcato: ${label}`, 'success');
+    applyFilters();
+    updateValidationBanner();
+  } catch (e) {
+    showToast('Errore: ' + e.message, 'error');
+  }
+}
+
+// --- Annulla lo stato manuale (riporta a "nessun match") ---
+async function resetManualStatus(programId) {
+  const p = allPrograms.find(p => p.id === programId);
+  if (!p) return;
+  
+  try {
+    const { error } = await supabaseClient
+      .from('programmi')
+      .update({ 
+        manual_catalog_id: null,
+        manual_catalog_title: null,
+        manual_catalog_author: null,
+        manual_catalog_publisher: null
+      })
+      .eq('id', p.id);
+    
+    if (error) throw error;
+    
+    p.manual_catalog_id = null;
+    p.manual_catalog_title = null;
+    p.manual_catalog_author = null;
+    p.manual_catalog_publisher = null;
+    
+    showToast('Stato manuale annullato', 'success');
     applyFilters();
     updateValidationBanner();
   } catch (e) {
@@ -574,6 +658,30 @@ function renderTable(programs) {
             <i class="fas fa-pen"></i>
           </button>
         </div>`;
+    } else if (p.manual_catalog_id === 'NO_MANUAL') {
+      // Nessun manuale adottato
+      matchHtml = `
+        <div class="flex items-center gap-1">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+            <i class="fas fa-book-open"></i> Nessun manuale
+          </span>
+          <button onclick="event.stopPropagation(); resetManualStatus('${p.id}')" 
+                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Annulla">
+            <i class="fas fa-undo"></i>
+          </button>
+        </div>`;
+    } else if (p.manual_catalog_id === 'NOT_SPECIFIED') {
+      // Non indicato nel programma
+      matchHtml = `
+        <div class="flex items-center gap-1">
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-600 rounded text-xs font-medium">
+            <i class="fas fa-question"></i> Non indicato
+          </span>
+          <button onclick="event.stopPropagation(); resetManualStatus('${p.id}')" 
+                  class="text-gray-400 hover:text-zanichelli-blue text-xs" title="Annulla">
+            <i class="fas fa-undo"></i>
+          </button>
+        </div>`;
     } else if (p._autoMatch) {
       // Match proposto — da confermare
       matchHtml = `
@@ -603,10 +711,20 @@ function renderTable(programs) {
             <i class="fas fa-times-circle"></i> Nessun match
           </span>
         </div>
-        <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
-                class="mt-1 px-2 py-0.5 bg-zanichelli-blue text-white rounded text-xs hover:bg-zanichelli-dark">
-          <i class="fas fa-search"></i> Seleziona
-        </button>`;
+        <div class="flex flex-col gap-1 mt-1">
+          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
+                  class="px-2 py-0.5 bg-zanichelli-blue text-white rounded text-xs hover:bg-zanichelli-dark">
+            <i class="fas fa-search"></i> Seleziona
+          </button>
+          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
+                  class="px-2 py-0.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">
+            <i class="fas fa-book-open"></i> Nessun manuale
+          </button>
+          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
+                  class="px-2 py-0.5 bg-orange-400 text-white rounded text-xs hover:bg-orange-500">
+            <i class="fas fa-question"></i> Non indicato
+          </button>
+        </div>`;
     }
 
     return `

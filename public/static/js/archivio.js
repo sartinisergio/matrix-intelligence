@@ -204,9 +204,16 @@ function renderArchivio(adozioni) {
     // Righe dei programmi dentro la materia — nascoste per default
     programmi.forEach(g => {
       const libriHtml = g.libri.map(l => {
+        const isNoManual = l.ruolo === 'nessuno';
         const star = l.ruolo === 'principale' ? '<i class="fas fa-star text-amber-400 mr-1" title="Testo principale"></i>' : '';
         const zanBadge = l.is_zanichelli ? '<span class="ml-1 px-1 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-medium">Z</span>' : '';
-        const editoreStr = l.editore ? `, ${l.editore}` : '';
+        const editoreStr = l.editore && l.editore !== '—' ? `, ${l.editore}` : '';
+        if (isNoManual) {
+          const icon = l.titolo && l.titolo.includes('Non indicato') 
+            ? '<i class="fas fa-question text-orange-400 mr-1" title="Non indicato nel programma"></i>'
+            : '<i class="fas fa-book-open text-purple-400 mr-1" title="Nessun manuale adottato"></i>';
+          return `<div class="py-1 text-gray-500 italic">${icon}<span>${l.titolo || 'N/D'}</span></div>`;
+        }
         const ruoloColor = l.ruolo === 'principale' ? 'text-gray-800 font-medium' : 'text-gray-600';
         return `<div class="py-1 ${ruoloColor}">${star}<strong>${l.titolo || 'N/D'}</strong> <span class="text-gray-400">(${l.autore || 'N/D'}${editoreStr})</span>${zanBadge}</div>`;
       }).join('');
