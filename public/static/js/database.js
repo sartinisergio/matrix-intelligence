@@ -606,180 +606,285 @@ function resetFilters() {
   applyFilters();
 }
 
-// --- Render tabella con colonna match ---
+// --- Render vista ad albero: Materia → Ateneo → Classe ---
 function renderTable(programs) {
-  const tbody = document.getElementById('db-table-body');
+  const container = document.getElementById('db-tree-view') || document.getElementById('db-table-body');
 
   if (programs.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="px-4 py-12 text-center text-gray-400">
-          <i class="fas fa-inbox text-3xl mb-2 block"></i>
-          Nessun programma trovato. Carica dei PDF dalla sezione Upload.
-        </td>
-      </tr>`;
+    container.innerHTML = `
+      <div class="text-center text-gray-400 py-12">
+        <i class="fas fa-inbox text-3xl mb-2 block"></i>
+        Nessun programma trovato. Carica dei PDF dalla sezione Upload.
+      </div>`;
     return;
   }
 
-  tbody.innerHTML = programs.map(p => {
-    const mainManual = (p.manuali_citati || []).find(m => m.ruolo === 'principale');
-    const manualText = mainManual ? `${mainManual.autore || ''} — ${mainManual.titolo || ''}` : '—';
+  // --- Raggruppa: Materia → Ateneo → Classe → [programmi] ---
+  const tree = {};
+  programs.forEach(p => {
+    const materia = p.materia_inferita || 'Materia non definita';
+    const ateneo = p.ateneo || 'Ateneo non definito';
+    const classe = p.classe_laurea || 'Classe non definita';
+    if (!tree[materia]) tree[materia] = {};
+    if (!tree[materia][ateneo]) tree[materia][ateneo] = {};
+    if (!tree[materia][ateneo][classe]) tree[materia][ateneo][classe] = [];
+    tree[materia][ateneo][classe].push(p);
+  });
 
-    // Colore riga per scenario
-    const rowBg = p.scenario_zanichelli === 'zanichelli_principale' ? 'bg-green-50/50' :
-                  p.scenario_zanichelli === 'zanichelli_alternativo' ? 'bg-yellow-50/50' : '';
+  // --- Contatori e statistiche per ogni livello ---
+  let html = '';
+  const materieKeys = Object.keys(tree).sort();
 
-    // Match catalogo — logica unificata
-    // Tutti gli stati "decisi" (match reale, NOT_IN_CATALOG, NO_MANUAL, NOT_SPECIFIED)
-    // mostrano badge verde "Confermato" + dettaglio + opzioni per cambiare
-    let matchHtml;
-    const specialIds = ['NOT_IN_CATALOG', 'NO_MANUAL', 'NOT_SPECIFIED'];
-    const isConfirmed = p.manual_catalog_id && !specialIds.includes(p.manual_catalog_id); // match reale dal catalogo
-    const isNotInCatalog = p.manual_catalog_id === 'NOT_IN_CATALOG';
-    const isNoManual = p.manual_catalog_id === 'NO_MANUAL';
-    const isNotSpecified = p.manual_catalog_id === 'NOT_SPECIFIED';
-    const isDecided = isConfirmed || isNotInCatalog || isNoManual || isNotSpecified;
+  materieKeys.forEach((materia, mIdx) => {
+    const atenei = tree[materia];
+    const ateneiKeys = Object.keys(atenei).sort();
+    const materiaCount = Object.values(atenei).reduce((sum, classes) => 
+      sum + Object.values(classes).reduce((s, progs) => s + progs.length, 0), 0);
+    
+    // Conta confermati per materia
+    const materiaConfirmed = Object.values(atenei).reduce((sum, classes) => 
+      sum + Object.values(classes).reduce((s, progs) => s + progs.filter(p => p.manual_catalog_id).length, 0), 0);
 
-    if (isDecided) {
-      // --- STATO DECISO: badge verde + dettaglio specifico + opzioni cambio ---
-      let detailBadge = '';
-      let detailText = '';
+    const materiaId = `materia-${mIdx}`;
 
-      if (isConfirmed) {
-        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px]">
-          <i class="fas fa-book"></i> Nel catalogo
-        </span>`;
-        detailText = `<div class="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]" title="${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}">
-          ${p.manual_catalog_author || ''} — ${p.manual_catalog_title || ''}
-        </div>`;
-      } else if (isNotInCatalog) {
-        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">
-          <i class="fas fa-minus-circle"></i> Non in catalogo
-        </span>`;
-      } else if (isNoManual) {
-        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-600 rounded text-[10px]">
-          <i class="fas fa-book-open"></i> Nessun manuale adottato
-        </span>`;
-      } else if (isNotSpecified) {
-        detailBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-500 rounded text-[10px]">
-          <i class="fas fa-question"></i> Non indicato nel programma
-        </span>`;
-      }
-
-      matchHtml = `
-        <div class="flex items-center gap-1">
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-            <i class="fas fa-check-circle"></i> Confermato
-          </span>
-          <button onclick="event.stopPropagation(); resetManualStatus('${p.id}')" 
-                  class="text-gray-400 hover:text-red-500 text-xs" title="Annulla conferma">
-            <i class="fas fa-undo"></i>
-          </button>
-        </div>
-        ${detailBadge}
-        ${detailText}
-        <div class="flex flex-wrap gap-1 mt-1">
-          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
-                  class="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-[10px] hover:bg-gray-300" title="Cerca nel catalogo">
-            <i class="fas fa-search"></i> Catalogo
-          </button>
-          ${!isNoManual ? `<button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
-                  class="px-2 py-0.5 bg-purple-100 text-purple-600 rounded text-[10px] hover:bg-purple-200" title="Nessun manuale adottato">
-            <i class="fas fa-book-open"></i> No manuale
-          </button>` : ''}
-          ${!isNotSpecified ? `<button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
-                  class="px-2 py-0.5 bg-orange-100 text-orange-500 rounded text-[10px] hover:bg-orange-200" title="Non indicato nel programma">
-            <i class="fas fa-question"></i> Non indicato
-          </button>` : ''}
-        </div>`;
-
-    } else if (p._autoMatch) {
-      // --- MATCH PROPOSTO — da confermare ---
-      matchHtml = `
-        <div class="flex items-center gap-1">
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium animate-pulse">
-            <i class="fas fa-question-circle"></i> Da confermare
-          </span>
-        </div>
-        <div class="text-xs text-gray-500 mt-0.5 truncate max-w-[180px]" title="${p._autoMatch.author} — ${p._autoMatch.title} (${p._autoMatch.publisher})">
-          ${p._autoMatch.author} — ${p._autoMatch.title}
-        </div>
-        <div class="flex gap-1 mt-1">
-          <button onclick="event.stopPropagation(); confirmSingleMatch('${p.id}')" 
-                  class="px-2 py-0.5 bg-green-500 text-white rounded text-xs hover:bg-green-600" title="Conferma">
-            <i class="fas fa-check"></i> OK
-          </button>
-          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
-                  class="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs hover:bg-gray-300" title="Cambia">
-            <i class="fas fa-exchange-alt"></i>
-          </button>
-        </div>
-        <div class="flex gap-1 mt-1">
-          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
-                  class="px-2 py-0.5 bg-purple-500 text-white rounded text-[10px] hover:bg-purple-600">
-            <i class="fas fa-book-open"></i> No manuale
-          </button>
-          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
-                  class="px-2 py-0.5 bg-orange-400 text-white rounded text-[10px] hover:bg-orange-500">
-            <i class="fas fa-question"></i> Non indicato
-          </button>
-        </div>`;
-
-    } else {
-      // --- NESSUN MATCH ---
-      matchHtml = `
-        <div class="flex items-center gap-1">
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-medium">
-            <i class="fas fa-times-circle"></i> Nessun match
-          </span>
-        </div>
-        <div class="flex flex-col gap-1 mt-1">
-          <button onclick="event.stopPropagation(); openManualSelector('${p.id}')" 
-                  class="px-2 py-0.5 bg-zanichelli-blue text-white rounded text-xs hover:bg-zanichelli-dark">
-            <i class="fas fa-search"></i> Seleziona dal catalogo
-          </button>
-          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NO_MANUAL')" 
-                  class="px-2 py-0.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">
-            <i class="fas fa-book-open"></i> Nessun manuale adottato
-          </button>
-          <button onclick="event.stopPropagation(); markNoManual('${p.id}', 'NOT_SPECIFIED')" 
-                  class="px-2 py-0.5 bg-orange-400 text-white rounded text-xs hover:bg-orange-500">
-            <i class="fas fa-question"></i> Non indicato
-          </button>
-        </div>`;
-    }
-
-    return `
-      <tr class="border-t hover:bg-gray-50 cursor-pointer ${rowBg}" onclick="showProgramDetail('${p.id}')">
-        <td class="px-4 py-3">
-          <div class="font-medium text-gray-800">${p.docente_nome || '—'}</div>
-          ${p.docente_email ? `<div class="text-xs text-gray-400">${p.docente_email}</div>` : ''}
-          ${p.archiviato ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded text-[10px] mt-0.5"><i class="fas fa-archive text-[8px]"></i>Archiviato</span>' : ''}
-        </td>
-        <td class="px-4 py-3 text-gray-600">${p.ateneo || '—'}</td>
-        <td class="px-4 py-3 text-gray-600">${p.materia_inferita || '—'}</td>
-        <td class="px-4 py-3 text-gray-500 text-xs">${p.classe_laurea || '—'}</td>
-        <td class="px-4 py-3 text-gray-600 text-xs">${truncate(manualText, 35)}</td>
-        <td class="px-3 py-2">${matchHtml}</td>
-        <td class="px-4 py-3">${scenarioBadge(p.scenario_zanichelli)}</td>
-        <td class="px-4 py-3 text-center">
-          <div class="flex items-center justify-center gap-2">
-            <button onclick="event.stopPropagation(); showProgramDetail('${p.id}')" 
-                    class="text-zanichelli-light hover:text-zanichelli-blue" title="Dettaglio">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button onclick="event.stopPropagation(); editProgram('${p.id}')" 
-                    class="text-gray-400 hover:text-zanichelli-blue" title="Modifica">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button onclick="event.stopPropagation(); deleteProgram('${p.id}')" 
-                    class="text-gray-400 hover:text-red-500" title="Elimina">
-              <i class="fas fa-trash-alt"></i>
-            </button>
+    html += `
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+             onclick="toggleTreeNode('${materiaId}')">
+          <div class="flex items-center gap-3">
+            <i id="icon-${materiaId}" class="fas fa-chevron-right text-gray-400 text-sm transition-transform duration-200"></i>
+            <div>
+              <span class="font-semibold text-gray-800 text-base">${materia}</span>
+              <span class="ml-2 text-xs text-gray-400">${ateneiKeys.length} aten${ateneiKeys.length === 1 ? 'eo' : 'ei'}</span>
+            </div>
           </div>
-        </td>
-      </tr>`;
-  }).join('');
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 bg-zanichelli-accent text-zanichelli-blue rounded-full text-xs font-medium">
+              ${materiaCount} programm${materiaCount === 1 ? 'a' : 'i'}
+            </span>
+            ${materiaConfirmed > 0 ? `<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+              <i class="fas fa-check-circle mr-1"></i>${materiaConfirmed} confermati
+            </span>` : ''}
+            ${materiaConfirmed < materiaCount ? `<span class="px-2 py-1 bg-amber-100 text-amber-600 rounded-full text-xs">
+              <i class="fas fa-clock mr-1"></i>${materiaCount - materiaConfirmed} da verificare
+            </span>` : ''}
+          </div>
+        </div>
+
+        <div id="${materiaId}" class="hidden border-t">`;
+
+    ateneiKeys.forEach((ateneo, aIdx) => {
+      const classi = atenei[ateneo];
+      const classiKeys = Object.keys(classi).sort();
+      const ateneoCount = Object.values(classi).reduce((s, progs) => s + progs.length, 0);
+      const ateneoId = `${materiaId}-ateneo-${aIdx}`;
+
+      html += `
+          <div class="border-b last:border-b-0">
+            <div class="flex items-center justify-between px-4 py-2.5 pl-10 cursor-pointer hover:bg-blue-50/50 transition-colors"
+                 onclick="toggleTreeNode('${ateneoId}')">
+              <div class="flex items-center gap-2">
+                <i id="icon-${ateneoId}" class="fas fa-chevron-right text-gray-300 text-xs transition-transform duration-200"></i>
+                <i class="fas fa-university text-zanichelli-light text-sm"></i>
+                <span class="font-medium text-gray-700">${ateneo}</span>
+              </div>
+              <span class="text-xs text-gray-400">${ateneoCount} programm${ateneoCount === 1 ? 'a' : 'i'} · ${classiKeys.length} class${classiKeys.length === 1 ? 'e' : 'i'}</span>
+            </div>
+
+            <div id="${ateneoId}" class="hidden">`;
+
+      classiKeys.forEach((classe, cIdx) => {
+        const progs = classi[classe];
+        const classeId = `${ateneoId}-classe-${cIdx}`;
+
+        html += `
+              <div class="border-t border-dashed">
+                <div class="flex items-center justify-between px-4 py-2 pl-16 cursor-pointer hover:bg-gray-50 transition-colors"
+                     onclick="toggleTreeNode('${classeId}')">
+                  <div class="flex items-center gap-2">
+                    <i id="icon-${classeId}" class="fas fa-chevron-right text-gray-300 text-xs transition-transform duration-200"></i>
+                    <i class="fas fa-graduation-cap text-gray-400 text-xs"></i>
+                    <span class="text-sm text-gray-600">${classe}</span>
+                  </div>
+                  <span class="text-xs text-gray-400">${progs.length} docent${progs.length === 1 ? 'e' : 'i'}</span>
+                </div>
+
+                <div id="${classeId}" class="hidden">`;
+
+        // --- Righe dei singoli programmi ---
+        progs.forEach(p => {
+          const mainManual = (p.manuali_citati || []).find(m => m.ruolo === 'principale');
+          const manualText = mainManual ? `${mainManual.autore || ''} — ${mainManual.titolo || ''}` : '—';
+
+          // Colore per scenario
+          const rowBg = p.scenario_zanichelli === 'zanichelli_principale' ? 'bg-green-50/30' :
+                        p.scenario_zanichelli === 'zanichelli_alternativo' ? 'bg-yellow-50/30' : '';
+
+          // Match badge compatto
+          let matchBadge = '';
+          const specialIds = ['NOT_IN_CATALOG', 'NO_MANUAL', 'NOT_SPECIFIED'];
+          const isConfirmed = p.manual_catalog_id && !specialIds.includes(p.manual_catalog_id);
+          const isNoManual = p.manual_catalog_id === 'NO_MANUAL';
+          const isNotSpecified = p.manual_catalog_id === 'NOT_SPECIFIED';
+          const isNotInCatalog = p.manual_catalog_id === 'NOT_IN_CATALOG';
+          const isDecided = isConfirmed || isNoManual || isNotSpecified || isNotInCatalog;
+
+          if (isDecided) {
+            let detailLabel = '';
+            let detailColor = 'green';
+            if (isConfirmed) {
+              detailLabel = truncate(p.manual_catalog_title || '', 25);
+            } else if (isNotInCatalog) {
+              detailLabel = 'Non in catalogo';
+              detailColor = 'gray';
+            } else if (isNoManual) {
+              detailLabel = 'Nessun manuale';
+              detailColor = 'purple';
+            } else if (isNotSpecified) {
+              detailLabel = 'Non indicato';
+              detailColor = 'orange';
+            }
+            matchBadge = `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-medium">
+                <i class="fas fa-check-circle"></i>
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-${detailColor}-50 text-${detailColor}-600 rounded text-[10px]">
+                ${detailLabel}
+              </span>`;
+          } else if (p._autoMatch) {
+            matchBadge = `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] animate-pulse">
+                <i class="fas fa-question-circle"></i> Da confermare
+              </span>`;
+          } else {
+            matchBadge = `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded text-[10px]">
+                <i class="fas fa-times-circle"></i> Nessun match
+              </span>`;
+          }
+
+          html += `
+                  <div class="flex items-center justify-between px-4 py-2 pl-20 ${rowBg} hover:bg-gray-100/50 transition-colors cursor-pointer border-t border-dotted border-gray-100"
+                       onclick="showProgramDetail('${p.id}')">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                      <i class="fas fa-user-tie text-gray-300 text-xs flex-shrink-0"></i>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-gray-800 text-sm">${p.docente_nome || '—'}</span>
+                          ${p.docente_email ? `<span class="text-[10px] text-gray-400 truncate">${p.docente_email}</span>` : ''}
+                          ${p.archiviato ? '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded text-[9px]"><i class="fas fa-archive text-[7px]"></i>Arch.</span>' : ''}
+                        </div>
+                        <div class="text-[10px] text-gray-400 truncate">${truncate(manualText, 50)}</div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      ${matchBadge}
+                      ${scenarioBadge(p.scenario_zanichelli)}
+                      <div class="flex items-center gap-1 ml-2">
+                        <button onclick="event.stopPropagation(); openMatchOptions('${p.id}', event)" 
+                                class="text-gray-400 hover:text-zanichelli-blue text-xs p-1" title="Gestisci match">
+                          <i class="fas fa-cog"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); editProgram('${p.id}')" 
+                                class="text-gray-400 hover:text-zanichelli-blue text-xs p-1" title="Modifica">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteProgram('${p.id}')" 
+                                class="text-gray-400 hover:text-red-500 text-xs p-1" title="Elimina">
+                          <i class="fas fa-trash-alt"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>`;
+        });
+
+        html += `
+                </div>
+              </div>`;
+      });
+
+      html += `
+            </div>
+          </div>`;
+    });
+
+    html += `
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// --- Toggle apertura/chiusura nodo albero ---
+function toggleTreeNode(id) {
+  const node = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+  if (!node) return;
+  
+  const isHidden = node.classList.contains('hidden');
+  node.classList.toggle('hidden');
+  
+  if (icon) {
+    if (isHidden) {
+      icon.style.transform = 'rotate(90deg)';
+    } else {
+      icon.style.transform = 'rotate(0deg)';
+    }
+  }
+}
+
+// --- Menu opzioni match (popup contestuale) ---
+function openMatchOptions(programId, event) {
+  event.stopPropagation();
+  const p = allPrograms.find(p => p.id === programId);
+  if (!p) return;
+
+  // Rimuovi menu esistente
+  const existing = document.getElementById('match-options-popup');
+  if (existing) existing.remove();
+
+  const rect = event.target.closest('button').getBoundingClientRect();
+  
+  const specialIds = ['NOT_IN_CATALOG', 'NO_MANUAL', 'NOT_SPECIFIED'];
+  const isDecided = p.manual_catalog_id != null;
+  
+  let options = `
+    <div id="match-options-popup" class="fixed bg-white rounded-xl shadow-xl border p-2 z-50 min-w-[200px]"
+         style="top: ${rect.bottom + 4}px; right: ${window.innerWidth - rect.right}px;">
+      <div class="text-[10px] text-gray-400 px-3 py-1 uppercase tracking-wide">Gestisci match</div>
+      <button onclick="openManualSelector('${p.id}'); closeMatchPopup();"
+              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-lg flex items-center gap-2">
+        <i class="fas fa-search text-zanichelli-light"></i> Cerca nel catalogo
+      </button>
+      <button onclick="markNoManual('${p.id}', 'NO_MANUAL'); closeMatchPopup();"
+              class="w-full text-left px-3 py-2 text-sm text-purple-600 hover:bg-purple-50 rounded-lg flex items-center gap-2">
+        <i class="fas fa-book-open"></i> Nessun manuale adottato
+      </button>
+      <button onclick="markNoManual('${p.id}', 'NOT_SPECIFIED'); closeMatchPopup();"
+              class="w-full text-left px-3 py-2 text-sm text-orange-500 hover:bg-orange-50 rounded-lg flex items-center gap-2">
+        <i class="fas fa-question"></i> Non indicato nel programma
+      </button>
+      ${isDecided ? `
+      <div class="border-t my-1"></div>
+      <button onclick="resetManualStatus('${p.id}'); closeMatchPopup();"
+              class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2">
+        <i class="fas fa-undo"></i> Annulla conferma
+      </button>` : ''}
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', options);
+
+  // Chiudi al click fuori
+  setTimeout(() => {
+    document.addEventListener('click', closeMatchPopup, { once: true });
+  }, 10);
+}
+
+function closeMatchPopup() {
+  const popup = document.getElementById('match-options-popup');
+  if (popup) popup.remove();
 }
 
 // --- Dettaglio programma (modale) ---

@@ -606,33 +606,15 @@ function dashboardPage(): string {
           </div>
         </div>
 
-        <!-- Tabella -->
-        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="bg-gray-50 text-gray-600 text-left">
-                <tr>
-                  <th class="px-4 py-3 font-medium">Docente</th>
-                  <th class="px-4 py-3 font-medium">Ateneo</th>
-                  <th class="px-4 py-3 font-medium">Materia</th>
-                  <th class="px-4 py-3 font-medium">Classe</th>
-                  <th class="px-4 py-3 font-medium">Manuale principale</th>
-                  <th class="px-3 py-3 font-medium">Match catalogo</th>
-                  <th class="px-4 py-3 font-medium">Scenario</th>
-                  <th class="px-4 py-3 font-medium text-center">Azioni</th>
-                </tr>
-              </thead>
-              <tbody id="db-table-body">
-                <tr>
-                  <td colspan="8" class="px-4 py-12 text-center text-gray-400">
-                    <i class="fas fa-inbox text-3xl mb-2 block"></i>
-                    Nessun programma trovato. Carica dei PDF dalla sezione Upload.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- Vista ad albero: Materia → Ateneo → Classe -->
+        <div id="db-tree-view" class="space-y-3">
+          <div class="text-center text-gray-400 py-12">
+            <i class="fas fa-inbox text-3xl mb-2 block"></i>
+            Nessun programma trovato. Carica dei PDF dalla sezione Upload.
           </div>
         </div>
+
+        <!-- Modale condivisa -->
       </section>
 
       <!-- ===================== SEZIONE CAMPAGNE ===================== -->
