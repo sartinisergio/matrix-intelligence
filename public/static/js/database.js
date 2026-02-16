@@ -45,30 +45,45 @@ async function ensureCatalogColumns() {
   }
 }
 
-// --- Migrazione automatica: aggiunge campo 'stato' ai programmi vecchi ---
+// --- Migrazione automatica: promuove al database i programmi pre-staging ---
+// Quando le colonne stato/dati_verificati vengono aggiunte, i vecchi programmi
+// ricevono il default 'staging'. Questa funzione li identifica e li promuove
+// automaticamente, perché erano già nel database prima dell'introduzione dello staging.
+let migrationDone = false;
 async function migrateOldPrograms(session) {
+  if (migrationDone) return;
+  migrationDone = true;
+  
   try {
-    // Cerca programmi che non hanno il campo 'stato' impostato (sono quelli vecchi, pre-staging)
+    // Cerca programmi con stato='staging' ma dati_verificati=false e SENZA il campo
+    // che normalmente viene impostato dal nuovo upload (come il flag esplicito).
+    // Criterio: programmi in staging che hanno created_at anteriore al 2026-02-16
+    // (data di deploy dello staging) → sono programmi vecchi
+    const cutoffDate = '2026-02-16T00:00:00Z';
+    
     const { data: oldPrograms, error } = await supabaseClient
       .from('programmi')
-      .select('id, stato')
+      .select('id, stato, created_at')
       .eq('user_id', session.user.id)
-      .is('stato', null);
+      .or(`stato.is.null,and(stato.eq.staging,created_at.lt.${cutoffDate})`);
     
     if (error || !oldPrograms || oldPrograms.length === 0) return;
     
-    console.log(`[Database] Trovati ${oldPrograms.length} programmi senza stato, migrazione a 'database'...`);
+    // Filtra solo quelli che NON sono già 'database'
+    const toMigrate = oldPrograms.filter(p => p.stato !== 'database');
+    if (toMigrate.length === 0) return;
     
-    // Aggiorna tutti i vecchi programmi con stato='database' e dati_verificati=true
-    // (sono già stati nel database, quindi li consideriamo verificati)
-    for (const p of oldPrograms) {
+    console.log(`[Database] Trovati ${toMigrate.length} programmi pre-staging, migrazione a 'database'...`);
+    
+    // Aggiorna tutti: stato='database' e dati_verificati=true
+    for (const p of toMigrate) {
       await supabaseClient
         .from('programmi')
         .update({ stato: 'database', dati_verificati: true })
         .eq('id', p.id);
     }
     
-    showToast(`${oldPrograms.length} programmi esistenti migrati al nuovo sistema`, 'info');
+    showToast(`${toMigrate.length} programmi esistenti migrati al nuovo sistema`, 'info');
   } catch (e) {
     console.warn('[Database] Migrazione automatica fallita:', e);
   }
