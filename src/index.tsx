@@ -70,7 +70,7 @@ function loginPage(): string {
     .feature-card { transition: transform 0.2s, box-shadow 0.2s; }
     .feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,59,123,0.15); }
     .step-line { position: relative; }
-    .step-line::after { content: ''; position: absolute; top: 50%; right: -32px; width: 32px; height: 2px; background: #0066CC; }
+    .step-line::after { content: ''; position: absolute; top: 28px; right: -12px; width: 24px; height: 2px; background: #0066CC; }
     .step-line:last-child::after { display: none; }
     @media (max-width: 768px) { .step-line::after { display: none; } }
     html { scroll-behavior: smooth; }
@@ -81,9 +81,11 @@ function loginPage(): string {
   <!-- ===================== HERO ===================== -->
   <section class="hero-gradient min-h-[80vh] flex items-center relative overflow-hidden">
     <!-- Pattern decorativo -->
-    <div class="absolute inset-0 opacity-5">
-      <div class="absolute top-20 left-10 text-9xl font-bold text-white">M</div>
-      <div class="absolute bottom-10 right-10 text-9xl font-bold text-white">I</div>
+    <div class="absolute inset-0 opacity-[0.03]">
+      <div class="absolute top-10 left-10 text-[12rem] font-black text-white leading-none">M</div>
+      <div class="absolute bottom-10 right-10 text-[12rem] font-black text-white leading-none">I</div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/20 rounded-full"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-white/10 rounded-full"></div>
     </div>
     
     <div class="max-w-6xl mx-auto px-6 py-20 relative z-10 w-full">
@@ -91,52 +93,109 @@ function loginPage(): string {
         <!-- Testo -->
         <div>
           <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
-            <i class="fas fa-brain text-blue-300"></i>
-            <span class="text-blue-200 text-sm font-medium">Piattaforma per promotori editoriali</span>
+            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+            <span class="text-blue-200 text-sm font-medium">Piattaforma AI per promotori editoriali</span>
           </div>
-          <h1 class="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
+          <h1 class="text-4xl md:text-6xl font-bold text-white leading-tight mb-4">
             MATRIX<br><span class="text-blue-300">Intelligence</span>
           </h1>
-          <p class="text-xl text-blue-100 leading-relaxed mb-8">
-            Analisi di mercato editoriale universitario, automatizzata.<br>
-            <span class="text-blue-300">Dai PDF dei programmi alle campagne di promozione.</span>
+          <p class="text-lg md:text-xl text-blue-100 leading-relaxed mb-4">
+            Il mercato editoriale universitario, decifrato dall'intelligenza artificiale.
+          </p>
+          <p class="text-blue-200/80 leading-relaxed mb-8">
+            Carica i programmi d'esame, scopri chi adotta cosa, identifica i docenti target e genera campagne promozionali personalizzate &mdash; tutto in un unico flusso.
           </p>
           <div class="flex flex-col sm:flex-row gap-4">
             <a href="#login-section" 
-               class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-zanichelli-blue rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors shadow-lg">
+               class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-zanichelli-blue rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors shadow-lg shadow-black/20">
               <i class="fas fa-sign-in-alt"></i>
-              Accedi
+              Accedi alla piattaforma
             </a>
             <a href="#funzionalita" 
                class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-medium text-lg hover:bg-white/20 transition-colors border border-white/20">
               <i class="fas fa-arrow-down"></i>
-              Scopri di piu
+              Come funziona
             </a>
           </div>
         </div>
         
-        <!-- Visual: statistiche -->
+        <!-- Visual: pipeline -->
         <div class="hidden md:block">
-          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-            <div class="grid grid-cols-2 gap-6">
-              <div class="text-center p-4">
-                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-file-pdf text-blue-300 text-3xl"></i></div>
-                <div class="text-blue-200 text-sm mt-2">Upload multiplo PDF</div>
+          <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10 space-y-4">
+            <div class="text-xs text-blue-300/60 uppercase tracking-wider font-semibold mb-2">Pipeline operativa</div>
+            
+            <div class="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/5">
+              <div class="w-10 h-10 bg-blue-400/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-file-pdf text-blue-300"></i>
               </div>
-              <div class="text-center p-4">
-                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-robot text-blue-300 text-3xl"></i></div>
-                <div class="text-blue-200 text-sm mt-2">Analisi AI automatica</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-white text-sm font-medium">Upload & Analisi PDF</div>
+                <div class="text-blue-300/60 text-xs">Estrazione automatica con AI dei dati strutturati</div>
               </div>
-              <div class="text-center p-4">
-                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-bullseye text-blue-300 text-3xl"></i></div>
-                <div class="text-blue-200 text-sm mt-2">Campagne mirate</div>
+              <i class="fas fa-check-circle text-green-400 text-sm"></i>
+            </div>
+            
+            <div class="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/5">
+              <div class="w-10 h-10 bg-amber-400/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-clipboard-check text-amber-300"></i>
               </div>
-              <div class="text-center p-4">
-                <div class="text-4xl font-bold text-white mb-1"><i class="fas fa-book-open text-blue-300 text-3xl"></i></div>
-                <div class="text-blue-200 text-sm mt-2">Archivio Adozioni</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-white text-sm font-medium">Staging & Validazione</div>
+                <div class="text-blue-300/60 text-xs">Verifica e conferma dei dati estratti</div>
               </div>
+              <i class="fas fa-check-circle text-green-400 text-sm"></i>
+            </div>
+            
+            <div class="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/5">
+              <div class="w-10 h-10 bg-green-400/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-link text-green-300"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-white text-sm font-medium">Match con catalogo</div>
+                <div class="text-blue-300/60 text-xs">85+ manuali, 21 framework disciplinari</div>
+              </div>
+              <i class="fas fa-check-circle text-green-400 text-sm"></i>
+            </div>
+            
+            <div class="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/5">
+              <div class="w-10 h-10 bg-indigo-400/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-bullseye text-indigo-300"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-white text-sm font-medium">Campagne & Email</div>
+                <div class="text-blue-300/60 text-xs">Intelligence di mercato e mail personalizzate</div>
+              </div>
+              <i class="fas fa-check-circle text-green-400 text-sm"></i>
+            </div>
+            
+            <div class="text-center mt-2">
+              <span class="text-blue-300/40 text-xs">Powered by OpenAI GPT-4o</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NUMERI ===================== -->
+  <section class="py-8 bg-white border-b">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div class="text-center">
+          <div class="text-3xl font-bold text-zanichelli-blue">6</div>
+          <div class="text-sm text-gray-500 mt-1">Sezioni operative</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-zanichelli-blue">85+</div>
+          <div class="text-sm text-gray-500 mt-1">Manuali nel catalogo</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-zanichelli-blue">21</div>
+          <div class="text-sm text-gray-500 mt-1">Framework disciplinari</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-zanichelli-blue">3</div>
+          <div class="text-sm text-gray-500 mt-1">Template email per scenario</div>
         </div>
       </div>
     </div>
@@ -146,52 +205,90 @@ function loginPage(): string {
   <section id="funzionalita" class="py-20 bg-white">
     <div class="max-w-6xl mx-auto px-6">
       <div class="text-center mb-14">
-        <h2 class="text-3xl font-bold text-gray-800 mb-3">Cosa fa Matrix Intelligence</h2>
-        <p class="text-gray-500 text-lg max-w-2xl mx-auto">Dalla raccolta dei programmi alla generazione delle campagne, tutto in un unico flusso</p>
+        <div class="inline-flex items-center gap-2 bg-zanichelli-accent rounded-full px-4 py-1.5 mb-4">
+          <i class="fas fa-th-large text-zanichelli-blue text-xs"></i>
+          <span class="text-zanichelli-blue text-sm font-medium">Funzionalita</span>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-800 mb-3">Tutto il flusso, in un'unica piattaforma</h2>
+        <p class="text-gray-500 text-lg max-w-2xl mx-auto">Dalla raccolta dei programmi alla generazione delle campagne personalizzate</p>
       </div>
       
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Card 1: Upload -->
-        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
-          <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-cloud-upload-alt text-zanichelli-light text-2xl"></i>
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center">
+              <i class="fas fa-cloud-upload-alt text-zanichelli-light text-lg"></i>
+            </div>
+            <h3 class="font-bold text-gray-800">Upload & Analisi PDF</h3>
           </div>
-          <h3 class="font-bold text-gray-800 mb-2">Carica i PDF</h3>
           <p class="text-sm text-gray-500 leading-relaxed">
-            Upload multiplo dei programmi universitari. L'AI estrae docente, ateneo, materia, manuali citati e scenario Zanichelli.
+            Drag & drop dei programmi universitari. L'AI estrae automaticamente docente, ateneo, materia, manuali citati e scenario Zanichelli.
           </p>
         </div>
         
-        <!-- Card 2: Database -->
-        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
-          <div class="w-14 h-14 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-database text-amber-500 text-2xl"></i>
+        <!-- Card 2: Staging -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center">
+              <i class="fas fa-clipboard-check text-amber-500 text-lg"></i>
+            </div>
+            <h3 class="font-bold text-gray-800">Staging & Verifica</h3>
           </div>
-          <h3 class="font-bold text-gray-800 mb-2">Analizza il mercato</h3>
           <p class="text-sm text-gray-500 leading-relaxed">
-            Match automatico con il catalogo. Verifica le adozioni, conferma i manuali e classifica ogni cattedra per scenario.
+            Area di validazione dove il promotore verifica, corregge e approva i dati estratti prima di promuoverli al database definitivo.
+          </p>
+        </div>
+
+        <!-- Card 3: Database -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center">
+              <i class="fas fa-database text-green-500 text-lg"></i>
+            </div>
+            <h3 class="font-bold text-gray-800">Database & Match</h3>
+          </div>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Match automatico con il catalogo di 85+ manuali. Vista ad albero Materia &rarr; Ateneo &rarr; Classe con badge scenario e conferma manuali.
           </p>
         </div>
         
-        <!-- Card 3: Campagne -->
-        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
-          <div class="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-bullseye text-green-500 text-2xl"></i>
+        <!-- Card 4: Campagne -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center">
+              <i class="fas fa-bullseye text-indigo-500 text-lg"></i>
+            </div>
+            <h3 class="font-bold text-gray-800">Campagne AI</h3>
           </div>
-          <h3 class="font-bold text-gray-800 mb-2">Campagne mirate</h3>
           <p class="text-sm text-gray-500 leading-relaxed">
-            Pre-valutazione e analisi completa per ogni target. L'AI genera schede operative e mail personalizzate per il promotore.
+            Intelligence a 2 fasi: pre-valutazione e analisi completa. L'AI genera schede operative con situazione, leve e suggerimenti per il colloquio.
           </p>
         </div>
         
-        <!-- Card 4: Archivio -->
-        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6 text-center">
-          <div class="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-book-open text-indigo-500 text-2xl"></i>
+        <!-- Card 5: Email -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-11 h-11 bg-pink-50 rounded-xl flex items-center justify-center">
+              <i class="fas fa-envelope text-pink-500 text-lg"></i>
+            </div>
+            <h3 class="font-bold text-gray-800">Email personalizzate</h3>
           </div>
-          <h3 class="font-bold text-gray-800 mb-2">Archivio Adozioni</h3>
           <p class="text-sm text-gray-500 leading-relaxed">
-            Banca dati bibliografica delle adozioni. Filtra per materia, editore, ateneo. Esporta in CSV per le tue analisi.
+            3 template differenziati per scenario (Conquista, Aggiornamento, Upgrade). Mail editabili con firma, link anteprima e copia in un clic.
+          </p>
+        </div>
+
+        <!-- Card 6: Archivio -->
+        <div class="feature-card bg-white rounded-xl border-2 border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-11 h-11 bg-teal-50 rounded-xl flex items-center justify-center">
+              <i class="fas fa-book-open text-teal-500 text-lg"></i>
+            </div>
+            <h3 class="font-bold text-gray-800">Archivio Adozioni</h3>
+          </div>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Banca dati bibliografica completa. Filtra per materia, editore, ateneo, docente, classe di laurea. Esporta in CSV.
           </p>
         </div>
       </div>
@@ -202,41 +299,95 @@ function loginPage(): string {
   <section class="py-20 bg-gray-50">
     <div class="max-w-6xl mx-auto px-6">
       <div class="text-center mb-14">
-        <h2 class="text-3xl font-bold text-gray-800 mb-3">Come funziona</h2>
-        <p class="text-gray-500 text-lg">Tre passaggi, dal PDF alla campagna</p>
+        <div class="inline-flex items-center gap-2 bg-zanichelli-accent rounded-full px-4 py-1.5 mb-4">
+          <i class="fas fa-route text-zanichelli-blue text-xs"></i>
+          <span class="text-zanichelli-blue text-sm font-medium">Workflow</span>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-800 mb-3">Dal PDF alla campagna in 4 step</h2>
+        <p class="text-gray-500 text-lg">Il percorso operativo del promotore</p>
       </div>
       
-      <div class="grid md:grid-cols-3 gap-8">
+      <div class="grid md:grid-cols-4 gap-6">
         <!-- Step 1 -->
         <div class="step-line text-center">
-          <div class="w-16 h-16 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span class="text-2xl font-bold text-white">1</span>
+          <div class="w-14 h-14 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-xl font-bold text-white">1</span>
           </div>
-          <h3 class="font-bold text-gray-800 text-lg mb-2">Carica i programmi</h3>
+          <h3 class="font-bold text-gray-800 mb-2">Carica</h3>
           <p class="text-gray-500 text-sm leading-relaxed">
-            Trascina i PDF dei programmi universitari. L'intelligenza artificiale analizza ogni documento ed estrae automaticamente tutte le informazioni rilevanti.
+            Trascina i PDF dei programmi. L'AI estrae docente, ateneo, materia, manuali e scenario.
           </p>
         </div>
         
         <!-- Step 2 -->
         <div class="step-line text-center">
-          <div class="w-16 h-16 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span class="text-2xl font-bold text-white">2</span>
+          <div class="w-14 h-14 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-xl font-bold text-white">2</span>
           </div>
-          <h3 class="font-bold text-gray-800 text-lg mb-2">Conferma i match</h3>
+          <h3 class="font-bold text-gray-800 mb-2">Verifica</h3>
           <p class="text-gray-500 text-sm leading-relaxed">
-            Il sistema propone un match con il catalogo per ogni manuale citato. Tu verifichi con un clic e correggi se necessario. Dati affidabili, validati dal promotore.
+            Valida i dati nello Staging, correggi se necessario e promuovi al database definitivo.
           </p>
         </div>
         
         <!-- Step 3 -->
         <div class="step-line text-center">
-          <div class="w-16 h-16 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span class="text-2xl font-bold text-white">3</span>
+          <div class="w-14 h-14 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-xl font-bold text-white">3</span>
           </div>
-          <h3 class="font-bold text-gray-800 text-lg mb-2">Genera le campagne</h3>
+          <h3 class="font-bold text-gray-800 mb-2">Conferma i match</h3>
           <p class="text-gray-500 text-sm leading-relaxed">
-            Seleziona un volume e lancia la campagna. Per ogni docente ricevi una scheda operativa con gap, leve e una mail di primo contatto pronta da inviare.
+            Il sistema propone i match con il catalogo. Conferma con un clic, correggi se serve.
+          </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-line text-center">
+          <div class="w-14 h-14 bg-zanichelli-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-xl font-bold text-white">4</span>
+          </div>
+          <h3 class="font-bold text-gray-800 mb-2">Lancia la campagna</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Seleziona un volume, genera i target, ricevi schede operative e mail pronte da inviare.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SCENARI ===================== -->
+  <section class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Intelligence per ogni scenario</h2>
+        <p class="text-gray-500">L'AI adatta l'approccio in base alla situazione di ogni docente</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+            <h3 class="font-bold text-green-800">Zanichelli Principale</h3>
+          </div>
+          <p class="text-sm text-green-700/80 leading-relaxed">
+            Il docente adotta gia un testo Zanichelli. Template <strong>Aggiornamento</strong>: presenta le novita editoriali e le nuove edizioni.
+          </p>
+        </div>
+        <div class="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+            <h3 class="font-bold text-yellow-800">Zanichelli Alternativo</h3>
+          </div>
+          <p class="text-sm text-yellow-700/80 leading-relaxed">
+            Zanichelli e tra i testi suggeriti ma non principale. Template <strong>Upgrade</strong>: argomenta la promozione a testo principale.
+          </p>
+        </div>
+        <div class="bg-red-50 rounded-xl p-6 border border-red-200">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+            <h3 class="font-bold text-red-800">Zanichelli Assente</h3>
+          </div>
+          <p class="text-sm text-red-700/80 leading-relaxed">
+            Il docente non adotta testi Zanichelli. Template <strong>Conquista</strong>: proponi il volume come alternativa ai concorrenti.
           </p>
         </div>
       </div>
@@ -330,21 +481,50 @@ function loginPage(): string {
       </div>
 
       <p class="text-center text-blue-200 text-sm mt-6">
-        MATRIX Intelligence v0.1 &mdash; Zanichelli
+        MATRIX Intelligence v0.4 &mdash; Zanichelli
       </p>
     </div>
   </section>
 
   <!-- ===================== FOOTER ===================== -->
-  <footer class="bg-zanichelli-dark py-8">
-    <div class="max-w-6xl mx-auto px-6 text-center">
-      <div class="flex items-center justify-center gap-2 mb-3">
-        <i class="fas fa-brain text-blue-300"></i>
-        <span class="text-white font-semibold">MATRIX Intelligence</span>
+  <footer class="bg-zanichelli-dark py-10">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid md:grid-cols-3 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <i class="fas fa-brain text-blue-300"></i>
+            <span class="text-white font-semibold">MATRIX Intelligence</span>
+          </div>
+          <p class="text-blue-300/60 text-sm leading-relaxed">
+            Piattaforma AI per l'analisi del mercato editoriale universitario e la gestione delle campagne promozionali.
+          </p>
+        </div>
+        <div>
+          <h4 class="text-white font-medium mb-3 text-sm">Funzionalita</h4>
+          <ul class="text-blue-300/60 text-sm space-y-1.5">
+            <li><i class="fas fa-check text-blue-400/40 mr-2 text-xs"></i>Upload & analisi PDF</li>
+            <li><i class="fas fa-check text-blue-400/40 mr-2 text-xs"></i>Staging & validazione</li>
+            <li><i class="fas fa-check text-blue-400/40 mr-2 text-xs"></i>Database & match catalogo</li>
+            <li><i class="fas fa-check text-blue-400/40 mr-2 text-xs"></i>Campagne AI & email</li>
+            <li><i class="fas fa-check text-blue-400/40 mr-2 text-xs"></i>Archivio adozioni</li>
+            <li><i class="fas fa-check text-blue-400/40 mr-2 text-xs"></i>Gestione multi-utente</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-white font-medium mb-3 text-sm">Tecnologie</h4>
+          <ul class="text-blue-300/60 text-sm space-y-1.5">
+            <li><i class="fas fa-server text-blue-400/40 mr-2 text-xs"></i>Hono + Cloudflare Pages</li>
+            <li><i class="fas fa-database text-blue-400/40 mr-2 text-xs"></i>Supabase (PostgreSQL)</li>
+            <li><i class="fas fa-robot text-blue-400/40 mr-2 text-xs"></i>OpenAI GPT-4o</li>
+            <li><i class="fas fa-file-pdf text-blue-400/40 mr-2 text-xs"></i>PDF.js (client-side)</li>
+          </ul>
+        </div>
       </div>
-      <p class="text-blue-300/60 text-sm">
-        Strumento interno per promotori editoriali Zanichelli &mdash; v0.1
-      </p>
+      <div class="border-t border-white/10 pt-6 text-center">
+        <p class="text-blue-300/40 text-sm">
+          MATRIX Intelligence v0.4 &mdash; Strumento interno per promotori editoriali Zanichelli
+        </p>
+      </div>
     </div>
   </footer>
 
