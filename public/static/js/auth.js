@@ -2,6 +2,9 @@
 // MATRIX Intelligence — Autenticazione
 // ==========================================
 
+// Ruolo utente corrente (promotore | gestore)
+let currentUserRole = 'promotore';
+
 // --- Pagina Login: Switch Tab ---
 function switchTab(tab) {
   const loginForm = document.getElementById('login-form');
@@ -57,6 +60,8 @@ async function handleLogin(event) {
   try {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // Assicura che il profilo esista
+    await ensureUserProfile(data.user);
     window.location.href = '/dashboard';
   } catch (error) {
     showAuthMessage(error.message || 'Errore di accesso', 'error');
@@ -89,6 +94,7 @@ async function handleRegister(event) {
       showAuthMessage('Questo indirizzo email è già registrato. Prova ad accedere.', 'error');
     } else if (data.session) {
       // Auto-login (conferma email disabilitata)
+      await ensureUserProfile(data.user);
       showAuthMessage('Registrazione completata! Reindirizzamento...', 'success');
       setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
     } else {
@@ -162,6 +168,98 @@ function showAuthMessage(text, type) {
   msg.textContent = text;
 }
 
+// --- Crea o aggiorna profilo utente in tabella profili ---
+async function ensureUserProfile(user) {
+  if (!supabaseClient || !user) return;
+  try {
+    // Controlla se il profilo esiste
+    const { data: existing, error: checkErr } = await supabaseClient
+      .from('profili')
+      .select('user_id, ruolo')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (checkErr) {
+      // Tabella potrebbe non esistere — non bloccare il login
+      console.warn('[Auth] Tabella profili non disponibile:', checkErr.message);
+      return;
+    }
+
+    if (existing) {
+      // Profilo gia presente — carica il ruolo
+      currentUserRole = existing.ruolo || 'promotore';
+      console.log('[Auth] Profilo trovato, ruolo:', currentUserRole);
+    } else {
+      // Prima registrazione — verifica se e il primo utente (diventa gestore)
+      const { count } = await supabaseClient
+        .from('profili')
+        .select('*', { count: 'exact', head: true });
+
+      const ruolo = (count === 0) ? 'gestore' : 'promotore';
+      
+      const { error: insertErr } = await supabaseClient.from('profili').insert({
+        user_id: user.id,
+        email: user.email,
+        ruolo: ruolo,
+        created_at: new Date().toISOString()
+      });
+
+      if (insertErr) {
+        console.warn('[Auth] Errore creazione profilo:', insertErr.message);
+      } else {
+        currentUserRole = ruolo;
+        console.log('[Auth] Profilo creato, ruolo:', currentUserRole);
+        if (ruolo === 'gestore') {
+          console.log('[Auth] Primo utente — ruolo gestore assegnato automaticamente');
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Auth] Errore ensureUserProfile:', e);
+  }
+}
+
+// --- Carica ruolo utente (per dashboard) ---
+async function loadUserRole(session) {
+  if (!supabaseClient || !session) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('profili')
+      .select('ruolo')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (!error && data) {
+      currentUserRole = data.ruolo || 'promotore';
+    }
+  } catch (e) {
+    console.warn('[Auth] Errore loadUserRole:', e);
+  }
+
+  // Mostra/nascondi voce Gestione nella sidebar
+  updateGestioneVisibility();
+}
+
+// --- Aggiorna visibilita menu Gestione ---
+function updateGestioneVisibility() {
+  const navGestione = document.getElementById('nav-gestione');
+  if (navGestione) {
+    if (currentUserRole === 'gestore') {
+      navGestione.classList.remove('hidden');
+    } else {
+      navGestione.classList.add('hidden');
+    }
+  }
+  // Aggiorna badge ruolo nel sidebar
+  const roleEl = document.getElementById('user-role');
+  if (roleEl) {
+    roleEl.textContent = currentUserRole === 'gestore' ? 'Gestore' : 'Promotore';
+    roleEl.className = currentUserRole === 'gestore' 
+      ? 'text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-200 rounded-full' 
+      : 'text-xs px-1.5 py-0.5 bg-white/10 text-blue-300 rounded-full';
+  }
+}
+
 // --- Check sessione (per dashboard) ---
 async function checkSession() {
   if (!supabaseClient) {
@@ -181,6 +279,9 @@ async function checkSession() {
     
     const emailEl = document.getElementById('user-email');
     if (emailEl) emailEl.textContent = session.user.email;
+
+    // Carica ruolo utente e aggiorna UI
+    await loadUserRole(session);
     
     return session;
   } catch (e) {

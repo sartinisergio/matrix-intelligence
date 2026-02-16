@@ -107,6 +107,7 @@ function navigateTo(section) {
   if (section === 'campagne') loadCampaigns();
   if (section === 'archivio') loadArchivio();
   if (section === 'impostazioni') loadSettings();
+  if (section === 'gestione') loadGestione();
 }
 
 function toggleSidebar() {

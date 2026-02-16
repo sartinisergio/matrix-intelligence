@@ -436,6 +436,12 @@ function dashboardPage(): string {
         <i class="fas fa-cog w-5 text-center"></i>
         <span>Impostazioni</span>
       </button>
+      <button onclick="navigateTo('gestione')" id="nav-gestione"
+              class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all hover:bg-white/10 text-blue-200 hidden">
+        <i class="fas fa-shield-alt w-5 text-center"></i>
+        <span>Gestione</span>
+        <span class="ml-auto text-[9px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded">Manager</span>
+      </button>
     </nav>
 
     <!-- User -->
@@ -446,6 +452,7 @@ function dashboardPage(): string {
         </div>
         <div class="flex-1 min-w-0">
           <p id="user-email" class="text-sm truncate">utente@email.it</p>
+          <span id="user-role" class="text-xs px-1.5 py-0.5 bg-white/10 text-blue-300 rounded-full">Promotore</span>
         </div>
         <button onclick="handleLogout()" class="text-blue-200 hover:text-white transition-colors" title="Logout">
           <i class="fas fa-sign-out-alt"></i>
@@ -1215,6 +1222,85 @@ function dashboardPage(): string {
         </div>
       </section>
 
+      <!-- ===================== SEZIONE GESTIONE (solo gestore) ===================== -->
+      <section id="section-gestione" class="section hidden">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-shield-alt text-zanichelli-light mr-2"></i>
+            Gestione
+          </h2>
+          <p class="text-gray-500 mt-1">Area riservata al gestore: framework condivisi, catalogo manuali e gestione utenti</p>
+        </div>
+
+        <div class="max-w-4xl space-y-6">
+
+          <!-- Framework condivisi -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800">
+                <i class="fas fa-cubes mr-2 text-zanichelli-light"></i>
+                Framework di Valutazione (condivisi)
+              </h3>
+              <div class="flex gap-2">
+                <button onclick="uploadSharedFramework()" 
+                        class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-xs font-medium hover:bg-zanichelli-dark transition-colors">
+                  <i class="fas fa-upload mr-1"></i>Carica JSON
+                </button>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 mb-3">I framework caricati qui sono disponibili per tutti gli utenti.</p>
+            <div id="gestione-frameworks-list" class="space-y-2"></div>
+          </div>
+
+          <!-- Catalogo manuali condiviso -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800">
+                <i class="fas fa-book mr-2 text-zanichelli-light"></i>
+                Catalogo Manuali (condiviso)
+              </h3>
+              <div class="flex gap-2">
+                <button onclick="uploadSharedManuals()" 
+                        class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-xs font-medium hover:bg-zanichelli-dark transition-colors">
+                  <i class="fas fa-upload mr-1"></i>Carica JSON
+                </button>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500 mb-3">I manuali caricati qui sono visibili da tutti gli utenti per il matching e le campagne.</p>
+            <div id="gestione-catalogo-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+          </div>
+
+          <!-- Import da sync Matrix -->
+          <div class="bg-zanichelli-accent rounded-xl p-6 border border-blue-200">
+            <h3 class="font-semibold text-zanichelli-blue mb-2">
+              <i class="fas fa-sync mr-2"></i>
+              Importa dati da Matrix nelle tabelle condivise
+            </h3>
+            <p class="text-sm text-zanichelli-blue/80 mb-4">
+              Se hai gia sincronizzato framework e catalogo da Matrix (nella sezione Impostazioni), puoi importarli nelle tabelle condivise Supabase cosi saranno disponibili a tutti gli utenti automaticamente.
+            </p>
+            <button onclick="syncToSharedFromLocal()" 
+                    class="px-4 py-2 bg-zanichelli-blue text-white rounded-lg text-sm font-medium hover:bg-zanichelli-dark transition-colors">
+              <i class="fas fa-cloud-upload-alt mr-2"></i>
+              Importa da Matrix a Supabase condiviso
+            </button>
+          </div>
+
+          <!-- Gestione utenti -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800">
+                <i class="fas fa-users-cog mr-2 text-zanichelli-light"></i>
+                Gestione Utenti
+              </h3>
+            </div>
+            <p class="text-sm text-gray-500 mb-3">Promuovi utenti a gestore o declassali a promotore.</p>
+            <div id="gestione-users-list" class="space-y-2"></div>
+          </div>
+
+        </div>
+      </section>
+
     </div>
   </main>
 
@@ -1247,6 +1333,7 @@ function dashboardPage(): string {
   <script src="/static/js/archivio.js"></script>
   <script src="/static/js/campagna.js"></script>
   <script src="/static/js/staging.js"></script>
+  <script src="/static/js/gestione.js"></script>
   <script src="/static/js/sync.js"></script>
 </body>
 </html>`

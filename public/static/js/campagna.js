@@ -30,14 +30,18 @@ async function loadCatalog() {
       catalogManuals = catalogData.manuals || [];
       const syncTime = localStorage.getItem('matrix_sync_timestamp');
       console.log(`Catalogo manuali caricato da sync: ${catalogManuals.length} manuali (sync: ${syncTime})`);
-      return;
+    } else {
+      // Fallback: file statico
+      const response = await fetch('/static/data/catalogo_manuali.json');
+      if (response.ok) {
+        catalogData = await response.json();
+        catalogManuals = catalogData.manuals || [];
+        console.log(`Catalogo manuali caricato da file statico: ${catalogManuals.length} manuali`);
+      }
     }
-    // Fallback: file statico
-    const response = await fetch('/static/data/catalogo_manuali.json');
-    if (!response.ok) throw new Error('Catalogo non trovato');
-    catalogData = await response.json();
-    catalogManuals = catalogData.manuals || [];
-    console.log(`Catalogo manuali caricato da file statico: ${catalogManuals.length} manuali`);
+
+    // Arricchisci con dati dal catalogo condiviso Supabase
+    await mergeCatalogFromSupabase();
   } catch (e) {
     console.error('Errore caricamento catalogo:', e);
   }
@@ -53,16 +57,99 @@ async function loadFrameworks() {
       allFrameworks = frameworkData.frameworks || [];
       const syncTime = localStorage.getItem('matrix_sync_timestamp');
       console.log(`Framework caricati da sync: ${allFrameworks.length} (sync: ${syncTime})`);
-      return;
+    } else {
+      // Fallback: file statico
+      const response = await fetch('/static/data/catalogo_framework.json');
+      if (response.ok) {
+        frameworkData = await response.json();
+        allFrameworks = frameworkData.frameworks || [];
+        console.log(`Framework caricati da file statico: ${allFrameworks.length}`);
+      }
     }
-    // Fallback: file statico
-    const response = await fetch('/static/data/catalogo_framework.json');
-    if (!response.ok) throw new Error('Framework non trovati');
-    frameworkData = await response.json();
-    allFrameworks = frameworkData.frameworks || [];
-    console.log(`Framework caricati da file statico: ${allFrameworks.length}`);
+
+    // Arricchisci con framework condivisi da Supabase
+    await mergeFrameworksFromSupabase();
   } catch (e) {
     console.error('Errore caricamento framework:', e);
+  }
+}
+
+// --- Merge catalogo manuali da Supabase condiviso ---
+async function mergeCatalogFromSupabase() {
+  if (!supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('catalogo_manuali_condiviso')
+      .select('*');
+    
+    if (error || !data || data.length === 0) return;
+
+    let added = 0;
+    for (const m of data) {
+      // Verifica duplicati per titolo + autore
+      const exists = catalogManuals.find(c => 
+        c.title && m.titolo &&
+        c.title.toLowerCase() === m.titolo.toLowerCase() &&
+        (c.author || '').toLowerCase() === (m.autore || '').toLowerCase()
+      );
+      if (!exists) {
+        catalogManuals.push({
+          id: m.id,
+          title: m.titolo,
+          author: m.autore || '',
+          publisher: m.editore || '',
+          subject: m.materia || '',
+          is_zanichelli: m.is_zanichelli || false,
+          chapters_count: m.capitoli_count || 0,
+          chapters_summary: m.dati?.chapters_summary || '',
+          temi_chiave: m.dati?.temi_chiave || []
+        });
+        added++;
+      }
+    }
+    if (added > 0) {
+      console.log(`[Catalogo] +${added} manuali da Supabase condiviso (totale: ${catalogManuals.length})`);
+    }
+  } catch (e) {
+    // Tabella potrebbe non esistere ancora
+    console.log('[Catalogo] Tabella catalogo_manuali_condiviso non disponibile');
+  }
+}
+
+// --- Merge framework da Supabase condiviso ---
+async function mergeFrameworksFromSupabase() {
+  if (!supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('frameworks_condivisi')
+      .select('*');
+    
+    if (error || !data || data.length === 0) return;
+
+    let added = 0;
+    for (const fw of data) {
+      // Verifica duplicati per materia
+      const exists = allFrameworks.find(f => 
+        f.subject && fw.materia &&
+        f.subject.toLowerCase() === fw.materia.toLowerCase()
+      );
+      if (!exists && fw.dati) {
+        allFrameworks.push({
+          id: fw.id,
+          name: fw.nome || fw.materia,
+          subject: fw.materia,
+          syllabus_modules: fw.dati.syllabus_modules || [],
+          program_profiles: fw.dati.program_profiles || []
+        });
+        added++;
+      }
+    }
+    if (added > 0) {
+      console.log(`[Framework] +${added} framework da Supabase condiviso (totale: ${allFrameworks.length})`);
+    }
+  } catch (e) {
+    // Tabella potrebbe non esistere ancora
+    console.log('[Framework] Tabella frameworks_condivisi non disponibile');
   }
 }
 
