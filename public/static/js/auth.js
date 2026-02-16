@@ -195,7 +195,7 @@ async function ensureUserProfile(user) {
         .from('profili')
         .select('*', { count: 'exact', head: true });
 
-      const ruolo = (count === 0) ? 'gestore' : 'promotore';
+      const ruolo = (count === 0 || count === null) ? 'gestore' : 'promotore';
       
       const { error: insertErr } = await supabaseClient.from('profili').insert({
         user_id: user.id,
@@ -216,6 +216,56 @@ async function ensureUserProfile(user) {
     }
   } catch (e) {
     console.warn('[Auth] Errore ensureUserProfile:', e);
+  }
+}
+
+// --- Richiedi promozione a gestore (primo utente) ---
+async function requestPromoteToGestore() {
+  if (!supabaseClient) {
+    showToast('Supabase non configurato', 'error');
+    return;
+  }
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return;
+
+  try {
+    // Conta quanti gestori ci sono
+    const { count: gestoriCount } = await supabaseClient
+      .from('profili')
+      .select('*', { count: 'exact', head: true })
+      .eq('ruolo', 'gestore');
+
+    if (gestoriCount > 0) {
+      showToast('Esiste gia un gestore. Solo un gestore puo promuovere altri utenti dalla sezione Gestione.', 'warning', 6000);
+      return;
+    }
+
+    // Nessun gestore — promuovi questo utente
+    const { error } = await supabaseClient
+      .from('profili')
+      .update({ ruolo: 'gestore', updated_at: new Date().toISOString() })
+      .eq('user_id', session.user.id);
+
+    if (error) throw error;
+
+    currentUserRole = 'gestore';
+    updateGestioneVisibility();
+    showToast('Sei stato promosso a Gestore! Il pulsante Gestione e ora visibile nella sidebar.', 'success', 5000);
+    
+    // Aggiorna il pulsante nella sezione impostazioni
+    const promoteContainer = document.getElementById('promote-gestore-container');
+    if (promoteContainer) {
+      promoteContainer.innerHTML = `
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-green-500"></i>
+            <span class="text-green-700 font-medium">Sei un Gestore</span>
+          </div>
+          <p class="text-sm text-green-600 mt-1">Usa la sezione Gestione nella sidebar per gestire utenti, framework e catalogo.</p>
+        </div>`;
+    }
+  } catch (e) {
+    showToast('Errore: ' + e.message, 'error');
   }
 }
 
@@ -257,6 +307,29 @@ function updateGestioneVisibility() {
     roleEl.className = currentUserRole === 'gestore' 
       ? 'text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-200 rounded-full' 
       : 'text-xs px-1.5 py-0.5 bg-white/10 text-blue-300 rounded-full';
+  }
+  // Aggiorna badge ruolo nella sezione Impostazioni
+  const settingsRoleBadge = document.getElementById('settings-role-badge');
+  if (settingsRoleBadge) {
+    if (currentUserRole === 'gestore') {
+      settingsRoleBadge.textContent = 'Gestore';
+      settingsRoleBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700';
+      // Aggiorna il container con messaggio di conferma
+      const promoteContainer = document.getElementById('promote-gestore-container');
+      if (promoteContainer) {
+        promoteContainer.innerHTML = `
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-check-circle text-green-500"></i>
+              <span class="text-green-700 font-medium">Sei un Gestore</span>
+            </div>
+            <p class="text-sm text-green-600 mt-1">Usa la sezione <strong>Gestione</strong> nella sidebar per gestire utenti, framework e catalogo.</p>
+          </div>`;
+      }
+    } else {
+      settingsRoleBadge.textContent = 'Promotore';
+      settingsRoleBadge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600';
+    }
   }
 }
 

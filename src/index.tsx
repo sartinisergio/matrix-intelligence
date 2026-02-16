@@ -1172,6 +1172,29 @@ function dashboardPage(): string {
             </div>
           </div>
 
+          <!-- Ruolo Utente / Promozione Gestore -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h3 class="font-semibold text-gray-800 mb-1">
+              <i class="fas fa-user-shield mr-2 text-zanichelli-light"></i>
+              Ruolo Utente
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">Il tuo ruolo attuale determina le funzionalita accessibili.</p>
+            <div id="promote-gestore-container">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-sm text-gray-600">Ruolo attuale:</span>
+                <span id="settings-role-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Promotore</span>
+              </div>
+              <p class="text-xs text-gray-400 mb-3">
+                Se non esiste ancora un Gestore nel sistema, puoi autopromoverti. Altrimenti, chiedi a un Gestore esistente di promuoverti dalla sezione Gestione.
+              </p>
+              <button onclick="requestPromoteToGestore()" 
+                      class="px-4 py-2.5 bg-zanichelli-blue text-white rounded-lg text-sm font-medium hover:bg-zanichelli-dark transition-colors">
+                <i class="fas fa-crown mr-2"></i>
+                Diventa Gestore
+              </button>
+            </div>
+          </div>
+
           <!-- Sincronizzazione Matrix -->
           <div class="bg-white rounded-xl shadow-sm border p-6">
             <h3 class="font-semibold text-gray-800 mb-1">
