@@ -45,12 +45,44 @@ async function ensureCatalogColumns() {
   }
 }
 
+// --- Migrazione automatica: aggiunge campo 'stato' ai programmi vecchi ---
+async function migrateOldPrograms(session) {
+  try {
+    // Cerca programmi che non hanno il campo 'stato' impostato (sono quelli vecchi, pre-staging)
+    const { data: oldPrograms, error } = await supabaseClient
+      .from('programmi')
+      .select('id, stato')
+      .eq('user_id', session.user.id)
+      .is('stato', null);
+    
+    if (error || !oldPrograms || oldPrograms.length === 0) return;
+    
+    console.log(`[Database] Trovati ${oldPrograms.length} programmi senza stato, migrazione a 'database'...`);
+    
+    // Aggiorna tutti i vecchi programmi con stato='database' e dati_verificati=true
+    // (sono già stati nel database, quindi li consideriamo verificati)
+    for (const p of oldPrograms) {
+      await supabaseClient
+        .from('programmi')
+        .update({ stato: 'database', dati_verificati: true })
+        .eq('id', p.id);
+    }
+    
+    showToast(`${oldPrograms.length} programmi esistenti migrati al nuovo sistema`, 'info');
+  } catch (e) {
+    console.warn('[Database] Migrazione automatica fallita:', e);
+  }
+}
+
 // --- Carica programmi dal database ---
 async function loadDatabase() {
   if (!supabaseClient) return;
 
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
+
+  // Migrazione automatica dei programmi vecchi (senza campo stato)
+  await migrateOldPrograms(session);
 
   // Assicura che il catalogo sia caricato (necessario per i match)
   await loadCatalog();
@@ -63,6 +95,7 @@ async function loadDatabase() {
       .from('programmi')
       .select('*')
       .eq('user_id', session.user.id)
+      .eq('stato', 'database')
       .order('created_at', { ascending: false });
 
     if (error) throw error;

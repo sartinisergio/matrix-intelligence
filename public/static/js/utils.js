@@ -102,6 +102,7 @@ function navigateTo(section) {
   }
 
   // Carica dati per la sezione
+  if (section === 'staging') loadStaging();
   if (section === 'database') loadDatabase();
   if (section === 'campagne') loadCampaigns();
   if (section === 'archivio') loadArchivio();

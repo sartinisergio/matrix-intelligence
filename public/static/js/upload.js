@@ -387,7 +387,9 @@ async function startProcessing() {
         temi_principali: classification.temi_principali || [],
         scenario_zanichelli: classification.scenario_zanichelli || 'zanichelli_assente',
         testo_programma: text,
-        pdf_storage_path: fileName
+        pdf_storage_path: fileName,
+        stato: 'staging',
+        dati_verificati: false
       };
 
       const { error } = await supabaseClient.from('programmi').insert(record);

@@ -411,6 +411,11 @@ function dashboardPage(): string {
         <i class="fas fa-cloud-upload-alt w-5 text-center"></i>
         <span>Upload Programmi</span>
       </button>
+      <button onclick="navigateTo('staging')" id="nav-staging"
+              class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all hover:bg-white/10 text-blue-200">
+        <i class="fas fa-clipboard-check w-5 text-center"></i>
+        <span>Staging</span>
+      </button>
       <button onclick="navigateTo('database')" id="nav-database"
               class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all hover:bg-white/10 text-blue-200">
         <i class="fas fa-database w-5 text-center"></i>
@@ -544,9 +549,58 @@ function dashboardPage(): string {
               </div>
             </div>
             <div id="result-details" class="space-y-2 max-h-60 overflow-y-auto"></div>
-            <button onclick="navigateTo('database')" class="mt-4 w-full py-2 bg-zanichelli-accent text-zanichelli-blue rounded-lg font-medium hover:bg-blue-100 transition-colors">
-              <i class="fas fa-database mr-2"></i>Vai al Database
+            <button onclick="navigateTo('staging')" class="mt-4 w-full py-2 bg-zanichelli-accent text-zanichelli-blue rounded-lg font-medium hover:bg-blue-100 transition-colors">
+              <i class="fas fa-clipboard-check mr-2"></i>Vai allo Staging
             </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SEZIONE STAGING ===================== -->
+      <section id="section-staging" class="section hidden">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-clipboard-check text-amber-500 mr-2"></i>
+            Staging — Verifica Programmi
+          </h2>
+          <p class="text-gray-500 mt-1">Verifica i dati estratti prima di promuovere al Database. I programmi restano qui finché tutti i prerequisiti sono soddisfatti.</p>
+        </div>
+
+        <!-- Riepilogo staging -->
+        <div id="staging-summary" class="mb-4"></div>
+
+        <!-- Filtri staging -->
+        <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Cerca</label>
+              <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" id="staging-filter-search" placeholder="Docente, ateneo, materia..."
+                       class="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-amber-300 focus:border-transparent outline-none"
+                       oninput="applyStagingFilters()">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Materia</label>
+              <select id="staging-filter-materia" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-amber-300 outline-none" onchange="applyStagingFilters()">
+                <option value="">Tutte le materie</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button onclick="resetStagingFilters()" class="text-sm text-amber-500 hover:text-amber-700">
+                <i class="fas fa-undo mr-1"></i>Reset filtri
+              </button>
+              <span id="staging-count" class="text-sm text-gray-500 ml-auto">0 programmi</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista programmi in staging -->
+        <div id="staging-list" class="space-y-3">
+          <div class="text-center text-gray-400 py-12">
+            <i class="fas fa-inbox text-3xl mb-2 block"></i>
+            Nessun programma in staging. Carica dei PDF dalla sezione Upload.
           </div>
         </div>
       </section>
@@ -1192,6 +1246,7 @@ function dashboardPage(): string {
   <script src="/static/js/database.js"></script>
   <script src="/static/js/archivio.js"></script>
   <script src="/static/js/campagna.js"></script>
+  <script src="/static/js/staging.js"></script>
   <script src="/static/js/sync.js"></script>
 </body>
 </html>`
