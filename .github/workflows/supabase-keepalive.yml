@@ -2,26 +2,61 @@ name: Supabase Keep-Alive
 
 on:
   schedule:
-    - cron: '0 8 */5 * *'
+    # Ogni 3 giorni alle 08:00 UTC
+    - cron: '0 8 */3 * *'
   workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase Database
+      - name: Ping Supabase con query attiva
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          echo "Supabase Keep-Alive ping — $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${SUPABASE_URL}/rest/v1/profili?select=count" \
+          echo "Supabase Keep-Alive — $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          
+          # 1. Query RPC che forza attivita sul database
+          RPC_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/rpc/keepalive" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          RPC_CODE=$(echo "$RPC_RESPONSE" | tail -1)
+          echo "RPC keepalive — HTTP $RPC_CODE"
+          
+          # 2. INSERT + DELETE su tabella profili (forza scrittura)
+          WRITE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/profili" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -X POST \
+            -d '{"user_id": "00000000-0000-0000-0000-000000000000", "email": "keepalive@ping.dev", "ruolo": "promotore"}')
+          echo "Write test — HTTP $WRITE_RESPONSE"
+          
+          # Pulisci la riga di test
+          DEL_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/profili?email=eq.keepalive@ping.dev" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -X DELETE)
+          echo "Cleanup — HTTP $DEL_RESPONSE"
+          
+          # 3. SELECT con risposta reale
+          READ_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/profili?select=count&limit=1" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
-          if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "206" ]; then
-            echo "Supabase attivo — HTTP $RESPONSE"
+          READ_CODE=$(echo "$READ_RESPONSE" | tail -1)
+          echo "Read check — HTTP $READ_CODE"
+          
+          if [ "$READ_CODE" = "200" ] || [ "$READ_CODE" = "206" ]; then
+            echo "Supabase attivo!"
           else
-            echo "Risposta inattesa — HTTP $RESPONSE"
+            echo "Errore — verificare dashboard Supabase"
             exit 1
           fi
