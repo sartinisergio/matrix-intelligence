@@ -1166,7 +1166,7 @@ function dashboardPage(): string {
 
             <form id="monitoraggio-form" onsubmit="handleCreateMonitoraggio(event)" class="space-y-5">
 
-              <!-- SEZIONE 1: MATERIA -->
+              <!-- SEZIONE 1: MATERIA (dropdown dal catalogo) -->
               <div class="space-y-4">
                 <div class="flex items-center gap-2 mb-1">
                   <span class="flex items-center justify-center w-6 h-6 bg-zanichelli-blue text-white rounded-full text-xs font-bold">1</span>
@@ -1176,58 +1176,31 @@ function dashboardPage(): string {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Materia *</label>
-                    <input type="text" id="mon-materia" required
-                           class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none"
-                           placeholder="Es: Chimica Generale">
+                    <select id="mon-materia" required onchange="onMonMateriaChange()"
+                            class="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-zanichelli-light outline-none bg-white">
+                      <option value="">— Seleziona materia dal catalogo —</option>
+                    </select>
                     <p class="text-xs text-gray-400 mt-1">Tutti i docenti di questa materia nel database verranno analizzati</p>
+                    <div id="mon-docenti-count" class="hidden mt-2 text-xs px-3 py-2 rounded-lg"></div>
                   </div>
                 </div>
-
-                <!-- Pannello Scenario (appare automaticamente) -->
-                <div id="mon-scenario-panel" class="hidden"></div>
               </div>
 
-              <!-- SEZIONE 2: VOLUMI ZANICHELLI -->
-              <div class="border-t pt-5">
-                <div class="flex items-center justify-between mb-3">
-                  <div class="flex items-center gap-2">
-                    <span class="flex items-center justify-center w-6 h-6 bg-zanichelli-blue text-white rounded-full text-xs font-bold">2</span>
-                    <h4 class="font-semibold text-gray-800">Volumi Zanichelli da confrontare</h4>
-                    <span id="mon-volumi-count" class="text-xs text-gray-400 ml-1">1 di 5</span>
-                  </div>
-                  <button type="button" onclick="addMonitoraggioVolume()" id="btn-add-volume"
-                          class="px-3 py-1.5 bg-zanichelli-accent text-zanichelli-blue rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center gap-1">
-                    <i class="fas fa-plus text-xs"></i>
-                    Aggiungi volume
-                  </button>
+              <!-- SEZIONE 2: VOLUMI ZANICHELLI (checkbox automatiche) -->
+              <div id="mon-volumi-section" class="border-t pt-5 hidden">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="flex items-center justify-center w-6 h-6 bg-zanichelli-blue text-white rounded-full text-xs font-bold">2</span>
+                  <h4 class="font-semibold text-gray-800">Volumi Zanichelli da confrontare</h4>
+                  <span id="mon-volumi-count" class="text-xs text-gray-400 ml-1"></span>
                 </div>
-                <p class="text-xs text-gray-400 mb-4">Inserisci da 1 a 5 volumi del catalogo Zanichelli. Per ciascuno, incolla l'indice o il sommario dei capitoli.</p>
+                <p class="text-xs text-gray-400 mb-4">Seleziona i volumi Zanichelli della materia. L'indice e i capitoli vengono caricati automaticamente dal catalogo MATRIX.</p>
 
-                <div id="mon-volumi-container" class="space-y-4">
-                  <!-- Volume 1 (sempre presente) -->
-                  <div class="mon-volume-entry bg-gray-50 rounded-xl p-4 border border-gray-200" data-volume-index="0">
-                    <div class="flex items-center justify-between mb-3">
-                      <span class="text-sm font-semibold text-gray-700">
-                        <i class="fas fa-book text-zanichelli-light mr-1"></i>Volume 1
-                      </span>
-                    </div>
-                    <div class="space-y-3">
-                      <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Titolo del volume *</label>
-                        <input type="text" class="mon-vol-titolo w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
-                               placeholder="Es: Chimica Generale e Inorganica — Petrucci">
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Indice / Sommario dei capitoli *</label>
-                        <textarea class="mon-vol-indice w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none" rows="4"
-                                  placeholder="Incolla qui l'indice del volume (capitoli principali). Necessario per l'analisi di allineamento."></textarea>
-                      </div>
-                    </div>
-                  </div>
+                <div id="mon-volumi-container" class="space-y-3">
+                  <!-- Popolato dinamicamente da onMonMateriaChange() -->
                 </div>
 
-                <div id="mon-volume-limit-msg" class="hidden mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
-                  <i class="fas fa-info-circle mr-1"></i>Massimo 5 volumi per mantenere la qualita dell'analisi
+                <div id="mon-no-volumi-msg" class="hidden mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+                  <i class="fas fa-exclamation-triangle mr-1"></i>Nessun volume Zanichelli trovato nel catalogo per questa materia
                 </div>
               </div>
 

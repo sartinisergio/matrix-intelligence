@@ -123,17 +123,40 @@ function renderMonitoraggiList() {
 }
 
 // ===================================================
-// FORM: MOSTRA / NASCONDI / GESTIONE VOLUMI
+// FORM: MOSTRA / NASCONDI / GESTIONE VOLUMI DA CATALOGO
 // ===================================================
 
-function showNewMonitoraggioForm() {
+async function showNewMonitoraggioForm() {
   document.getElementById('monitoraggio-form-container').classList.remove('hidden');
   document.getElementById('btn-new-monitoraggio').classList.add('hidden');
   document.getElementById('monitoraggi-list').classList.add('hidden');
 
-  // Reset form
-  document.getElementById('mon-materia').value = '';
-  resetMonitoraggioVolumi();
+  // Carica catalogo se non presente
+  await loadCatalog();
+
+  // Popola dropdown materie dal catalogo (solo materie con volumi Zanichelli)
+  const materiaSelect = document.getElementById('mon-materia');
+  materiaSelect.innerHTML = '<option value="">— Seleziona materia dal catalogo —</option>';
+
+  const materieConVolumi = {};
+  for (const m of catalogManuals) {
+    if (m.is_zanichelli && m.subject) {
+      if (!materieConVolumi[m.subject]) materieConVolumi[m.subject] = 0;
+      materieConVolumi[m.subject]++;
+    }
+  }
+
+  Object.keys(materieConVolumi).sort().forEach(mat => {
+    const opt = document.createElement('option');
+    opt.value = mat;
+    opt.textContent = `${mat} (${materieConVolumi[mat]} volumi Zanichelli)`;
+    materiaSelect.appendChild(opt);
+  });
+
+  // Reset
+  document.getElementById('mon-volumi-section').classList.add('hidden');
+  document.getElementById('mon-volumi-container').innerHTML = '';
+  document.getElementById('mon-docenti-count').classList.add('hidden');
   validateMonitoraggioForm();
 }
 
@@ -143,113 +166,102 @@ function hideMonitoraggioForm() {
   document.getElementById('monitoraggi-list').classList.remove('hidden');
 }
 
-function resetMonitoraggioVolumi() {
-  const container = document.getElementById('mon-volumi-container');
-  // Ricrea solo il primo volume
-  container.innerHTML = createVolumeEntryHTML(0);
-  document.getElementById('btn-add-volume').classList.remove('hidden');
-  document.getElementById('mon-volume-limit-msg').classList.add('hidden');
-  updateVolumiCount();
-}
+// Quando l'utente seleziona una materia, mostra i volumi Zanichelli disponibili
+async function onMonMateriaChange() {
+  const materia = document.getElementById('mon-materia').value;
+  const volumiSection = document.getElementById('mon-volumi-section');
+  const volumiContainer = document.getElementById('mon-volumi-container');
+  const noVolumiMsg = document.getElementById('mon-no-volumi-msg');
+  const countEl = document.getElementById('mon-volumi-count');
+  const docentiCountEl = document.getElementById('mon-docenti-count');
 
-function createVolumeEntryHTML(index) {
-  const removeBtn = index > 0
-    ? `<button type="button" onclick="removeMonitoraggioVolume(this)" class="text-xs text-red-400 hover:text-red-600 transition-colors">
-         <i class="fas fa-trash-alt mr-1"></i>Rimuovi
-       </button>`
-    : '';
-
-  return `
-    <div class="mon-volume-entry bg-gray-50 rounded-xl p-4 border border-gray-200" data-volume-index="${index}">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-sm font-semibold text-gray-700">
-          <i class="fas fa-book text-zanichelli-light mr-1"></i>Volume ${index + 1}
-        </span>
-        ${removeBtn}
-      </div>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Titolo del volume *</label>
-          <input type="text" class="mon-vol-titolo w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none"
-                 placeholder="Es: Chimica Generale e Inorganica — Petrucci"
-                 oninput="validateMonitoraggioForm()">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Indice / Sommario dei capitoli *</label>
-          <textarea class="mon-vol-indice w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-zanichelli-light outline-none" rows="4"
-                    placeholder="Incolla qui l'indice del volume (capitoli principali). Necessario per l'analisi di allineamento."
-                    oninput="validateMonitoraggioForm()"></textarea>
-        </div>
-      </div>
-    </div>`;
-}
-
-function addMonitoraggioVolume() {
-  const container = document.getElementById('mon-volumi-container');
-  const entries = container.querySelectorAll('.mon-volume-entry');
-
-  if (entries.length >= 5) return; // Hard limit
-
-  const newIndex = entries.length;
-  const div = document.createElement('div');
-  div.innerHTML = createVolumeEntryHTML(newIndex);
-  container.appendChild(div.firstElementChild);
-
-  updateVolumiCount();
-  validateMonitoraggioForm();
-
-  // Se raggiunto il limite, nascondi il bottone e mostra il messaggio
-  if (container.querySelectorAll('.mon-volume-entry').length >= 5) {
-    document.getElementById('btn-add-volume').classList.add('hidden');
-    document.getElementById('mon-volume-limit-msg').classList.remove('hidden');
-  }
-}
-
-function removeMonitoraggioVolume(btn) {
-  const entry = btn.closest('.mon-volume-entry');
-  entry.remove();
-
-  // Rinumera le entry rimaste
-  const container = document.getElementById('mon-volumi-container');
-  const entries = container.querySelectorAll('.mon-volume-entry');
-  entries.forEach((el, i) => {
-    el.dataset.volumeIndex = i;
-    el.querySelector('.text-sm.font-semibold').innerHTML =
-      `<i class="fas fa-book text-zanichelli-light mr-1"></i>Volume ${i + 1}`;
-  });
-
-  // Riabilita bottone aggiungi se sotto il limite
-  if (entries.length < 5) {
-    document.getElementById('btn-add-volume').classList.remove('hidden');
-    document.getElementById('mon-volume-limit-msg').classList.add('hidden');
+  if (!materia) {
+    volumiSection.classList.add('hidden');
+    docentiCountEl.classList.add('hidden');
+    validateMonitoraggioForm();
+    return;
   }
 
-  updateVolumiCount();
-  validateMonitoraggioForm();
-}
+  // Mostra conteggio docenti disponibili
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      const { data: programs } = await supabaseClient
+        .from('programmi')
+        .select('id, materia_inferita')
+        .eq('user_id', session.user.id);
+      
+      const matching = (programs || []).filter(p => checkSubjectMatch(materia, p.materia_inferita));
+      docentiCountEl.classList.remove('hidden');
+      if (matching.length > 0) {
+        docentiCountEl.className = 'mt-2 text-xs px-3 py-2 rounded-lg bg-green-50 text-green-700';
+        docentiCountEl.innerHTML = `<i class="fas fa-users mr-1"></i>${matching.length} docent${matching.length === 1 ? 'e' : 'i'} di ${materia} trovati nel tuo database`;
+      } else {
+        docentiCountEl.className = 'mt-2 text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600';
+        docentiCountEl.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>Nessun docente di ${materia} trovato. Carica prima i programmi dalla sezione Upload.`;
+      }
+    }
+  } catch (e) {
+    console.warn('[Monitoraggio] Errore conteggio docenti:', e);
+  }
 
-function updateVolumiCount() {
-  const count = document.querySelectorAll('.mon-volume-entry').length;
-  const label = document.getElementById('mon-volumi-count');
-  if (label) label.textContent = `${count} di 5`;
+  // Filtra volumi Zanichelli per la materia selezionata
+  const volumiZan = catalogManuals.filter(m =>
+    m.is_zanichelli && checkSubjectMatch(m.subject, materia)
+  );
+
+  volumiSection.classList.remove('hidden');
+
+  if (volumiZan.length === 0) {
+    volumiContainer.innerHTML = '';
+    noVolumiMsg.classList.remove('hidden');
+    countEl.textContent = '0 volumi';
+    validateMonitoraggioForm();
+    return;
+  }
+
+  noVolumiMsg.classList.add('hidden');
+  countEl.textContent = `${volumiZan.length} volumi disponibili`;
+
+  // Genera checkbox per ogni volume Zanichelli
+  volumiContainer.innerHTML = volumiZan.map((v, i) => `
+    <label class="mon-volume-checkbox flex items-start gap-3 bg-gray-50 rounded-xl p-4 border border-gray-200 cursor-pointer hover:bg-blue-50/30 hover:border-zanichelli-light transition-colors"
+           data-manual-id="${v.id}">
+      <input type="checkbox" name="mon-vol" value="${v.id}" onchange="validateMonitoraggioForm()"
+             class="mt-1 w-4 h-4 text-zanichelli-blue rounded focus:ring-zanichelli-light">
+      <div class="flex-1">
+        <div class="flex items-center gap-2">
+          <span class="font-medium text-gray-800 text-sm">${v.title}</span>
+          <span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium">Zanichelli</span>
+        </div>
+        <div class="text-xs text-gray-500 mt-0.5">${v.author} — ${v.chapters_count || '?'} capitoli</div>
+        ${v.chapters_summary ? `<details class="mt-2">
+          <summary class="text-xs text-zanichelli-light cursor-pointer hover:text-zanichelli-dark">Mostra indice capitoli</summary>
+          <pre class="mt-1 text-xs text-gray-500 whitespace-pre-wrap max-h-32 overflow-y-auto bg-white p-2 rounded border">${v.chapters_summary.substring(0, 500)}${v.chapters_summary.length > 500 ? '\n...' : ''}</pre>
+        </details>` : '<div class="text-xs text-amber-500 mt-1"><i class="fas fa-exclamation-circle mr-1"></i>Indice non disponibile nel catalogo</div>'}
+      </div>
+    </label>
+  `).join('');
+
+  validateMonitoraggioForm();
 }
 
 function validateMonitoraggioForm() {
-  const materia = document.getElementById('mon-materia')?.value.trim();
-  const entries = document.querySelectorAll('.mon-volume-entry');
+  const materia = document.getElementById('mon-materia')?.value;
   const btn = document.getElementById('btn-avvia-monitoraggio');
   if (!btn) return;
 
-  // Almeno un volume con titolo e indice compilati
-  let hasValidVolume = false;
-  entries.forEach(entry => {
-    const titolo = entry.querySelector('.mon-vol-titolo')?.value.trim();
-    const indice = entry.querySelector('.mon-vol-indice')?.value.trim();
-    if (titolo && indice) hasValidVolume = true;
-  });
-
-  const isValid = materia && hasValidVolume;
+  // Almeno una checkbox volume selezionata
+  const checked = document.querySelectorAll('input[name="mon-vol"]:checked');
+  const isValid = materia && checked.length > 0 && checked.length <= 5;
   btn.disabled = !isValid;
+
+  // Aggiorna contatore
+  const countEl = document.getElementById('mon-volumi-count');
+  if (countEl && materia) {
+    const total = document.querySelectorAll('input[name="mon-vol"]').length;
+    countEl.textContent = `${checked.length} selezionat${checked.length === 1 ? 'o' : 'i'} su ${total}`;
+  }
 }
 
 // ===================================================
@@ -265,35 +277,42 @@ async function handleCreateMonitoraggio(event) {
     return;
   }
 
-  const materia = document.getElementById('mon-materia').value.trim();
+  const materia = document.getElementById('mon-materia').value;
   if (!materia) {
-    showToast('Inserisci la materia da monitorare', 'warning');
+    showToast('Seleziona la materia da monitorare', 'warning');
     return;
   }
 
-  // Raccogli volumi
-  const entries = document.querySelectorAll('.mon-volume-entry');
+  // Raccogli volumi selezionati dal catalogo
+  const checkedBoxes = document.querySelectorAll('input[name="mon-vol"]:checked');
+  if (checkedBoxes.length === 0) {
+    showToast('Seleziona almeno un volume Zanichelli', 'warning');
+    return;
+  }
+  if (checkedBoxes.length > 5) {
+    showToast('Massimo 5 volumi consentiti', 'warning');
+    return;
+  }
+
   const volumi = [];
-  entries.forEach(entry => {
-    const titolo = entry.querySelector('.mon-vol-titolo')?.value.trim();
-    const indice = entry.querySelector('.mon-vol-indice')?.value.trim();
-    if (titolo && indice) {
+  checkedBoxes.forEach(cb => {
+    const manual = catalogManuals.find(m => m.id === cb.value);
+    if (manual) {
       volumi.push({
-        titolo: titolo,
-        materia: materia,
-        indice: indice,
-        temi: [] // Saranno popolati via LLM nella Fase 2
+        id: manual.id,
+        titolo: manual.title,
+        autore: manual.author,
+        editore: manual.publisher,
+        materia: manual.subject,
+        indice: manual.chapters_summary || '',
+        chapters_count: manual.chapters_count || 0,
+        temi: [] // Saranno popolati via LLM durante la generazione
       });
     }
   });
 
   if (volumi.length === 0) {
-    showToast('Inserisci almeno un volume con titolo e indice', 'warning');
-    return;
-  }
-
-  if (volumi.length > 5) {
-    showToast('Massimo 5 volumi consentiti', 'warning');
+    showToast('Errore nel recupero dei volumi dal catalogo', 'error');
     return;
   }
 
@@ -1055,12 +1074,7 @@ function exportMonitoraggioCSV() {
 }
 
 // ===================================================
-// INIZIALIZZAZIONE — listener per validazione form
+// INIZIALIZZAZIONE
 // ===================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-  const materiaInput = document.getElementById('mon-materia');
-  if (materiaInput) {
-    materiaInput.addEventListener('input', validateMonitoraggioForm);
-  }
-});
+// Nessun listener manuale necessario: il form usa onchange/onsubmit inline.
