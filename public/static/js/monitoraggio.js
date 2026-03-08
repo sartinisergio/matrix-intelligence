@@ -4,11 +4,12 @@
 // Sezione indipendente da campagna.js.
 // Gestisce il flusso: materia + volumi → analisi strategica per docente.
 // Fase 1: CRUD, form, rendering statico.
-// Fase 2 (futura): generaTargetMonitoraggio, LLM calls.
+// Fase 2: generaTargetMonitoraggio, LLM calls, refresh, email.
 
 let allMonitoraggi = [];
 let currentMonTargets = [];
 let currentMonitoraggioId = null;
+let monitoraggioGenerating = false; // Flag anti-doppio click
 
 // ===================================================
 // CARICAMENTO E LISTA
@@ -78,6 +79,17 @@ function renderMonitoraggiList() {
       actionButtons += `
         <button onclick="viewMonitoraggioTargets('${m.id}')" class="px-3 py-1.5 bg-zanichelli-accent text-zanichelli-blue rounded-lg text-sm hover:bg-blue-100 transition-colors" title="Vedi risultati">
           <i class="fas fa-list mr-1"></i>Risultati
+        </button>`;
+    }
+    if (m.stato === 'bozza' || (m.stato !== 'completata' && targetCount === 0)) {
+      actionButtons += `
+        <button onclick="generaTargetMonitoraggio('${m.id}')" class="px-3 py-1.5 bg-zanichelli-blue text-white rounded-lg text-sm hover:bg-zanichelli-dark transition-colors" title="Avvia analisi disciplinare">
+          <i class="fas fa-play mr-1"></i>Genera analisi
+        </button>`;
+    } else if (m.stato === 'completata') {
+      actionButtons += `
+        <button onclick="generaTargetMonitoraggio('${m.id}')" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="Rigenera analisi completa">
+          <i class="fas fa-redo mr-1"></i>Rigenera
         </button>`;
     }
 
@@ -309,9 +321,8 @@ async function handleCreateMonitoraggio(event) {
     hideMonitoraggioForm();
     await loadMonitoraggi();
 
-    // Fase 2: qui verra avviata la generazione target
-    // await generaTargetMonitoraggio(data.id);
-    console.log('[Monitoraggio] Creato ID:', data.id, '— generazione target non ancora implementata (Fase 2)');
+    // Avvia la generazione target
+    await generaTargetMonitoraggio(data.id);
 
   } catch (e) {
     showToast('Errore creazione monitoraggio: ' + e.message, 'error');
@@ -447,7 +458,7 @@ function renderMonitoraggioTargets(targets, showVolumeColumn) {
     tbody.innerHTML = `
       <tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">
         <i class="fas fa-binoculars text-3xl mb-2 block"></i>
-        Nessun target generato — la generazione verra avviata nella Fase 2
+        Nessun target generato — premi "Genera analisi" dalla lista monitoraggi
       </td></tr>`;
     return;
   }
@@ -504,19 +515,494 @@ function renderMonitoraggioTargets(targets, showVolumeColumn) {
 }
 
 // ===================================================
-// AZIONI SUI TARGET (PLACEHOLDER FASE 2)
+// CONCURRENCY LIMITER (inline p-limit replacement)
+// ===================================================
+
+function createConcurrencyLimiter(concurrency) {
+  let active = 0;
+  const queue = [];
+
+  function next() {
+    if (active >= concurrency || queue.length === 0) return;
+    active++;
+    const { fn, resolve, reject } = queue.shift();
+    fn().then(resolve, reject).finally(() => {
+      active--;
+      next();
+    });
+  }
+
+  return function limit(fn) {
+    return new Promise((resolve, reject) => {
+      queue.push({ fn, resolve, reject });
+      next();
+    });
+  };
+}
+
+// ===================================================
+// GENERAZIONE TARGET MONITORAGGIO (ORCHESTRAZIONE)
+// ===================================================
+
+function updateMonProgress(current, total, detail) {
+  const container = document.getElementById('monitoraggio-progress');
+  const bar = document.getElementById('mon-progress-bar');
+  const text = document.getElementById('mon-progress-text');
+  const detailEl = document.getElementById('mon-progress-detail');
+
+  if (!container) return;
+  container.classList.remove('hidden');
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  if (bar) bar.style.width = pct + '%';
+  if (text) text.textContent = `${current}/${total}`;
+  if (detailEl && detail) detailEl.textContent = detail;
+}
+
+function hideMonProgress() {
+  const container = document.getElementById('monitoraggio-progress');
+  if (container) container.classList.add('hidden');
+}
+
+async function generaTargetMonitoraggio(monitoraggioId) {
+  if (monitoraggioGenerating) {
+    showToast('Generazione gia in corso, attendere...', 'warning');
+    return;
+  }
+  monitoraggioGenerating = true;
+
+  const mon = allMonitoraggi.find(m => m.id === monitoraggioId);
+  if (!mon) {
+    showToast('Monitoraggio non trovato', 'error');
+    monitoraggioGenerating = false;
+    return;
+  }
+
+  const materia = mon.libro_materia;
+  const volumi = mon.volumi_monitoraggio || [];
+  if (volumi.length === 0) {
+    showToast('Nessun volume configurato nel monitoraggio', 'warning');
+    monitoraggioGenerating = false;
+    return;
+  }
+
+  // Verifica API key
+  if (!CONFIG.OPENAI_API_KEY) {
+    showToast('API Key OpenAI non configurata. Vai nelle Impostazioni.', 'error');
+    monitoraggioGenerating = false;
+    return;
+  }
+
+  try {
+    showToast(`Avvio analisi disciplinare per "${materia}"...`, 'info');
+    updateMonProgress(0, 1, 'Caricamento risorse...');
+
+    // 1. Carica risorse condivise
+    await loadCatalog();
+    await loadFrameworks();
+    const framework = findFrameworkForSubject(materia);
+
+    // 2. Carica programmi dell'utente
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) throw new Error('Sessione scaduta');
+
+    const { data: programs, error: progErr } = await supabaseClient
+      .from('programmi')
+      .select('*')
+      .eq('user_id', session.user.id);
+
+    if (progErr) throw progErr;
+    if (!programs || programs.length === 0) {
+      showToast('Nessun programma nel database. Carica prima dei PDF dalla sezione Upload.', 'warning');
+      monitoraggioGenerating = false;
+      hideMonProgress();
+      return;
+    }
+
+    // 3. Filtra docenti per materia
+    const matchingPrograms = programs.filter(p =>
+      checkSubjectMatch(materia, p.materia_inferita)
+    );
+
+    if (matchingPrograms.length === 0) {
+      showToast(`Nessun programma corrisponde alla materia "${materia}". Verifica i programmi caricati.`, 'warning');
+      monitoraggioGenerating = false;
+      hideMonProgress();
+      return;
+    }
+
+    console.log(`[Monitoraggio] ${matchingPrograms.length} programmi trovati per "${materia}"`);
+    updateMonProgress(0, matchingPrograms.length, `Analisi di ${matchingPrograms.length} docenti...`);
+
+    // 4. Estrai temi dai volumi se mancanti (una sola volta)
+    for (let vi = 0; vi < volumi.length; vi++) {
+      const v = volumi[vi];
+      if ((!v.temi || v.temi.length === 0) && v.indice && v.indice.trim().length > 20) {
+        try {
+          const themeResult = await callOpenAI(
+            'Estrai 10-15 temi/argomenti chiave dal seguente indice di un libro accademico. Rispondi con JSON: {"temi": ["tema1", "tema2", ...]}',
+            v.indice, true
+          );
+          volumi[vi].temi = themeResult.temi || [];
+          console.log(`[Monitoraggio] Temi estratti per "${v.titolo}": ${volumi[vi].temi.length}`);
+        } catch (e) {
+          console.warn(`[Monitoraggio] Errore estrazione temi volume ${v.titolo}:`, e);
+          volumi[vi].temi = [];
+        }
+      }
+    }
+    // Salva volumi con temi aggiornati
+    await supabaseClient.from('campagne').update({ volumi_monitoraggio: volumi }).eq('id', monitoraggioId);
+
+    // 5. Analisi parallela con concurrency limiter (max 3)
+    const limit = createConcurrencyLimiter(3);
+    let completed = 0;
+    const results = [];
+
+    const promises = matchingPrograms.map(prog =>
+      limit(async () => {
+        try {
+          const result = await generaMatchingMultiVolume(prog, volumi, framework);
+          completed++;
+          updateMonProgress(completed, matchingPrograms.length, `Analizzato: ${prog.docente_nome || 'Docente ' + completed}`);
+          return {
+            programma_id: prog.id,
+            docente_nome: prog.docente_nome || '',
+            docente_email: prog.docente_email || '',
+            ateneo: prog.ateneo || '',
+            classe_laurea: prog.classe_laurea || '',
+            materia_inferita: prog.materia_inferita || '',
+            scenario: prog.scenario_zanichelli || 'Non classificato',
+            scenario_zanichelli: prog.scenario_zanichelli || 'Non classificato',
+            manuale_principale: (prog.manuali_citati || []).find(m => m.ruolo === 'principale')?.titolo || '',
+            volume_ottimale: result.volume_ottimale || '',
+            volume_consigliato: result.volume_ottimale || '',
+            motivazione_scelta: result.motivazione_scelta || '',
+            allineamento: (result.valutazioni || []).find(v => v.titolo === result.volume_ottimale)?.allineamento || 'medio',
+            valutazioni_volumi: result.valutazioni || [],
+            stato_analisi: 'completato'
+          };
+        } catch (e) {
+          completed++;
+          updateMonProgress(completed, matchingPrograms.length, `Errore per: ${prog.docente_nome || 'Docente'}`);
+          console.error(`[Monitoraggio] Errore analisi ${prog.docente_nome}:`, e);
+          return {
+            programma_id: prog.id,
+            docente_nome: prog.docente_nome || '',
+            docente_email: prog.docente_email || '',
+            ateneo: prog.ateneo || '',
+            classe_laurea: prog.classe_laurea || '',
+            materia_inferita: prog.materia_inferita || '',
+            scenario: prog.scenario_zanichelli || 'Non classificato',
+            scenario_zanichelli: prog.scenario_zanichelli || 'Non classificato',
+            manuale_principale: (prog.manuali_citati || []).find(m => m.ruolo === 'principale')?.titolo || '',
+            volume_ottimale: '',
+            volume_consigliato: '',
+            motivazione_scelta: '',
+            allineamento: 'non_valutato',
+            valutazioni_volumi: [],
+            tipo_azione: 'DA VERIFICARE',
+            urgenza: 'BASSA',
+            stato_analisi: 'errore',
+            errore: e.message
+          };
+        }
+      })
+    );
+
+    const allResults = await Promise.all(promises);
+    console.log(`[Monitoraggio] Analisi completata: ${allResults.length} docenti`);
+
+    // 6. Prioritizzazione via LLM
+    updateMonProgress(matchingPrograms.length, matchingPrograms.length, 'Generazione priorita disciplinare...');
+
+    let prioritaData = null;
+    try {
+      prioritaData = await generaPrioritaMonitoraggio(allResults, materia);
+    } catch (e) {
+      console.error('[Monitoraggio] Errore prioritizzazione:', e);
+      showToast('Errore nella prioritizzazione — i risultati saranno mostrati senza ordinamento', 'warning');
+    }
+
+    // 7. Merge priorita con risultati
+    let targets;
+    if (prioritaData && prioritaData.lista_priorita) {
+      targets = prioritaData.lista_priorita.map(p => {
+        // Cerca il risultato corrispondente
+        const match = allResults.find(r =>
+          r.docente_nome && p.docente &&
+          r.docente_nome.toLowerCase().includes(p.docente.toLowerCase().split(' ')[0])
+        ) || allResults.find(r => r.ateneo && p.ateneo && r.ateneo.toLowerCase() === p.ateneo.toLowerCase());
+
+        return {
+          ...(match || {}),
+          docente_nome: p.docente || match?.docente_nome || '',
+          ateneo: p.ateneo || match?.ateneo || '',
+          tipo_azione: p.tipo_azione || 'DA VERIFICARE',
+          urgenza: p.urgenza || 'BASSA',
+          volume_consigliato: p.volume_consigliato || match?.volume_consigliato || '',
+          motivazione_scelta: p.motivazione || match?.motivazione_scelta || '',
+          scenario: p.scenario_attuale || match?.scenario || 'Non classificato'
+        };
+      });
+
+      // Aggiungi eventuali risultati non inclusi nella lista priorita
+      for (const r of allResults) {
+        const found = targets.some(t =>
+          t.docente_nome && r.docente_nome &&
+          t.docente_nome.toLowerCase() === r.docente_nome.toLowerCase()
+        );
+        if (!found) {
+          targets.push({
+            ...r,
+            tipo_azione: 'DA VERIFICARE',
+            urgenza: 'BASSA'
+          });
+        }
+      }
+    } else {
+      // Fallback senza prioritizzazione: ordine per scenario
+      targets = allResults.map(r => ({
+        ...r,
+        tipo_azione: r.tipo_azione || mapScenarioToAzione(r.scenario, r.allineamento),
+        urgenza: r.urgenza || mapScenarioToUrgenza(r.scenario, r.allineamento)
+      }));
+    }
+
+    // 8. Salva tutto in Supabase
+    const sintesi = prioritaData?.sintesi_disciplina || {
+      totale_docenti: targets.length,
+      difese_urgenti: targets.filter(t => t.tipo_azione === 'DIFESA').length,
+      upgrade_possibili: targets.filter(t => t.tipo_azione === 'UPGRADE').length,
+      conquiste_possibili: targets.filter(t => t.tipo_azione === 'CONQUISTA').length,
+      non_valutati: targets.filter(t => t.tipo_azione === 'DA VERIFICARE').length,
+      nota_strategica: ''
+    };
+
+    const { error: saveErr } = await supabaseClient
+      .from('campagne')
+      .update({
+        target_generati: targets,
+        sintesi_disciplina: sintesi,
+        volumi_monitoraggio: volumi,
+        stato: 'completata',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', monitoraggioId);
+
+    if (saveErr) throw saveErr;
+
+    // 9. Aggiorna UI
+    hideMonProgress();
+    showToast(`Analisi completata: ${targets.length} docenti analizzati per "${materia}"`, 'success');
+    await loadMonitoraggi();
+
+    // Apri direttamente i risultati
+    viewMonitoraggioTargets(monitoraggioId);
+
+  } catch (e) {
+    console.error('[Monitoraggio] Errore generazione:', e);
+    showToast('Errore generazione monitoraggio: ' + e.message, 'error');
+    hideMonProgress();
+  } finally {
+    monitoraggioGenerating = false;
+  }
+}
+
+// --- Fallback mapping scenario → azione/urgenza ---
+function mapScenarioToAzione(scenario, allineamento) {
+  const s = (scenario || '').toLowerCase();
+  if (s.includes('principale')) return 'DIFESA';
+  if (s.includes('alternativo')) return 'UPGRADE';
+  if (s.includes('assente')) return 'CONQUISTA';
+  return 'DA VERIFICARE';
+}
+
+function mapScenarioToUrgenza(scenario, allineamento) {
+  const s = (scenario || '').toLowerCase();
+  const a = (allineamento || '').toLowerCase();
+  if (s.includes('principale') && (a === 'medio' || a === 'basso')) return 'ALTA';
+  if (s.includes('alternativo') && a === 'alto') return 'ALTA';
+  if (s.includes('assente') && a === 'alto') return 'MEDIA';
+  if (s.includes('principale') && a === 'alto') return 'MEDIA';
+  if (s.includes('alternativo') && a === 'medio') return 'MEDIA';
+  return 'BASSA';
+}
+
+// ===================================================
+// REFRESH SINGOLO DOCENTE
 // ===================================================
 
 async function refreshMonitoraggioDocente(targetIndex) {
-  // Fase 2: richiamera generaMatchingMultiVolume per il singolo docente
-  showToast('Rigenerazione singola non ancora implementata (Fase 2)', 'info');
-  console.log('[Monitoraggio] Refresh docente index:', targetIndex);
+  const mon = allMonitoraggi.find(m => m.id === currentMonitoraggioId);
+  if (!mon) { showToast('Monitoraggio non trovato', 'error'); return; }
+
+  const target = currentMonTargets[targetIndex];
+  if (!target) { showToast('Target non trovato', 'error'); return; }
+
+  if (!CONFIG.OPENAI_API_KEY) {
+    showToast('API Key OpenAI non configurata', 'error');
+    return;
+  }
+
+  // Mostra spinner sul bottone
+  const btn = document.querySelector(`#mon-target-table-body tr:nth-child(${targetIndex + 1}) .fa-sync-alt`);
+  if (btn) btn.classList.add('fa-spin');
+
+  try {
+    // Recupera programma fresco dal DB
+    const { data: prog, error } = await supabaseClient
+      .from('programmi')
+      .select('*')
+      .eq('id', target.programma_id)
+      .single();
+
+    if (error || !prog) throw new Error('Programma non trovato nel database');
+
+    const volumi = mon.volumi_monitoraggio || [];
+    await loadFrameworks();
+    const framework = findFrameworkForSubject(mon.libro_materia);
+
+    // Riesegui matching
+    const result = await generaMatchingMultiVolume(prog, volumi, framework);
+
+    // Aggiorna il target
+    currentMonTargets[targetIndex] = {
+      ...target,
+      volume_ottimale: result.volume_ottimale || '',
+      volume_consigliato: result.volume_ottimale || '',
+      motivazione_scelta: result.motivazione_scelta || '',
+      allineamento: (result.valutazioni || []).find(v => v.titolo === result.volume_ottimale)?.allineamento || 'medio',
+      valutazioni_volumi: result.valutazioni || [],
+      tipo_azione: mapScenarioToAzione(target.scenario, (result.valutazioni || []).find(v => v.titolo === result.volume_ottimale)?.allineamento || 'medio'),
+      urgenza: mapScenarioToUrgenza(target.scenario, (result.valutazioni || []).find(v => v.titolo === result.volume_ottimale)?.allineamento || 'medio'),
+      stato_analisi: 'completato',
+      errore: undefined
+    };
+
+    // Salva in Supabase
+    await supabaseClient
+      .from('campagne')
+      .update({
+        target_generati: currentMonTargets,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', currentMonitoraggioId);
+
+    // Aggiorna in-memory e UI
+    const monIdx = allMonitoraggi.findIndex(m => m.id === currentMonitoraggioId);
+    if (monIdx >= 0) allMonitoraggi[monIdx].target_generati = currentMonTargets;
+
+    const showVol = (mon.volumi_monitoraggio || []).length > 1;
+    renderMonitoraggioTargets(currentMonTargets, showVol);
+
+    showToast(`Analisi aggiornata per ${target.docente_nome || 'docente'}`, 'success');
+
+  } catch (e) {
+    console.error('[Monitoraggio] Errore refresh docente:', e);
+    showToast('Errore rigenerazione: ' + e.message, 'error');
+  } finally {
+    if (btn) btn.classList.remove('fa-spin');
+  }
 }
 
+// ===================================================
+// GENERAZIONE EMAIL
+// ===================================================
+
 async function generateMonitoraggioEmail(targetIndex) {
-  // Fase 2: generera email usando il volume ottimale come riferimento
-  showToast('Generazione email non ancora implementata (Fase 2)', 'info');
-  console.log('[Monitoraggio] Email docente index:', targetIndex);
+  const mon = allMonitoraggi.find(m => m.id === currentMonitoraggioId);
+  if (!mon) { showToast('Monitoraggio non trovato', 'error'); return; }
+
+  const target = currentMonTargets[targetIndex];
+  if (!target) { showToast('Target non trovato', 'error'); return; }
+
+  if (target.tipo_azione === 'DA VERIFICARE') {
+    showToast('Completa prima l\'analisi per questo docente (premi Rigenera)', 'warning');
+    return;
+  }
+
+  if (!CONFIG.OPENAI_API_KEY) {
+    showToast('API Key OpenAI non configurata', 'error');
+    return;
+  }
+
+  showToast('Generazione email in corso...', 'info');
+
+  try {
+    // Trova il volume ottimale tra i volumi configurati
+    const volumi = mon.volumi_monitoraggio || [];
+    const volumeOttimale = volumi.find(v => v.titolo === target.volume_consigliato) || volumi[0] || {};
+
+    const userPrompt = `Scrivi una email professionale per un promotore editoriale Zanichelli.
+
+DESTINATARIO:
+- Docente: ${target.docente_nome || 'N/D'}
+- Ateneo: ${target.ateneo || 'N/D'}
+- Materia: ${target.materia_inferita || mon.libro_materia || 'N/D'}
+- Scenario attuale: ${target.scenario || 'N/D'}
+
+AZIONE: ${target.tipo_azione || 'N/D'}
+VOLUME DA PROPORRE: ${volumeOttimale.titolo || target.volume_consigliato || 'N/D'}
+MOTIVAZIONE: ${target.motivazione_scelta || 'N/D'}
+
+Scrivi una email breve (max 150 parole), professionale, che:
+1. Si presenti come promotore Zanichelli
+2. Faccia riferimento alla materia e all'ateneo
+3. Proponga il volume specifico con 1-2 punti di forza concreti legati al programma del docente
+4. Chieda un appuntamento
+
+Tono: cordiale, professionale, non invasivo. NO frasi generiche. NO elenchi puntati.`;
+
+    const systemPrompt = 'Sei un esperto di comunicazione commerciale nel settore editoriale universitario. Scrivi email concise, personalizzate e professionali. Rispondi SOLO con il testo della email, senza commenti.';
+
+    const emailText = await callOpenAIExtended(systemPrompt, userPrompt, false, 1000);
+
+    // Mostra email in modal o alert (riusa pattern di campagna se disponibile)
+    showEmailModal(target, emailText);
+
+  } catch (e) {
+    console.error('[Monitoraggio] Errore generazione email:', e);
+    showToast('Errore generazione email: ' + e.message, 'error');
+  }
+}
+
+function showEmailModal(target, emailText) {
+  // Controlla se esiste un modal generico oppure ne crea uno semplice
+  let modal = document.getElementById('mon-email-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'mon-email-modal';
+    modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <div class="p-6 border-b">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-800">
+            <i class="fas fa-envelope text-zanichelli-light mr-2"></i>Email per ${target.docente_nome || 'Docente'}
+          </h3>
+          <button onclick="document.getElementById('mon-email-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
+        <p class="text-sm text-gray-500 mt-1">${target.ateneo || ''} — ${target.volume_consigliato || ''}</p>
+      </div>
+      <div class="p-6">
+        <pre class="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">${emailText}</pre>
+      </div>
+      <div class="p-4 border-t bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+        <button onclick="navigator.clipboard.writeText(document.querySelector('#mon-email-modal pre').textContent).then(() => showToast('Email copiata!', 'success'))" class="px-4 py-2 bg-zanichelli-blue text-white rounded-lg text-sm hover:bg-zanichelli-dark transition-colors">
+          <i class="fas fa-copy mr-1"></i>Copia
+        </button>
+        <button onclick="document.getElementById('mon-email-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors">
+          Chiudi
+        </button>
+      </div>
+    </div>`;
+
+  modal.classList.remove('hidden');
 }
 
 // ===================================================
