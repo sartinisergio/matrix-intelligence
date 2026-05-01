@@ -220,5 +220,15 @@ ALTER TABLE catalogo_manuali_condiviso ENABLE ROW LEVEL SECURITY;
 - [ ] Storico adozioni multi-anno per trend analysis
 - [ ] API REST per integrazione con CRM aziendale
 
----
+## Maintenance
+
+Questo repository utilizza un workflow schedulato di GitHub Actions per supportare la continuità operativa dei servizi collegati a Supabase.
+
+### Scheduled workflow
+- Workflow: `supabase-keepalive.yml`
+- Scopo: eseguire controlli periodici di manutenzione
+- Nota: GitHub può disabilitare automaticamente i workflow schedulati nei repository pubblici dopo un lungo periodo senza attività del repository
+
+Se il workflow viene disabilitato automaticamente, può essere riattivato dalla sezione **Actions** del repository tramite l'opzione **Enable workflow**.
+
 MATRIX Intelligence v0.4 — Zanichelli
